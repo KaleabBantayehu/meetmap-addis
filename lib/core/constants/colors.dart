@@ -31,4 +31,7 @@ class AppColors {
 
   // Shadows
   static const Color shadow = Colors.black12;
+  
+  //Placeholder
+  static const Color imagePlaceholder = Color(0xFFE8E8E8);
 }
