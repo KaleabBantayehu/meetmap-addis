@@ -55,12 +55,12 @@ class _MainNavigationState extends State<MainNavigation> {
 
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.explore_rounded),
+            icon: Icon(Icons.home_rounded),
             label: 'Home',
           ),
 
           BottomNavigationBarItem(
-            icon: Icon(Icons.search_rounded),
+            icon: Icon(Icons.explore_rounded),
             label: 'Explore',
           ),
 
