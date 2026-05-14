@@ -86,13 +86,13 @@ class ExplorePlaceCard extends StatelessWidget {
               imageUrl: place.imageUrl,
               fit: BoxFit.cover,
 
-              placeholder: (_, __) {
+              placeholder: (_, _) {
                 return Container(
                   color: AppColors.surfaceVariant,
                 );
               },
 
-              errorWidget: (_, __, ___) {
+              errorWidget: (_, _, _) {
                 return Container(
                   color: AppColors.surfaceVariant,
                   child: const Center(

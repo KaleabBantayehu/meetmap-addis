@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/features/explore/widgets/explore_place_card.dart';
+import 'package:meetmap_addis/features/places/screens/place_detail_screen.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
 
 class ExploreScreen extends StatefulWidget {
@@ -101,7 +102,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       child: ExplorePlaceCard(
                         place: place,
                         onTap: () {
-                          // TODO: Open place details screen
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => PlaceDetailScreen(place: place),
+                            ),
+                          );
                         },
                       ),
                     ),
