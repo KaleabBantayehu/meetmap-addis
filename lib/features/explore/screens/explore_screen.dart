@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/features/explore/widgets/explore_place_card.dart';
 import 'package:meetmap_addis/features/places/screens/place_detail_screen.dart';
-import 'package:meetmap_addis/shared/models/place_model.dart';
+import 'package:meetmap_addis/shared/data/mock_places.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -15,52 +15,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
   int selectedCategoryIndex = 0;
 
   final categories = ['Cafés', 'Restaurants', 'Coworking', 'Hotels'];
-
-  // 1. Fully populated list so the map function actually has items to render!
-  final List<PlaceModel> places = [
-    PlaceModel(
-      id: '1',
-      name: 'Tomoca Coffee',
-      imageUrl: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb',
-      category: 'Cafe',
-      location: 'Bole',
-      rating: 4.8,
-      isOpen: true,
-      latitude: 9.03,
-      longitude: 38.74,
-      priceRange: '\$\$',
-      reviewCount: 1200,
-      tags: ['Study', 'History', 'Iconic'],
-    ),
-    PlaceModel(
-      id: '2',
-      name: 'Garden of Coffee',
-      imageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085',
-      category: 'Cafe',
-      location: 'Kazanchis',
-      rating: 4.9,
-      isOpen: true,
-      latitude: 9.02,
-      longitude: 38.76,
-      priceRange: '\$\$\$',
-      reviewCount: 980,
-      tags: ['Meeting', 'Date', 'Premium'],
-    ),
-    PlaceModel(
-      id: '3',
-      name: 'Work-at-Bole',
-      imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f',
-      category: 'Coworking',
-      location: 'Bole',
-      rating: 4.5,
-      isOpen: true,
-      latitude: 9.01,
-      longitude: 38.75,
-      priceRange: '\$\$',
-      reviewCount: 540,
-      tags: ['Fast Wifi', 'Quiet', 'Networking'],
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -95,8 +49,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
                   const SizedBox(height: 28),
 
-                  // 2. The spread operator maps over the places and renders your new cards
-                  ...places.map(
+                  ...mockPlaces.map(
                     (place) => Padding(
                       padding: const EdgeInsets.only(bottom: 24),
                       child: ExplorePlaceCard(

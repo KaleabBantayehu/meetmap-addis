@@ -6,6 +6,7 @@ import 'package:meetmap_addis/features/places/widgets/place_header.dart';
 import 'package:meetmap_addis/features/places/widgets/place_info_section.dart';
 import 'package:meetmap_addis/features/places/widgets/place_location_map.dart';
 import 'package:meetmap_addis/features/places/widgets/place_reviews_section.dart';
+import 'package:meetmap_addis/shared/data/mock_places.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
 
 class PlaceDetailScreen extends StatelessWidget {
@@ -13,25 +14,9 @@ class PlaceDetailScreen extends StatelessWidget {
 
   final PlaceModel? place;
 
-  static const PlaceModel _demoPlace = PlaceModel(
-    id: '1',
-    name: 'Tomoca Coffee',
-    imageUrl:
-        'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80',
-    category: 'Cafe',
-    location: 'Bole',
-    rating: 4.8,
-    priceRange: r'$$',
-    isOpen: true,
-    latitude: 9.03,
-    longitude: 38.74,
-    tags: ['Study', 'History', 'Iconic'],
-    reviewCount: 1200,
-  );
-
   @override
   Widget build(BuildContext context) {
-    final currentPlace = place ?? _demoPlace;
+    final currentPlace = place ?? mockPlaces.first;
 
     return Scaffold(
       backgroundColor: AppColors.background,
