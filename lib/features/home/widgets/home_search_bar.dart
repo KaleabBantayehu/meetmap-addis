@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
+import 'package:meetmap_addis/routes/app_routes.dart';
 
 class HomeSearchBar extends StatelessWidget {
   const HomeSearchBar({super.key});
@@ -9,6 +10,8 @@ class HomeSearchBar extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: () => Navigator.of(context).pushNamed(AppRoutes.search),
         child: Container(
           height: 60,
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -27,7 +30,7 @@ class HomeSearchBar extends StatelessWidget {
             children: [
               InkWell(
                 borderRadius: BorderRadius.circular(100),
-                onTap: () {},
+                onTap: () => Navigator.of(context).pushNamed(AppRoutes.search),
                 child: const Icon(
                   Icons.search_rounded,
                   size: 28,
@@ -52,7 +55,10 @@ class HomeSearchBar extends StatelessWidget {
         
               InkWell(
                 borderRadius: BorderRadius.circular(100),
-                onTap: () {},
+                onTap: () {
+                  // TODO: Open advanced search filters.
+                  Navigator.of(context).pushNamed(AppRoutes.search);
+                },
                 child: const Icon(
                   Icons.tune_rounded,
                   color: AppColors.primary,

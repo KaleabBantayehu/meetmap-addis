@@ -46,6 +46,36 @@ final List<PlaceModel> mockPlaces = [
     reviewCount: 540,
     tags: ['Coffee', 'Casual', 'Chain'],
   ),
+  const PlaceModel(
+    id: '4',
+    name: 'Lime Tree',
+    imageUrl:
+        'https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?auto=format&fit=crop&w=1200&q=80',
+    category: 'International',
+    location: 'Kazanchis',
+    rating: 4.5,
+    isOpen: true,
+    latitude: 9.018,
+    longitude: 38.761,
+    priceRange: r'$$$',
+    reviewCount: 430,
+    tags: ['Dining', 'Garden', 'International'],
+  ),
+  const PlaceModel(
+    id: '5',
+    name: 'Kuriftu Bistro',
+    imageUrl:
+        'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?auto=format&fit=crop&w=1200&q=80',
+    category: 'Fine Dining',
+    location: 'Sarbet',
+    rating: 4.7,
+    isOpen: true,
+    latitude: 9.004,
+    longitude: 38.724,
+    priceRange: r'$$$$',
+    reviewCount: 360,
+    tags: ['Dining', 'Date', 'Premium'],
+  ),
 ];
 
 final List<PlaceModel> savedMockPlaces = [

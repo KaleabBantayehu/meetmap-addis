@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
+import 'package:meetmap_addis/routes/app_routes.dart';
 
 class SavedScreenHeader extends StatelessWidget {
   const SavedScreenHeader({super.key});
@@ -40,9 +41,7 @@ class SavedScreenHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () {
-              // TODO: Open saved places search.
-            },
+            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.search),
             icon: const Icon(
               Icons.search_rounded,
               color: AppColors.primary,

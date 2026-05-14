@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
+import 'package:meetmap_addis/routes/app_routes.dart';
 
 class HomeAppBar extends StatelessWidget {
   const HomeAppBar({super.key});
@@ -34,7 +35,7 @@ class HomeAppBar extends StatelessWidget {
           ),
 
           IconButton(
-            onPressed: () {},
+            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.search),
             icon: const Icon(
               Icons.search_rounded,
               size: 28,
