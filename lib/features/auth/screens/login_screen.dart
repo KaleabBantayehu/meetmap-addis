@@ -46,12 +46,15 @@ class _LoginScreenState extends State<LoginScreen> {
     // TODO: connect Firebase / backend auth later
     // TODO: support OTP phone authentication
 
-    Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 1), () {
       if (!mounted) return;
 
       setState(() {
         _isLoading = false;
       });
+      
+      // TODO: replace with real authentication logic (temporary dev routing)
+      Navigator.pushReplacementNamed(context, '/home');
     });
   }
 
@@ -216,10 +219,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   GoogleSignInButton(
                     onPressed: () {
                       // TODO: Google Sign In
+                      // TODO: replace with real authentication logic (temporary dev routing)
+                      Navigator.pushReplacementNamed(context, '/home');
                     },
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+
+                  Text(
+                    'DEV MODE: UI Navigation Only',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary.withValues(alpha: 0.5),
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
 
                   AuthFooterLink(
                     text: "Don't have an account?",

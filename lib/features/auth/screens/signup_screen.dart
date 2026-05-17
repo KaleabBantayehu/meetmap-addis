@@ -59,14 +59,15 @@ class _SignupScreenState extends State<SignupScreen> {
     // TODO: connect signup API/Firebase
     // TODO: connect phone verification / OTP flow
 
-    Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 1), () {
       if (!mounted) return;
 
       setState(() {
         _isLoading = false;
       });
       
-      // Successfully signed up, but do not navigate to home automatically
+      // TODO: replace with real authentication logic (temporary dev routing)
+      Navigator.pushReplacementNamed(context, '/home');
     });
   }
 
@@ -247,10 +248,22 @@ class _SignupScreenState extends State<SignupScreen> {
                         GoogleSignInButton(
                           onPressed: () {
                             // TODO: Google Sign Up
+                            // TODO: replace with real authentication logic (temporary dev routing)
+                            Navigator.pushReplacementNamed(context, '/home');
                           },
                         ),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
+
+                        Text(
+                          'DEV MODE: UI Navigation Only',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary.withValues(alpha: 0.5),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+
+                        const SizedBox(height: 8),
 
                         AuthFooterLink(
                           text: 'Already have an account?',

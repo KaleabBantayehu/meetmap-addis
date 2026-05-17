@@ -2,44 +2,50 @@ import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/routes/app_routes.dart';
 
-class HomeAppBar extends StatelessWidget {
-  const HomeAppBar({super.key});
+class SavedScreenHeader extends StatelessWidget {
+  const SavedScreenHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      color: AppColors.surface,
+      height: 80,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           IconButton(
             onPressed: () {},
             icon: const Icon(
               Icons.menu_rounded,
-              size: 32,
               color: AppColors.primary,
+              size: 30,
             ),
           ),
-
-          const SizedBox(width: 12),
-
+          const SizedBox(width: 18),
           Expanded(
             child: Text(
-              'MeetMap Addis',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                  ),
+              'Saved Places',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.primaryDark,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
-
           IconButton(
             onPressed: () => Navigator.of(context).pushNamed(AppRoutes.search),
             icon: const Icon(
               Icons.search_rounded,
-              size: 28,
               color: AppColors.primary,
+              size: 30,
             ),
           ),
         ],
