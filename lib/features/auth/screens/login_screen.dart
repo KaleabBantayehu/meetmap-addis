@@ -3,8 +3,10 @@ import 'package:meetmap_addis/core/constants/colors.dart';
 
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_textfield.dart';
-import '../widgets/auth_footer.dart';
+import '../../../shared/widgets/or_divider.dart';
+import '../widgets/auth_footer_link.dart';
 import '../widgets/auth_header.dart';
+import '../widgets/auth_method_selector.dart';
 import '../widgets/google_signin_button.dart';
 import 'signup_screen.dart';
 
@@ -19,14 +21,17 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  AuthMethod _authMethod = AuthMethod.email;
   bool _isObscure = true;
   bool _isLoading = false;
 
   @override
   void dispose() {
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -39,6 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     // TODO: connect Firebase / backend auth later
+    // TODO: support OTP phone authentication
 
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
@@ -60,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(
               horizontal: 28,
-              vertical: 24, // Reduced to make it compact
+              vertical: 24,
             ),
             child: Form(
               key: _formKey,
@@ -71,35 +77,71 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 32),
 
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Email Address',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  CustomTextField(
-                    controller: _emailController,
-                    hintText: 'name@example.com',
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your email';
-                      }
-
-                      if (!value.contains('@')) {
-                        return 'Enter a valid email';
-                      }
-
-                      return null;
+                  AuthMethodSelector(
+                    selectedMethod: _authMethod,
+                    onChanged: (method) {
+                      setState(() {
+                        _authMethod = method;
+                      });
                     },
                   ),
+
+                  const SizedBox(height: 24),
+
+                  if (_authMethod == AuthMethod.email) ...[
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Email Address',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    CustomTextField(
+                      controller: _emailController,
+                      hintText: 'name@example.com',
+                      prefixIcon: const Icon(Icons.email_outlined),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your email';
+                        }
+                        if (!value.contains('@')) {
+                          return 'Enter a valid email';
+                        }
+                        return null;
+                      },
+                    ),
+                  ] else ...[
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Phone Number',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    CustomTextField(
+                      controller: _phoneController,
+                      hintText: '+251 9XX XXX XXX',
+                      prefixIcon: const Icon(Icons.phone_outlined),
+                      keyboardType: TextInputType.phone,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your phone number';
+                        }
+                        final phoneRegex = RegExp(r'^(?:\+2519|09)\d{8}$');
+                        if (!phoneRegex.hasMatch(value.replaceAll(' ', ''))) {
+                          return 'Enter a valid Ethiopian phone number';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
 
                   const SizedBox(height: 20),
 
@@ -150,11 +192,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter password';
                       }
-
                       if (value.length < 6) {
                         return 'Minimum 6 characters';
                       }
-
                       return null;
                     },
                   ),
@@ -169,21 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 24),
 
-                  Row(
-                    children: [
-                      const Expanded(child: Divider()),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          'OR',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                      const Expanded(child: Divider()),
-                    ],
-                  ),
+                  const OrDivider(),
 
                   const SizedBox(height: 24),
 
@@ -195,8 +221,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 24),
 
-                  AuthFooter(
-                    onSignUpPressed: () {
+                  AuthFooterLink(
+                    text: "Don't have an account?",
+                    linkText: 'Sign Up',
+                    onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
