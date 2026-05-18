@@ -5,6 +5,7 @@ import '../features/explore/screens/explore_screen.dart';
 import '../features/explore/screens/filter_screen.dart';
 import '../features/meetings/screens/meetings_screen.dart';
 import '../features/navigation/screens/main_navigation.dart';
+import '../features/places/screens/add_place_screen.dart';
 import '../features/profile/screens/edit_profile_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/saved/screens/saved_screen.dart';
@@ -24,6 +25,7 @@ class AppRoutes {
   static const helpSupport = '/help-support';
   static const reviewHistory = '/review-history';
   static const notifications = '/notifications';
+  static const addPlace = '/add-place';
 
   static Map<String, WidgetBuilder> routes = {
     login: (context) => const LoginScreen(),
@@ -39,5 +41,6 @@ class AppRoutes {
     helpSupport: (context) => const HelpSupportScreen(),
     reviewHistory: (context) => const ReviewHistoryScreen(),
     notifications: (context) => const NotificationsScreen(),
+    addPlace: (context) => const AddPlaceScreen(),
   };
 }

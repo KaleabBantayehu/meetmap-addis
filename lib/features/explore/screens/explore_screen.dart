@@ -73,7 +73,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.primary,
-        onPressed: () {},
+        onPressed: () {
+          Navigator.of(context).pushNamed(AppRoutes.addPlace);
+        },
         child: const Icon(Icons.add_rounded, size: 32, color: Colors.white),
       ),
     );
