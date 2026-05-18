@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/features/explore/widgets/explore_place_card.dart';
+import 'package:meetmap_addis/features/explore/widgets/social_discovery_section.dart';
 import 'package:meetmap_addis/features/places/screens/place_detail_screen.dart';
 import 'package:meetmap_addis/routes/app_routes.dart';
 import 'package:meetmap_addis/shared/data/mock_places.dart';
@@ -28,15 +29,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.only(
-                  left: 20,
-                  right: 20,
                   top: 12,
                   bottom: 120,
                 ),
                 children: [
-                  const _ExploreHeader(),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: _ExploreHeader(),
+                  ),
 
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 24),
+
+                  const SocialDiscoverySection(),
+
+                  const SizedBox(height: 32),
 
                   _CategoryRow(
                     categories: categories,
@@ -52,7 +58,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
                   ...mockPlaces.map(
                     (place) => Padding(
-                      padding: const EdgeInsets.only(bottom: 24),
+                      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
                       child: ExplorePlaceCard(
                         place: place,
                         onTap: () {
@@ -196,6 +202,7 @@ class _CategoryRow extends StatelessWidget {
     return SizedBox(
       height: 42,
       child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         scrollDirection: Axis.horizontal,
         itemCount: categories.length,
         separatorBuilder: (_, _) => const SizedBox(width: 12),
