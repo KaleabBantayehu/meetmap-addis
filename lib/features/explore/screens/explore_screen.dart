@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/features/explore/widgets/explore_place_card.dart';
 import 'package:meetmap_addis/features/places/screens/place_detail_screen.dart';
+import 'package:meetmap_addis/routes/app_routes.dart';
 import 'package:meetmap_addis/shared/data/mock_places.dart';
 
 class ExploreScreen extends StatefulWidget {
@@ -98,7 +99,7 @@ class _ExploreHeader extends StatelessWidget {
           ),
         ),
         GestureDetector(
-          onTap: () {},
+          onTap: () => Navigator.of(context).pushNamed(AppRoutes.filters),
           child: Container(
             width: 46,
             height: 46,
