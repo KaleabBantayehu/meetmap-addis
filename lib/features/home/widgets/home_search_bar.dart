@@ -56,8 +56,7 @@ class HomeSearchBar extends StatelessWidget {
               InkWell(
                 borderRadius: BorderRadius.circular(100),
                 onTap: () {
-                  // TODO: Open advanced search filters.
-                  Navigator.of(context).pushNamed(AppRoutes.search);
+                  Navigator.of(context).pushNamed(AppRoutes.filters);
                 },
                 child: const Icon(
                   Icons.tune_rounded,
