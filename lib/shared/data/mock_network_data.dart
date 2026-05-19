@@ -34,7 +34,6 @@ class MockNetworkData {
       name: 'Salem H.',
       username: 'salem_eats',
       profileImageUrl: 'https://i.pravatar.cc/150?u=salem',
-      followerCount: 4200,
       bio: 'Chasing the best macchiato in Bole. Exploring Addis one plate of Tibs at a time. 🇪🇹☕',
       tags: ['COFFEE LOVER', 'FOOD CRITIC', 'TRADITIONAL'],
       recentImageUrls: [
@@ -48,7 +47,6 @@ class MockNetworkData {
       name: 'Brook T.',
       username: 'brook_arch',
       profileImageUrl: 'https://i.pravatar.cc/150?u=brook',
-      followerCount: 2800,
       bio: 'Architectural photographer. Finding beauty in the urban sprawl of Addis. 🏗️📸',
       tags: ['DESIGN', 'PHOTOGRAPHY', 'NIGHTLIFE'],
       recentImageUrls: [
