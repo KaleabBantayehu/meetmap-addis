@@ -1,128 +1,165 @@
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
+import '../widgets/labeled_text_field.dart';
+import '../widgets/profile_image_picker.dart';
 
-class EditProfileScreen extends StatelessWidget {
+class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const ProfilePlaceholderScreen(
-      title: 'Edit Profile',
-      icon: Icons.edit_rounded,
-      message: 'Profile editing will connect to the user account API.',
-    );
-  }
+  State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class ProfileSettingsScreen extends StatelessWidget {
-  const ProfileSettingsScreen({super.key});
+class _EditProfileScreenState extends State<EditProfileScreen> {
+  bool isPrivateProfile = true;
+
+  late TextEditingController _nameController;
+  late TextEditingController _emailController;
+  late TextEditingController _phoneController;
+  late TextEditingController _bioController;
 
   @override
-  Widget build(BuildContext context) {
-    return const ProfilePlaceholderScreen(
-      title: 'Settings',
-      icon: Icons.settings_rounded,
-      message: 'Settings will manage account, privacy, and app preferences.',
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: 'Selamawit T.');
+    _emailController = TextEditingController(text: 'selam.t@meetmap.et');
+    _phoneController = TextEditingController(text: '+251 911 234 567');
+    _bioController = TextEditingController(
+      text: 'Marketing Strategist & Tech Enthusiast based in Bole. Love connecting with fellow professionals and exploring the hidden cafe gems of Addis Ababa.',
     );
   }
-}
-
-class HelpSupportScreen extends StatelessWidget {
-  const HelpSupportScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const ProfilePlaceholderScreen(
-      title: 'Help & Support',
-      icon: Icons.help_rounded,
-      message: 'Support resources and contact options will live here.',
-    );
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _bioController.dispose();
+    super.dispose();
   }
-}
-
-class ReviewHistoryScreen extends StatelessWidget {
-  const ReviewHistoryScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const ProfilePlaceholderScreen(
-      title: 'My Reviews',
-      icon: Icons.rate_review_rounded,
-      message: 'Review history will load from the reviews API.',
-    );
-  }
-}
-
-class NotificationsScreen extends StatelessWidget {
-  const NotificationsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const ProfilePlaceholderScreen(
-      title: 'Notifications',
-      icon: Icons.notifications_rounded,
-      message: 'Notifications will show account and meeting updates.',
-    );
-  }
-}
-
-class ProfilePlaceholderScreen extends StatelessWidget {
-  const ProfilePlaceholderScreen({
-    super.key,
-    required this.title,
-    required this.icon,
-    required this.message,
-  });
-
-  final String title;
-  final IconData icon;
-  final String message;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(title),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.primaryDark,
-        elevation: 0,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 86,
-                height: 86,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight.withValues(alpha: 0.25),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: AppColors.primary, size: 40),
-              ),
-              const SizedBox(height: 22),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppColors.primaryDark,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textSecondary,
-                  height: 1.45,
-                ),
-              ),
-            ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Edit Profile',
+          style: TextStyle(
+            color: AppColors.primary,
+            fontWeight: FontWeight.bold,
           ),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          TextButton(
+            onPressed: () {
+              // TODO: Implement save logic
+              Navigator.of(context).pop();
+            },
+            child: const Text(
+              'Save',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 20),
+            const ProfileImagePicker(
+              imageUrl: 'https://i.pravatar.cc/300?img=47',
+            ),
+            const SizedBox(height: 32),
+            LabeledTextField(
+              label: 'Full Name',
+              hintText: 'Enter your full name',
+              controller: _nameController,
+            ),
+            LabeledTextField(
+              label: 'Email Address',
+              hintText: 'Enter your email',
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+            ),
+            LabeledTextField(
+              label: 'Phone Number',
+              hintText: 'Enter your phone number',
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+            ),
+            LabeledTextField(
+              label: 'Bio',
+              hintText: 'Tell us about yourself',
+              controller: _bioController,
+              maxLines: 4,
+            ),
+            const Divider(height: 40),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Private Profile',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Only your connections can see your details.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch.adaptive(
+                  value: isPrivateProfile,
+                  onChanged: (val) => setState(() => isPrivateProfile = val),
+                  activeColor: AppColors.primary,
+                ),
+              ],
+            ),
+            const SizedBox(height: 60),
+            Center(
+              child: TextButton.icon(
+                onPressed: () {
+                  // TODO: Implement deactivate logic
+                },
+                icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+                label: const Text(
+                  'Deactivate Account',
+                  style: TextStyle(
+                    color: AppColors.error,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
+          ],
         ),
       ),
     );

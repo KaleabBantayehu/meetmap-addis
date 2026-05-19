@@ -173,10 +173,13 @@ class _ExploreAppBar extends StatelessWidget {
                 color: AppColors.outline.withValues(alpha: 0.4),
               ),
             ),
-            child: ClipOval(
-              child: Image.network(
-                'https://i.pravatar.cc/150?img=12',
-                fit: BoxFit.cover,
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.editProfile),
+              child: ClipOval(
+                child: Image.network(
+                  'https://i.pravatar.cc/150?img=12',
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),
