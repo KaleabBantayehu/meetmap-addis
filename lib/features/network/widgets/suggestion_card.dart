@@ -16,39 +16,40 @@ class SuggestionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 150,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(right: 12, bottom: 10, top: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
+            blurRadius: 8,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: MainAxisSize.max,
         children: [
           CircleAvatar(
-            radius: 40,
+            radius: 34, // Slightly smaller to prevent overflow
             backgroundImage: NetworkImage(user.profileImageUrl),
             backgroundColor: AppColors.imagePlaceholder,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text(
             user.name,
             style: const TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 16,
+              fontSize: 15,
               color: AppColors.textPrimary,
             ),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+          const SizedBox(height: 2),
           Text(
             user.title ?? '',
             style: const TextStyle(
@@ -59,7 +60,7 @@ class SuggestionCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 12),
+          const Spacer(), // Pushes the button to the bottom
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -67,8 +68,8 @@ class SuggestionCard extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                minimumSize: const Size(0, 36),
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 34),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -76,7 +77,7 @@ class SuggestionCard extends StatelessWidget {
               child: const Text(
                 'FOLLOW',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
               ),

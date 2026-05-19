@@ -43,10 +43,11 @@ class NetworkScreen extends StatelessWidget {
             _buildSectionHeader('Suggested for you', onSeeAll: () {}),
             const SizedBox(height: 16),
             SizedBox(
-              height: 220,
+              height: 230, // Increased slightly to accommodate shadows and prevent clipping
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: MockNetworkData.suggestedUsers.length,
+                clipBehavior: Clip.none, // Allows shadow to be visible outside bounds
                 itemBuilder: (context, index) {
                   return SuggestionCard(
                     user: MockNetworkData.suggestedUsers[index],

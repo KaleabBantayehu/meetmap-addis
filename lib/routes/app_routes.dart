@@ -8,8 +8,10 @@ import '../features/navigation/screens/main_navigation.dart';
 import '../features/places/screens/add_place_screen.dart';
 import '../features/profile/screens/edit_profile_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
+import '../features/profile/screens/settings_screen.dart';
 import '../features/saved/screens/saved_screen.dart';
 import '../features/search/screens/search_screen.dart';
+import '../features/network/screens/network_screen.dart';
 
 class AppRoutes {
   static const login = '/login';
@@ -26,6 +28,7 @@ class AppRoutes {
   static const reviewHistory = '/review-history';
   static const notifications = '/notifications';
   static const addPlace = '/add-place';
+  static const network = '/network';
 
   static Map<String, WidgetBuilder> routes = {
     login: (context) => const LoginScreen(),
@@ -36,11 +39,12 @@ class AppRoutes {
     search: (context) => const SearchScreen(),
     filters: (context) => const FilterScreen(),
     meetings: (context) => const MeetingsScreen(),
-    settings: (context) => const ProfileSettingsScreen(),
+    settings: (context) => const SettingsScreen(),
     editProfile: (context) => const EditProfileScreen(),
-    helpSupport: (context) => const HelpSupportScreen(),
-    reviewHistory: (context) => const ReviewHistoryScreen(),
-    notifications: (context) => const NotificationsScreen(),
+    // helpSupport: (context) => const HelpSupportScreen(),
+    // reviewHistory: (context) => const ReviewHistoryScreen(),
+    // notifications: (context) => const NotificationsScreen(),
     addPlace: (context) => const AddPlaceScreen(),
+    network: (context) => const NetworkScreen(),
   };
 }

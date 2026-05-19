@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
-import 'package:meetmap_addis/features/events/screens/events_screen.dart'; // Just checking imports, wait actually I need HangoutsScreen
 import 'package:meetmap_addis/features/hangouts/screens/hangouts_screen.dart';
+import 'package:meetmap_addis/routes/app_routes.dart';
 
 import 'social_entry_card.dart';
 
@@ -72,13 +72,8 @@ class SocialDiscoverySection extends StatelessWidget {
                 iconColor: const Color(0xFF1565C0),
                 iconBackgroundColor: const Color(0xFF1565C0).withValues(alpha: 0.1),
                 onTap: () {
-                  // Placeholder for future NetworkScreen
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Networking feature coming soon!'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
+                  // Using named route for better consistency with project architecture
+                  Navigator.pushNamed(context, AppRoutes.network);
                 },
               ),
             ],
