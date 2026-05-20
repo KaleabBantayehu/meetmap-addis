@@ -137,7 +137,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Switch.adaptive(
                   value: isPrivateProfile,
                   onChanged: (val) => setState(() => isPrivateProfile = val),
-                  activeColor: AppColors.primary,
+                  activeTrackColor: AppColors.primary,
                 ),
               ],
             ),

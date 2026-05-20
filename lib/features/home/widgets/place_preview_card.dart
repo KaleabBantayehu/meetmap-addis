@@ -52,13 +52,15 @@ class PlacePreviewCard extends StatelessWidget {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFA7F3D0),
+                              color: place.isOpen
+                                  ? const Color(0xFFA7F3D0)
+                                  : AppColors.surfaceVariant,
                               borderRadius:
                                   BorderRadius.circular(8),
                             ),
-                            child: const Text(
-                              'OPEN NOW',
-                              style: TextStyle(
+                            child: Text(
+                              place.isOpen ? 'OPEN NOW' : 'CLOSED',
+                              style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primaryDark,

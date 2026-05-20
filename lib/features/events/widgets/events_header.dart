@@ -1,6 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 
+void _showComingSoon(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Coming soon!'),
+      behavior: SnackBarBehavior.floating,
+      duration: Duration(seconds: 2),
+    ),
+  );
+}
+
 class EventsHeader extends StatelessWidget {
   const EventsHeader({super.key});
 
@@ -44,7 +54,7 @@ class _FilterIconButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: () {},
+        onTap: () => _showComingSoon(context),
         child: Container(
           width: 46,
           height: 46,

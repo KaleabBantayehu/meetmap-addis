@@ -23,6 +23,7 @@ class SearchSectionHeader extends StatelessWidget {
             ),
           ),
         ),
+        // ignore: use_null_aware_elements
         if (trailing != null) trailing!,
       ],
     );

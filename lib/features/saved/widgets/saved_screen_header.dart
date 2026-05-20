@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/routes/app_routes.dart';
 
+void _showComingSoon(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Coming soon!'),
+      behavior: SnackBarBehavior.floating,
+      duration: Duration(seconds: 2),
+    ),
+  );
+}
+
 class SavedScreenHeader extends StatelessWidget {
   const SavedScreenHeader({super.key});
 
@@ -23,7 +33,7 @@ class SavedScreenHeader extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            onPressed: () {},
+            onPressed: () => _showComingSoon(context),
             icon: const Icon(
               Icons.menu_rounded,
               color: AppColors.primary,

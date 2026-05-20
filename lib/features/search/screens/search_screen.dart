@@ -23,6 +23,8 @@ class _SearchScreenState extends State<SearchScreen> {
   final List<String> recentSearches = ['Tomoca Coffee', 'Bole Road', 'Co-work'];
   String selectedCategory = '';
   String query = '';
+  // ignore: prefer_final_fields
+  bool _isLoading = false;
 
   static const List<String> defaultSuggestionIds = ['2', '4', '1', '5'];
 
@@ -95,7 +97,12 @@ class _SearchScreenState extends State<SearchScreen> {
                   const SizedBox(height: 38),
                   const SearchSectionHeader(title: 'Suggested Places'),
                   const SizedBox(height: 20),
-                  if (results.isEmpty)
+                  if (_isLoading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (results.isEmpty)
                     SearchEmptyState(query: query)
                   else
                     ...results.map(

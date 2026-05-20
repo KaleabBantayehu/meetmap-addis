@@ -60,7 +60,7 @@ class TrendingReviewerCard extends StatelessWidget {
                       ],
                     ),
                     Text(
-                      '@${user.username} • ${(user.followerCount ?? 0) / 1000}k followers',
+                      '@${user.username ?? ''} • ${(user.followerCount / 1000).toStringAsFixed(1)}k followers',
                       style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondary,
@@ -101,23 +101,22 @@ class TrendingReviewerCard extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 12),
-          if (user.tags != null)
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: user.tags!.map((tag) => _buildTag(tag)).toList(),
-            ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: user.tags.map((tag) => _buildTag(tag)).toList(),
+          ),
           const SizedBox(height: 16),
-          if (user.recentImageUrls != null && user.recentImageUrls!.isNotEmpty)
+          if (user.recentImageUrls.isNotEmpty)
             Row(
               children: [
-                Expanded(child: _buildImage(user.recentImageUrls![0])),
+                Expanded(child: _buildImage(user.recentImageUrls[0])),
                 const SizedBox(width: 8),
-                Expanded(child: _buildImage(user.recentImageUrls![1])),
+                Expanded(child: _buildImage(user.recentImageUrls[1])),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: user.recentImageUrls!.length > 2
-                      ? _buildLastImage(user.recentImageUrls![2])
+                  child: user.recentImageUrls.length > 2
+                      ? _buildLastImage(user.recentImageUrls[2])
                       : const SizedBox.shrink(),
                 ),
               ],

@@ -133,7 +133,7 @@ class SearchResultInfo extends StatelessWidget {
         const SizedBox(height: 10),
         Row(
           children: [
-            const Icon(Icons.star_rounded, color: Color(0xFF7A3F00), size: 20),
+            const Icon(Icons.star_rounded, color: AppColors.accent, size: 20),
             const SizedBox(width: 4),
             Text(
               place.rating.toStringAsFixed(1),

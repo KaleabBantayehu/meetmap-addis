@@ -39,23 +39,29 @@ class _LoginScreenState extends State<LoginScreen> {
   void _login() {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    // TODO: connect Firebase / backend auth later
-    // TODO: support OTP phone authentication
+    setState(() => _isLoading = true);
 
     Future.delayed(const Duration(seconds: 1), () {
       if (!mounted) return;
+      setState(() => _isLoading = false);
 
-      setState(() {
-        _isLoading = false;
-      });
-      
-      // TODO: replace with real authentication logic (temporary dev routing)
+      // TODO: Replace with real Firebase auth. On failure, call _showAuthError().
       Navigator.pushReplacementNamed(context, '/home');
     });
+  }
+
+  // ignore: unused_element
+  void _showAuthError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
   }
 
   @override

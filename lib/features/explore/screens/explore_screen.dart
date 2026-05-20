@@ -6,6 +6,16 @@ import 'package:meetmap_addis/features/places/screens/place_detail_screen.dart';
 import 'package:meetmap_addis/routes/app_routes.dart';
 import 'package:meetmap_addis/shared/data/mock_places.dart';
 
+void _showComingSoon(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Coming soon!'),
+      behavior: SnackBarBehavior.floating,
+      duration: Duration(seconds: 2),
+    ),
+  );
+}
+
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
 
@@ -15,6 +25,8 @@ class ExploreScreen extends StatefulWidget {
 
 class _ExploreScreenState extends State<ExploreScreen> {
   int selectedCategoryIndex = 0;
+  // ignore: prefer_final_fields
+  bool _isLoading = false;
 
   final categories = ['Cafés', 'Restaurants', 'Coworking', 'Hotels'];
 
@@ -56,7 +68,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
                   const SizedBox(height: 28),
 
-                  ...mockPlaces.map(
+                  if (_isLoading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 60),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else
+                    ...mockPlaces.map(
                     (place) => Padding(
                       padding: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
                       child: ExplorePlaceCard(
@@ -147,7 +165,7 @@ class _ExploreAppBar extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            onPressed: () {},
+            onPressed: () => _showComingSoon(context),
             icon: const Icon(
               Icons.menu_rounded,
               size: 30,

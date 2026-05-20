@@ -5,6 +5,16 @@ import '../widgets/network_search_bar.dart';
 import '../widgets/suggestion_card.dart';
 import '../widgets/trending_reviewer_card.dart';
 
+void _showComingSoon(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Coming soon!'),
+      behavior: SnackBarBehavior.floating,
+      duration: Duration(seconds: 2),
+    ),
+  );
+}
+
 class NetworkScreen extends StatelessWidget {
   const NetworkScreen({super.key});
 
@@ -15,13 +25,13 @@ class NetworkScreen extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.menu),
-          onPressed: () {},
+          onPressed: () => _showComingSoon(context),
         ),
         title: const Text('Network'),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none_outlined),
-            onPressed: () {},
+            onPressed: () => _showComingSoon(context),
           ),
           const Padding(
             padding: EdgeInsets.only(right: 16.0),
@@ -42,10 +52,21 @@ class NetworkScreen extends StatelessWidget {
             const SizedBox(height: 24),
             _buildSectionHeader('Suggested for you', onSeeAll: () {}),
             const SizedBox(height: 16),
-            SizedBox(
-              height: 230, // Increased slightly to accommodate shadows and prevent clipping
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
+            if (MockNetworkData.suggestedUsers.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 32),
+                child: Center(
+                  child: Text(
+                    'No suggestions yet — check back soon.',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
+              )
+            else
+              SizedBox(
+                height: 230, // Increased slightly to accommodate shadows and prevent clipping
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
                 itemCount: MockNetworkData.suggestedUsers.length,
                 clipBehavior: Clip.none, // Allows shadow to be visible outside bounds
                 itemBuilder: (context, index) {

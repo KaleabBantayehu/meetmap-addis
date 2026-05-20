@@ -41,34 +41,34 @@ class _SignupScreenState extends State<SignupScreen> {
 
   void _signup() {
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (!_agreedToTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please agree to the Terms of Service and Privacy Policy.'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+      _showAuthError('Please agree to the Terms of Service and Privacy Policy.');
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    // TODO: connect signup API/Firebase
-    // TODO: connect phone verification / OTP flow
+    setState(() => _isLoading = true);
 
     Future.delayed(const Duration(seconds: 1), () {
       if (!mounted) return;
+      setState(() => _isLoading = false);
 
-      setState(() {
-        _isLoading = false;
-      });
-      
-      // TODO: replace with real authentication logic (temporary dev routing)
+      // TODO: Replace with real Firebase auth. On failure, call _showAuthError().
       Navigator.pushReplacementNamed(context, '/home');
     });
+  }
+
+  void _showAuthError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
   }
 
   @override

@@ -2,13 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/shared/data/mock_events.dart';
 import 'package:meetmap_addis/shared/models/event_model.dart';
-
+import 'package:meetmap_addis/routes/app_routes.dart';
 import '../widgets/events_header.dart';
 import '../widgets/event_category_chips.dart';
 import '../widgets/featured_event_banner.dart';
 import '../widgets/event_card.dart';
 import '../widgets/event_filter_button.dart';
 import '../widgets/empty_events_state.dart';
+
+void _showComingSoon(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Coming soon!'),
+      behavior: SnackBarBehavior.floating,
+      duration: Duration(seconds: 2),
+    ),
+  );
+}
 
 class EventsScreen extends StatefulWidget {
   const EventsScreen({super.key});
@@ -19,6 +29,8 @@ class EventsScreen extends StatefulWidget {
 
 class _EventsScreenState extends State<EventsScreen> {
   int _selectedCategoryIndex = 0;
+  // ignore: prefer_final_fields
+  bool _isLoading = false;
 
   static const _categories = [
     'All',
@@ -122,7 +134,12 @@ class _EventsScreenState extends State<EventsScreen> {
                   ),
 
                   // ── Event list or empty state ───────────────────────────
-                  if (filtered.isEmpty)
+                  if (_isLoading)
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (filtered.isEmpty)
                     const SliverFillRemaining(
                       hasScrollBody: false,
                       child: EmptyEventsState(),
@@ -177,7 +194,7 @@ class _EventsAppBar extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            onPressed: () {},
+            onPressed: () => _showComingSoon(context),
             icon: const Icon(
               Icons.menu_rounded,
               size: 28,
@@ -195,7 +212,7 @@ class _EventsAppBar extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () {},
+            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.search),
             icon: const Icon(
               Icons.search_rounded,
               size: 26,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/features/profile/widgets/profile_section_header.dart';
+import 'package:meetmap_addis/shared/data/mock_profile_data.dart';
 
 class ProfileReviewsSection extends StatelessWidget {
   const ProfileReviewsSection({super.key, required this.onViewAll});
@@ -22,6 +23,20 @@ class ProfileReviewsSection extends StatelessWidget {
             final cardWidth = (constraints.maxWidth * 0.82)
                 .clamp(244.0, 300.0)
                 .toDouble();
+
+            if (profileReviewSamples.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: Text(
+                    'No reviews yet',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              );
+            }
 
             return SizedBox(
               height: 174,
@@ -84,7 +99,7 @@ class ProfileReviewCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.black,
+                  color: AppColors.textPrimary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -132,31 +147,4 @@ class ProfileReviewStars extends StatelessWidget {
   }
 }
 
-class ProfileReviewData {
-  const ProfileReviewData({
-    required this.placeName,
-    required this.excerpt,
-    required this.timeAgo,
-    required this.rating,
-  });
 
-  final String placeName;
-  final String excerpt;
-  final String timeAgo;
-  final int rating;
-}
-
-const List<ProfileReviewData> profileReviewSamples = [
-  ProfileReviewData(
-    placeName: 'Tomoca Coffee, Bole',
-    excerpt: 'Perfect spot for a morning networking session. The aroma is unmatched...',
-    timeAgo: '2d ago',
-    rating: 4,
-  ),
-  ProfileReviewData(
-    placeName: 'Sheraton Addis',
-    excerpt: 'Very quiet meeting corner. Ideal for signing important documents...',
-    timeAgo: '1w ago',
-    rating: 5,
-  ),
-];

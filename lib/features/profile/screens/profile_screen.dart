@@ -8,6 +8,7 @@ import 'package:meetmap_addis/features/profile/widgets/profile_settings_panel.da
 import 'package:meetmap_addis/features/profile/widgets/profile_stats_section.dart';
 import 'package:meetmap_addis/features/profile/widgets/profile_top_bar.dart';
 import 'package:meetmap_addis/routes/app_routes.dart';
+import 'package:meetmap_addis/features/hangouts/screens/hangouts_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -59,7 +60,7 @@ class ProfileScreen extends StatelessWidget {
                         stats: const [
                           ProfileStatData(label: 'Reviews', value: '12'),
                           ProfileStatData(label: 'Saved', value: '24'),
-                          ProfileStatData(label: 'Meetings', value: '8'),
+                          ProfileStatData(label: 'Hangouts', value: '8'),
                         ],
                         onStatSelected: (label) {
                           if (label == 'Reviews') {
@@ -68,8 +69,10 @@ class ProfileScreen extends StatelessWidget {
                             ).pushNamed(AppRoutes.reviewHistory);
                           } else if (label == 'Saved') {
                             Navigator.of(context).pushNamed(AppRoutes.saved);
-                          } else if (label == 'Meetings') {
-                            Navigator.of(context).pushNamed(AppRoutes.meetings);
+                          } else if (label == 'Hangouts') {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const HangoutsScreen()),
+                            );
                           }
                         },
                       ),

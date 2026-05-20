@@ -1,3 +1,5 @@
+// NOTE: Feature-specific cards (e.g., ExplorePlaceCard, SavedPlaceCard) are the pattern in this project.
+// There is no generic shared place_card.dart.
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 

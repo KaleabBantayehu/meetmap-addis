@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/features/reviews/models/review_ui_models.dart';
 import 'package:meetmap_addis/features/reviews/widgets/experience_input_field.dart';
+import 'package:meetmap_addis/shared/widgets/dashed_border_painter.dart';
 
 class PhotoUploadStrip extends StatelessWidget {
   const PhotoUploadStrip({
@@ -155,32 +156,4 @@ class ReviewPhotoTile extends StatelessWidget {
   }
 }
 
-class DashedBorderPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.outline
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.6;
-    final path = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          Offset.zero & size,
-          const Radius.circular(10),
-        ),
-      );
 
-    for (final metric in path.computeMetrics()) {
-      double distance = 0;
-      while (distance < metric.length) {
-        final next = distance + 7;
-        final end = next > metric.length ? metric.length : next;
-        canvas.drawPath(metric.extractPath(distance, end), paint);
-        distance = next + 6;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

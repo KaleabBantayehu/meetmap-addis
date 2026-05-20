@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/explore/screens/explore_screen.dart';
 import '../features/explore/screens/filter_screen.dart';
-import '../features/meetings/screens/meetings_screen.dart';
 import '../features/navigation/screens/main_navigation.dart';
 import '../features/places/screens/add_place_screen.dart';
 import '../features/profile/screens/edit_profile_screen.dart';
@@ -21,7 +20,6 @@ class AppRoutes {
   static const saved = '/saved';
   static const search = '/search';
   static const filters = '/filters';
-  static const meetings = '/meetings';
   static const settings = '/settings';
   static const editProfile = '/edit-profile';
   static const helpSupport = '/help-support';
@@ -38,7 +36,6 @@ class AppRoutes {
     saved: (context) => const SavedScreen(),
     search: (context) => const SearchScreen(),
     filters: (context) => const FilterScreen(),
-    meetings: (context) => const MeetingsScreen(),
     settings: (context) => const SettingsScreen(),
     editProfile: (context) => const EditProfileScreen(),
     // helpSupport: (context) => const HelpSupportScreen(),

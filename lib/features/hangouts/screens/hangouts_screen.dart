@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/shared/data/mock_hangouts.dart';
-
+import 'package:meetmap_addis/routes/app_routes.dart';
 import '../widgets/hangouts_header.dart';
 import '../widgets/hangout_category_chips.dart';
 import '../widgets/section_header.dart';
@@ -9,6 +9,16 @@ import '../widgets/active_hangout_card.dart';
 import '../widgets/quick_hangout_card.dart';
 import '../widgets/top_pick_venue_card.dart';
 import '../widgets/recent_activity_section.dart';
+
+void _showComingSoon(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Coming soon!'),
+      behavior: SnackBarBehavior.floating,
+      duration: Duration(seconds: 2),
+    ),
+  );
+}
 
 class HangoutsScreen extends StatefulWidget {
   const HangoutsScreen({super.key});
@@ -33,7 +43,7 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () => _showComingSoon(context),
         backgroundColor: AppColors.primaryDark,
         elevation: 6,
         shape: const CircleBorder(),
@@ -79,14 +89,14 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                           title: 'Active Now',
                           actionLabel: 'View Map',
                           actionIcon: Icons.map_outlined,
-                          onActionTap: () {},
+                          onActionTap: () => _showComingSoon(context),
                         ),
                         
                         const SizedBox(height: 16),
                         
                         ActiveHangoutCard(
                           hangout: activeHangout,
-                          onTap: () {},
+                          onTap: () => _showComingSoon(context),
                         ),
                         
                         const SizedBox(height: 16),
@@ -96,7 +106,7 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                             padding: const EdgeInsets.only(bottom: 16),
                             child: QuickHangoutCard(
                               hangout: hangout,
-                              onTap: () {},
+                              onTap: () => _showComingSoon(context),
                             ),
                           ),
                         ),
@@ -107,7 +117,7 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                         SectionHeader(
                           title: 'Top Pick Venues',
                           actionLabel: 'Explore all',
-                          onActionTap: () {},
+                          onActionTap: () => _showComingSoon(context),
                         ),
                         
                         const SizedBox(height: 16),
@@ -122,7 +132,7 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                             itemBuilder: (context, index) {
                               return TopPickVenueCard(
                                 venue: topPickVenues[index],
-                                onTap: () {},
+                                onTap: () => _showComingSoon(context),
                               );
                             },
                           ),
@@ -191,7 +201,7 @@ class _TopAppBar extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () {},
+            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.search),
             icon: const Icon(
               Icons.search_rounded,
               size: 26,
