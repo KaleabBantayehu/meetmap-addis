@@ -5,8 +5,9 @@ import 'package:meetmap_addis/features/saved/widgets/saved_category_chips.dart';
 import 'package:meetmap_addis/features/saved/widgets/saved_empty_state.dart';
 import 'package:meetmap_addis/features/saved/widgets/saved_place_card.dart';
 import 'package:meetmap_addis/features/saved/widgets/saved_screen_header.dart';
-import 'package:meetmap_addis/shared/data/mock_places.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
+import 'package:provider/provider.dart';
+import 'package:meetmap_addis/providers/saved_provider.dart';
 
 class SavedScreen extends StatefulWidget {
   const SavedScreen({super.key});
@@ -17,9 +18,6 @@ class SavedScreen extends StatefulWidget {
 
 class _SavedScreenState extends State<SavedScreen> {
   int selectedCategoryIndex = 0;
-  final Set<String> savedPlaceIds = savedMockPlaces
-      .map((place) => place.id)
-      .toSet();
 
   static const List<String> categories = [
     'All Places',
@@ -28,11 +26,7 @@ class _SavedScreenState extends State<SavedScreen> {
     'Parks',
   ];
 
-  List<PlaceModel> get visiblePlaces {
-    final savedPlaces = savedMockPlaces
-        .where((place) => savedPlaceIds.contains(place.id))
-        .toList();
-
+  List<PlaceModel> getVisiblePlaces(List<PlaceModel> savedPlaces) {
     if (selectedCategoryIndex == 0) {
       return savedPlaces;
     }
@@ -53,8 +47,21 @@ class _SavedScreenState extends State<SavedScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<SavedProvider>(context, listen: false);
+      if (provider.savedPlaces.isEmpty) {
+        provider.fetchSavedPlaces();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final places = visiblePlaces;
+    final savedProvider = Provider.of<SavedProvider>(context);
+    final places = getVisiblePlaces(savedProvider.savedPlaces);
+    final isLoading = savedProvider.isLoading;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -74,7 +81,12 @@ class _SavedScreenState extends State<SavedScreen> {
                     },
                   ),
                   const SizedBox(height: 28),
-                  if (places.isEmpty)
+                  if (isLoading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 60),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (places.isEmpty)
                     ConstrainedBox(
                       constraints: BoxConstraints(
                         minHeight: MediaQuery.of(context).size.height * 0.48,
@@ -89,10 +101,10 @@ class _SavedScreenState extends State<SavedScreen> {
                           place: place,
                           distanceLabel: distanceLabelFor(place.id),
                           statusLabel: statusLabelFor(place),
-                          isSaved: savedPlaceIds.contains(place.id),
+                          isSaved: savedProvider.isSaved(place.id),
                           onTap: () => openPlaceDetails(place),
-                          onSaveToggle: () => toggleSaved(place.id),
-                          onRemove: () => removeSaved(place.id),
+                          onSaveToggle: () => savedProvider.toggleSaved(place),
+                          onRemove: () => savedProvider.removeSaved(place.id),
                         ),
                       ),
                     ),
@@ -112,21 +124,7 @@ class _SavedScreenState extends State<SavedScreen> {
     );
   }
 
-  void toggleSaved(String placeId) {
-    // TODO: Persist saved state to the user profile API.
-    setState(() {
-      if (savedPlaceIds.contains(placeId)) {
-        savedPlaceIds.remove(placeId);
-      } else {
-        savedPlaceIds.add(placeId);
-      }
-    });
-  }
 
-  void removeSaved(String placeId) {
-    // TODO: Sync remove action with backend saved places endpoint.
-    setState(() => savedPlaceIds.remove(placeId));
-  }
 
   String distanceLabelFor(String placeId) {
     switch (placeId) {

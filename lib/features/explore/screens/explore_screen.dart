@@ -4,7 +4,8 @@ import 'package:meetmap_addis/features/explore/widgets/explore_place_card.dart';
 import 'package:meetmap_addis/features/explore/widgets/social_discovery_section.dart';
 import 'package:meetmap_addis/features/places/screens/place_detail_screen.dart';
 import 'package:meetmap_addis/routes/app_routes.dart';
-import 'package:meetmap_addis/shared/data/mock_places.dart';
+import 'package:provider/provider.dart';
+import 'package:meetmap_addis/providers/places_provider.dart';
 
 void _showComingSoon(BuildContext context) {
   ScaffoldMessenger.of(context).showSnackBar(
@@ -25,13 +26,25 @@ class ExploreScreen extends StatefulWidget {
 
 class _ExploreScreenState extends State<ExploreScreen> {
   int selectedCategoryIndex = 0;
-  // ignore: prefer_final_fields
-  bool _isLoading = false;
 
   final categories = ['Cafés', 'Restaurants', 'Coworking', 'Hotels'];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<PlacesProvider>(context, listen: false);
+      if (provider.places.isEmpty) {
+        provider.fetchPlaces();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final placesProvider = Provider.of<PlacesProvider>(context);
+    final places = placesProvider.places;
+    final isLoading = placesProvider.isLoading;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -68,13 +81,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
                   const SizedBox(height: 28),
 
-                  if (_isLoading)
+                  if (isLoading)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 60),
                       child: Center(child: CircularProgressIndicator()),
                     )
                   else
-                    ...mockPlaces.map(
+                    ...places.map(
                     (place) => Padding(
                       padding: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
                       child: ExplorePlaceCard(

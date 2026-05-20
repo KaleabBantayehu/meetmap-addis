@@ -7,8 +7,10 @@ import 'package:meetmap_addis/features/search/widgets/search_empty_state.dart';
 import 'package:meetmap_addis/features/search/widgets/search_result_card.dart';
 import 'package:meetmap_addis/features/search/widgets/search_screen_header.dart';
 import 'package:meetmap_addis/features/search/widgets/search_section_header.dart';
-import 'package:meetmap_addis/shared/data/mock_places.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
+import 'package:provider/provider.dart';
+import 'package:meetmap_addis/providers/places_provider.dart';
+import 'package:meetmap_addis/providers/saved_provider.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -19,24 +21,25 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController searchController = TextEditingController();
-  final Set<String> savedPlaceIds = {'1', '2'};
   final List<String> recentSearches = ['Tomoca Coffee', 'Bole Road', 'Co-work'];
   String selectedCategory = '';
   String query = '';
-  // ignore: prefer_final_fields
-  bool _isLoading = false;
 
   static const List<String> defaultSuggestionIds = ['2', '4', '1', '5'];
 
-  List<PlaceModel> get filteredPlaces {
+  List<PlaceModel> getFilteredPlaces(List<PlaceModel> places) {
     final normalizedQuery = query.trim().toLowerCase();
     final normalizedCategory = selectedCategory.toLowerCase();
 
     final sourcePlaces = normalizedQuery.isEmpty && normalizedCategory.isEmpty
         ? defaultSuggestionIds
-            .map((id) => mockPlaces.where((place) => place.id == id).first)
+            .map((id) {
+              final found = places.where((place) => place.id == id);
+              return found.isNotEmpty ? found.first : null;
+            })
+            .whereType<PlaceModel>()
             .toList()
-        : mockPlaces;
+        : places;
 
     return sourcePlaces.where((place) {
       final searchableText = [
@@ -60,6 +63,17 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<PlacesProvider>(context, listen: false);
+      if (provider.places.isEmpty) {
+        provider.fetchPlaces();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     searchController.dispose();
     super.dispose();
@@ -67,7 +81,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final results = filteredPlaces;
+    final placesProvider = Provider.of<PlacesProvider>(context);
+    final savedProvider = Provider.of<SavedProvider>(context);
+    final places = placesProvider.places;
+    final isLoading = placesProvider.isLoading;
+    final results = getFilteredPlaces(places);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -97,7 +115,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   const SizedBox(height: 38),
                   const SearchSectionHeader(title: 'Suggested Places'),
                   const SizedBox(height: 20),
-                  if (_isLoading)
+                  if (isLoading)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 40),
                       child: Center(child: CircularProgressIndicator()),
@@ -111,9 +129,9 @@ class _SearchScreenState extends State<SearchScreen> {
                         child: SearchResultCard(
                           place: place,
                           distanceLabel: distanceLabelFor(place.id),
-                          isSaved: savedPlaceIds.contains(place.id),
+                          isSaved: savedProvider.isSaved(place.id),
                           onTap: () => openPlaceDetails(place),
-                          onSaveToggle: () => toggleSaved(place.id),
+                          onSaveToggle: () => savedProvider.toggleSaved(place),
                         ),
                       ),
                     ),
@@ -158,16 +176,7 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
-  void toggleSaved(String placeId) {
-    // TODO: Persist saved state to backend profile service.
-    setState(() {
-      if (savedPlaceIds.contains(placeId)) {
-        savedPlaceIds.remove(placeId);
-      } else {
-        savedPlaceIds.add(placeId);
-      }
-    });
-  }
+
 
   void openPlaceDetails(PlaceModel place) {
     // TODO: Replace mock model navigation with API-backed place lookup.
