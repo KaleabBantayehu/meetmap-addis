@@ -4,13 +4,22 @@ import 'core/theme/app_theme.dart';
 import 'routes/app_routes.dart';
 import 'core/repositories/mock/mock_place_repository.dart';
 import 'core/repositories/mock/mock_auth_repository.dart';
+import 'core/repositories/mock/mock_event_repository.dart';
+import 'core/repositories/mock/mock_network_repository.dart';
+import 'core/repositories/mock/mock_hangout_repository.dart';
 import 'providers/places_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/saved_provider.dart';
+import 'providers/events_provider.dart';
+import 'providers/network_provider.dart';
+import 'providers/hangouts_provider.dart';
 
 void main() {
   final placeRepository = MockPlaceRepository();
   final authRepository = MockAuthRepository();
+  final eventRepository = MockEventRepository();
+  final networkRepository = MockNetworkRepository();
+  final hangoutRepository = MockHangoutRepository();
 
   runApp(
     MultiProvider(
@@ -23,6 +32,15 @@ void main() {
         ),
         ChangeNotifierProvider(
           create: (_) => SavedProvider(placeRepository: placeRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => EventsProvider(eventRepository: eventRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => NetworkProvider(networkRepository: networkRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => HangoutsProvider(hangoutRepository: hangoutRepository),
         ),
       ],
       child: const MeetMapApp(),

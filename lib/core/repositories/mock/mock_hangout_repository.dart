@@ -8,4 +8,16 @@ class MockHangoutRepository implements HangoutRepository {
     await Future.delayed(const Duration(milliseconds: 400));
     return [activeHangout, ...quickHangouts];
   }
+
+  @override
+  Future<List<VenueModel>> getTopPickVenues() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    return List.from(topPickVenues);
+  }
+
+  @override
+  Future<List<ActivityModel>> getRecentActivities() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    return List.from(recentActivities);
+  }
 }

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+
 class PlaceModel {
   final String id;
   final String name;
@@ -27,6 +30,36 @@ class PlaceModel {
     required this.tags,
     required this.reviewCount,
   }) : assert(rating >= 0 && rating <= 5);
+
+  PlaceModel copyWith({
+    String? id,
+    String? name,
+    String? imageUrl,
+    String? category,
+    String? location,
+    double? rating,
+    String? priceRange,
+    bool? isOpen,
+    double? latitude,
+    double? longitude,
+    List<String>? tags,
+    int? reviewCount,
+  }) {
+    return PlaceModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      imageUrl: imageUrl ?? this.imageUrl,
+      category: category ?? this.category,
+      location: location ?? this.location,
+      rating: rating ?? this.rating,
+      priceRange: priceRange ?? this.priceRange,
+      isOpen: isOpen ?? this.isOpen,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      tags: tags ?? this.tags,
+      reviewCount: reviewCount ?? this.reviewCount,
+    );
+  }
 
   factory PlaceModel.fromMap(Map<String, dynamic> map) {
     return PlaceModel(
@@ -60,5 +93,45 @@ class PlaceModel {
       'tags': tags,
       'reviewCount': reviewCount,
     };
+  }
+
+  String toJson() => json.encode(toMap());
+
+  factory PlaceModel.fromJson(String source) =>
+      PlaceModel.fromMap(json.decode(source) as Map<String, dynamic>);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is PlaceModel &&
+        other.id == id &&
+        other.name == name &&
+        other.imageUrl == imageUrl &&
+        other.category == category &&
+        other.location == location &&
+        other.rating == rating &&
+        other.priceRange == priceRange &&
+        other.isOpen == isOpen &&
+        other.latitude == latitude &&
+        other.longitude == longitude &&
+        listEquals(other.tags, tags) &&
+        other.reviewCount == reviewCount;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^
+        name.hashCode ^
+        imageUrl.hashCode ^
+        category.hashCode ^
+        location.hashCode ^
+        rating.hashCode ^
+        priceRange.hashCode ^
+        isOpen.hashCode ^
+        latitude.hashCode ^
+        longitude.hashCode ^
+        tags.hashCode ^
+        reviewCount.hashCode;
   }
 }

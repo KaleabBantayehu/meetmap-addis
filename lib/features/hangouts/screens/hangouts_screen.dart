@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
-import 'package:meetmap_addis/shared/data/mock_hangouts.dart';
 import 'package:meetmap_addis/routes/app_routes.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/hangouts_provider.dart';
 import '../widgets/hangouts_header.dart';
 import '../widgets/hangout_category_chips.dart';
 import '../widgets/section_header.dart';
@@ -39,7 +40,25 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<HangoutsProvider>(context, listen: false);
+      if (provider.quickHangouts.isEmpty && provider.activeHangout == null) {
+        provider.fetchHangouts();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final hangoutsProvider = Provider.of<HangoutsProvider>(context);
+    final activeHangout = hangoutsProvider.activeHangout;
+    final quickHangouts = hangoutsProvider.quickHangouts;
+    final topPickVenues = hangoutsProvider.topPickVenues;
+    final recentActivities = hangoutsProvider.recentActivities;
+    final isLoading = hangoutsProvider.isLoading;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       floatingActionButton: FloatingActionButton(
@@ -93,61 +112,69 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                         ),
                         
                         const SizedBox(height: 16),
-                        
-                        ActiveHangoutCard(
-                          hangout: activeHangout,
-                          onTap: () => _showComingSoon(context),
-                        ),
-                        
-                        const SizedBox(height: 16),
-                        
-                        ...quickHangouts.map(
-                          (hangout) => Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: QuickHangoutCard(
-                              hangout: hangout,
+
+                        if (isLoading)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 40),
+                            child: Center(child: CircularProgressIndicator()),
+                          )
+                        else ...[
+                          if (activeHangout != null) ...[
+                            ActiveHangoutCard(
+                              hangout: activeHangout,
                               onTap: () => _showComingSoon(context),
                             ),
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 16),
-                        
-                        // Top Pick Venues Section
-                        SectionHeader(
-                          title: 'Top Pick Venues',
-                          actionLabel: 'Explore all',
-                          onActionTap: () => _showComingSoon(context),
-                        ),
-                        
-                        const SizedBox(height: 16),
-                        
-                        SizedBox(
-                          height: 210, // Fixed height for horizontal list
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            clipBehavior: Clip.none,
-                            itemCount: topPickVenues.length,
-                            separatorBuilder: (_, _) => const SizedBox(width: 16),
-                            itemBuilder: (context, index) {
-                              return TopPickVenueCard(
-                                venue: topPickVenues[index],
+                            const SizedBox(height: 16),
+                          ],
+                          
+                          ...quickHangouts.map(
+                            (hangout) => Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: QuickHangoutCard(
+                                hangout: hangout,
                                 onTap: () => _showComingSoon(context),
-                              );
-                            },
+                              ),
+                            ),
                           ),
-                        ),
-                        
-                        const SizedBox(height: 32),
-                        
-                        // Recent Activity Section
-                        const SectionHeader(
-                          title: 'Recent Activity',
-                        ),
-                        
-                        const SizedBox(height: 16),
-                        
-                        RecentActivitySection(activities: recentActivities),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // Top Pick Venues Section
+                          SectionHeader(
+                            title: 'Top Pick Venues',
+                            actionLabel: 'Explore all',
+                            onActionTap: () => _showComingSoon(context),
+                          ),
+                          
+                          const SizedBox(height: 16),
+                          
+                          SizedBox(
+                            height: 210, // Fixed height for horizontal list
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              clipBehavior: Clip.none,
+                              itemCount: topPickVenues.length,
+                              separatorBuilder: (_, _) => const SizedBox(width: 16),
+                              itemBuilder: (context, index) {
+                                return TopPickVenueCard(
+                                  venue: topPickVenues[index],
+                                  onTap: () => _showComingSoon(context),
+                                );
+                              },
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 32),
+                          
+                          // Recent Activity Section
+                          const SectionHeader(
+                            title: 'Recent Activity',
+                          ),
+                          
+                          const SizedBox(height: 16),
+                          
+                          RecentActivitySection(activities: recentActivities),
+                        ],
                       ]),
                     ),
                   ),

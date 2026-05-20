@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
-import 'package:meetmap_addis/shared/data/mock_events.dart';
 import 'package:meetmap_addis/shared/models/event_model.dart';
 import 'package:meetmap_addis/routes/app_routes.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/events_provider.dart';
 import '../widgets/events_header.dart';
 import '../widgets/event_category_chips.dart';
 import '../widgets/featured_event_banner.dart';
@@ -29,8 +30,6 @@ class EventsScreen extends StatefulWidget {
 
 class _EventsScreenState extends State<EventsScreen> {
   int _selectedCategoryIndex = 0;
-  // ignore: prefer_final_fields
-  bool _isLoading = false;
 
   static const _categories = [
     'All',
@@ -43,17 +42,32 @@ class _EventsScreenState extends State<EventsScreen> {
     'Study',
   ];
 
-  List<EventModel> get _filteredEvents {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<EventsProvider>(context, listen: false);
+      if (provider.events.isEmpty) {
+        provider.fetchEvents();
+      }
+    });
+  }
+
+  List<EventModel> _filteredEvents(List<EventModel> events) {
     final selected = _categories[_selectedCategoryIndex];
-    if (selected == 'All') return mockEvents;
-    return mockEvents
+    if (selected == 'All') return events;
+    return events
         .where((e) => e.category.toLowerCase() == selected.toLowerCase())
         .toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredEvents;
+    final eventsProvider = Provider.of<EventsProvider>(context);
+    final events = eventsProvider.events;
+    final featuredEvent = eventsProvider.featuredEvent;
+    final isLoading = eventsProvider.isLoading;
+    final filtered = _filteredEvents(events);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -82,10 +96,11 @@ class _EventsScreenState extends State<EventsScreen> {
                           const SizedBox(height: 20),
 
                           // Featured banner
-                          FeaturedEventBanner(
-                            event: featuredEvent,
-                            onTap: () {},
-                          ),
+                          if (featuredEvent != null)
+                            FeaturedEventBanner(
+                              event: featuredEvent,
+                              onTap: () {},
+                            ),
 
                           const SizedBox(height: 24),
 
@@ -134,7 +149,7 @@ class _EventsScreenState extends State<EventsScreen> {
                   ),
 
                   // ── Event list or empty state ───────────────────────────
-                  if (_isLoading)
+                  if (isLoading)
                     const SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(child: CircularProgressIndicator()),
