@@ -38,9 +38,9 @@ class HomeAppBar extends StatelessWidget {
             child: Text(
               'MeetMap Addis',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                  ),
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
             ),
           ),
 

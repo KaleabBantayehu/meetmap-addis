@@ -27,7 +27,9 @@ class RecentActivityTile extends StatelessWidget {
               if (activity.avatarUrl != null)
                 CircleAvatar(
                   radius: 12,
-                  backgroundImage: CachedNetworkImageProvider(activity.avatarUrl!),
+                  backgroundImage: CachedNetworkImageProvider(
+                    activity.avatarUrl!,
+                  ),
                   backgroundColor: AppColors.surfaceVariant,
                 )
               else if (activity.hasGroupIcon)
@@ -68,9 +70,9 @@ class RecentActivityTile extends StatelessWidget {
                     child: Text(
                       activity.authorName,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -79,8 +81,8 @@ class RecentActivityTile extends StatelessWidget {
                   Text(
                     activity.timestamp,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -88,9 +90,9 @@ class RecentActivityTile extends StatelessWidget {
               Text(
                 activity.message,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                      height: 1.4,
-                    ),
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
               ),
             ],
           ),

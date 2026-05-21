@@ -8,7 +8,8 @@ class MockReviewRepository implements ReviewRepository {
       placeId: '1',
       userId: 'u1',
       rating: 5.0,
-      reviewText: 'Outstanding Ethiopian coffee experience. The atmosphere is vibrant and iconic!',
+      reviewText:
+          'Outstanding Ethiopian coffee experience. The atmosphere is vibrant and iconic!',
       createdAt: DateTime.now().subtract(const Duration(days: 2)),
     ),
     ReviewModel(
@@ -16,7 +17,8 @@ class MockReviewRepository implements ReviewRepository {
       placeId: '1',
       userId: 'u2',
       rating: 4.0,
-      reviewText: 'Perfect spot for a morning networking session. The aroma is unmatched.',
+      reviewText:
+          'Perfect spot for a morning networking session. The aroma is unmatched.',
       createdAt: DateTime.now().subtract(const Duration(days: 5)),
     ),
     ReviewModel(
@@ -24,7 +26,8 @@ class MockReviewRepository implements ReviewRepository {
       placeId: '2',
       userId: 'u3',
       rating: 4.5,
-      reviewText: 'Great selection of specialty coffees. Friendly staff and cozy space.',
+      reviewText:
+          'Great selection of specialty coffees. Friendly staff and cozy space.',
       createdAt: DateTime.now().subtract(const Duration(days: 3)),
     ),
   ];

@@ -41,9 +41,7 @@ class SocialEntryCard extends StatelessWidget {
                 offset: const Offset(0, 4),
               ),
             ],
-            border: Border.all(
-              color: AppColors.outline.withValues(alpha: 0.3),
-            ),
+            border: Border.all(color: AppColors.outline.withValues(alpha: 0.3)),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -57,11 +55,7 @@ class SocialEntryCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 alignment: Alignment.center,
-                child: Icon(
-                  icon,
-                  size: 28,
-                  color: iconColor,
-                ),
+                child: Icon(icon, size: 28, color: iconColor),
               ),
               const SizedBox(width: 16),
               // Content
@@ -73,9 +67,9 @@ class SocialEntryCard extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -83,9 +77,9 @@ class SocialEntryCard extends StatelessWidget {
                     Text(
                       description,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                            height: 1.3,
-                          ),
+                        color: AppColors.textSecondary,
+                        height: 1.3,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),

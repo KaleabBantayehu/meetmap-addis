@@ -6,7 +6,7 @@ class EventsProvider with ChangeNotifier {
   final EventRepository _eventRepository;
 
   EventsProvider({required EventRepository eventRepository})
-      : _eventRepository = eventRepository;
+    : _eventRepository = eventRepository;
 
   List<EventModel> _events = [];
   List<EventModel> get events => _events;

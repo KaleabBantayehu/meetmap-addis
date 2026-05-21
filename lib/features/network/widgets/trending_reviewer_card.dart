@@ -6,11 +6,7 @@ class TrendingReviewerCard extends StatelessWidget {
   final UserModel user;
   final VoidCallback? onFollow;
 
-  const TrendingReviewerCard({
-    super.key,
-    required this.user,
-    this.onFollow,
-  });
+  const TrendingReviewerCard({super.key, required this.user, this.onFollow});
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +51,11 @@ class TrendingReviewerCard extends StatelessWidget {
                         ),
                         if (user.isVerified) ...[
                           const SizedBox(width: 4),
-                          const Icon(Icons.verified, size: 16, color: Colors.blue),
+                          const Icon(
+                            Icons.verified,
+                            size: 16,
+                            color: Colors.blue,
+                          ),
                         ],
                       ],
                     ),
@@ -74,7 +74,10 @@ class TrendingReviewerCard extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
                   minimumSize: const Size(0, 36),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -82,10 +85,7 @@ class TrendingReviewerCard extends StatelessWidget {
                 ),
                 child: const Text(
                   'Follow',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -150,10 +150,7 @@ class TrendingReviewerCard extends StatelessWidget {
       aspectRatio: 1,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.network(
-          url,
-          fit: BoxFit.cover,
-        ),
+        child: Image.network(url, fit: BoxFit.cover),
       ),
     );
   }
@@ -166,10 +163,7 @@ class TrendingReviewerCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              url,
-              fit: BoxFit.cover,
-            ),
+            child: Image.network(url, fit: BoxFit.cover),
           ),
           Container(
             decoration: BoxDecoration(

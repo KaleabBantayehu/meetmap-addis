@@ -7,11 +7,7 @@ class ExplorePlaceCard extends StatelessWidget {
   final PlaceModel place;
   final VoidCallback onTap;
 
-  const ExplorePlaceCard({
-    super.key,
-    required this.place,
-    required this.onTap,
-  });
+  const ExplorePlaceCard({super.key, required this.place, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -75,9 +71,7 @@ class ExplorePlaceCard extends StatelessWidget {
     return Stack(
       children: [
         ClipRRect(
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(24),
-          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
 
           child: AspectRatio(
             aspectRatio: 16 / 9,
@@ -87,9 +81,7 @@ class ExplorePlaceCard extends StatelessWidget {
               fit: BoxFit.cover,
 
               placeholder: (_, _) {
-                return Container(
-                  color: AppColors.surfaceVariant,
-                );
+                return Container(color: AppColors.surfaceVariant);
               },
 
               errorWidget: (_, _, _) {
@@ -108,11 +100,7 @@ class ExplorePlaceCard extends StatelessWidget {
           ),
         ),
 
-        const Positioned(
-          top: 16,
-          right: 16,
-          child: FavoriteButton(),
-        ),
+        const Positioned(top: 16, right: 16, child: FavoriteButton()),
       ],
     );
   }
@@ -126,9 +114,9 @@ class ExplorePlaceCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
 
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
 
@@ -136,9 +124,9 @@ class ExplorePlaceCard extends StatelessWidget {
 
         Text(
           '0.4 km away',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );
@@ -147,19 +135,13 @@ class ExplorePlaceCard extends StatelessWidget {
   Widget _buildInfoRow(BuildContext context) {
     return Row(
       children: [
-        const Icon(
-          Icons.star_rounded,
-          size: 18,
-          color: AppColors.accent,
-        ),
+        const Icon(Icons.star_rounded, size: 18, color: AppColors.accent),
 
         const SizedBox(width: 4),
 
         Text(
           place.rating.toStringAsFixed(1),
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
 
         const SizedBox(width: 8),
@@ -170,9 +152,7 @@ class ExplorePlaceCard extends StatelessWidget {
 
         Text(
           place.priceRange,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ],
     );
@@ -182,17 +162,12 @@ class ExplorePlaceCard extends StatelessWidget {
 class _TagChip extends StatelessWidget {
   final String tag;
 
-  const _TagChip({
-    required this.tag,
-  });
+  const _TagChip({required this.tag});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 8,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
 
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
@@ -250,12 +225,8 @@ class _FavoriteButtonState extends State<FavoriteButton> {
         ),
 
         child: Icon(
-          isFavorite
-              ? Icons.favorite_rounded
-              : Icons.favorite_border_rounded,
-          color: isFavorite
-              ? Colors.red
-              : AppColors.primary,
+          isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+          color: isFavorite ? Colors.red : AppColors.primary,
           size: 28,
         ),
       ),

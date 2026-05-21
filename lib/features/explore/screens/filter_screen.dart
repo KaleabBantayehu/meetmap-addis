@@ -94,7 +94,10 @@ class _FilterScreenState extends State<FilterScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -103,7 +106,8 @@ class _FilterScreenState extends State<FilterScreen> {
                     const SizedBox(height: 16),
                     PriceSelector(
                       selectedPrice: _selectedPrice,
-                      onPriceSelected: (val) => setState(() => _selectedPrice = val),
+                      onPriceSelected: (val) =>
+                          setState(() => _selectedPrice = val),
                     ),
 
                     const SizedBox(height: 32),
@@ -126,7 +130,8 @@ class _FilterScreenState extends State<FilterScreen> {
                     const SizedBox(height: 16),
                     RatingSelector(
                       selectedRating: _selectedRating,
-                      onRatingSelected: (val) => setState(() => _selectedRating = val),
+                      onRatingSelected: (val) =>
+                          setState(() => _selectedRating = val),
                     ),
 
                     const SizedBox(height: 32),
@@ -145,7 +150,9 @@ class _FilterScreenState extends State<FilterScreen> {
                               child: AmenityCheckboxCard(
                                 title: 'Power Outlets',
                                 subtitle: 'Available at tables',
-                                isChecked: _selectedAmenities.contains('Power Outlets'),
+                                isChecked: _selectedAmenities.contains(
+                                  'Power Outlets',
+                                ),
                                 onTap: () => _toggleAmenity('Power Outlets'),
                               ),
                             ),
@@ -154,7 +161,9 @@ class _FilterScreenState extends State<FilterScreen> {
                               child: AmenityCheckboxCard(
                                 title: 'Parking',
                                 subtitle: 'On-site space',
-                                isChecked: _selectedAmenities.contains('Parking'),
+                                isChecked: _selectedAmenities.contains(
+                                  'Parking',
+                                ),
                                 onTap: () => _toggleAmenity('Parking'),
                               ),
                             ),
@@ -172,7 +181,9 @@ class _FilterScreenState extends State<FilterScreen> {
                               child: AmenityCheckboxCard(
                                 title: 'Accessibility',
                                 subtitle: 'Ramps available',
-                                isChecked: _selectedAmenities.contains('Accessibility'),
+                                isChecked: _selectedAmenities.contains(
+                                  'Accessibility',
+                                ),
                                 onTap: () => _toggleAmenity('Accessibility'),
                               ),
                             ),
@@ -190,13 +201,13 @@ class _FilterScreenState extends State<FilterScreen> {
                         // TODO: Open radius selection bottom sheet or slider
                       },
                     ),
-                    
+
                     const SizedBox(height: 40),
                   ],
                 ),
               ),
             ),
-            
+
             // Bottom Action Bar
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),

@@ -53,10 +53,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
             const _ExploreAppBar(),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.only(
-                  top: 12,
-                  bottom: 120,
-                ),
+                padding: const EdgeInsets.only(top: 12, bottom: 120),
                 children: [
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20),
@@ -88,20 +85,24 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     )
                   else
                     ...places.map(
-                    (place) => Padding(
-                      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
-                      child: ExplorePlaceCard(
-                        place: place,
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => PlaceDetailScreen(place: place),
-                            ),
-                          );
-                        },
+                      (place) => Padding(
+                        padding: const EdgeInsets.only(
+                          left: 20,
+                          right: 20,
+                          bottom: 24,
+                        ),
+                        child: ExplorePlaceCard(
+                          place: place,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => PlaceDetailScreen(place: place),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -205,7 +206,8 @@ class _ExploreAppBar extends StatelessWidget {
               ),
             ),
             child: GestureDetector(
-              onTap: () => Navigator.of(context).pushNamed(AppRoutes.editProfile),
+              onTap: () =>
+                  Navigator.of(context).pushNamed(AppRoutes.editProfile),
               child: ClipOval(
                 child: Image.network(
                   'https://i.pravatar.cc/150?img=12',

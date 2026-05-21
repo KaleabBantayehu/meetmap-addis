@@ -25,7 +25,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _emailController = TextEditingController(text: 'selam.t@meetmap.et');
     _phoneController = TextEditingController(text: '+251 911 234 567');
     _bioController = TextEditingController(
-      text: 'Marketing Strategist & Tech Enthusiast based in Bole. Love connecting with fellow professionals and exploring the hidden cafe gems of Addis Ababa.',
+      text:
+          'Marketing Strategist & Tech Enthusiast based in Bole. Love connecting with fellow professionals and exploring the hidden cafe gems of Addis Ababa.',
     );
   }
 
@@ -147,7 +148,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 onPressed: () {
                   // TODO: Implement deactivate logic
                 },
-                icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: AppColors.error,
+                  size: 20,
+                ),
                 label: const Text(
                   'Deactivate Account',
                   style: TextStyle(

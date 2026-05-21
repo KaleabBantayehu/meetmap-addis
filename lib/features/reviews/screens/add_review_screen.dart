@@ -84,7 +84,9 @@ class AddReviewScreenState extends State<AddReviewScreen> {
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
                           elevation: 8,
-                          shadowColor: AppColors.primary.withValues(alpha: 0.22),
+                          shadowColor: AppColors.primary.withValues(
+                            alpha: 0.22,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),

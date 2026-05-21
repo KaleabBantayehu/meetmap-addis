@@ -109,8 +109,7 @@ class _EventsScreenState extends State<EventsScreen> {
                             categories: _categories,
                             selectedIndex: _selectedCategoryIndex,
                             onCategorySelected: (index) {
-                              setState(
-                                  () => _selectedCategoryIndex = index);
+                              setState(() => _selectedCategoryIndex = index);
                             },
                           ),
 
@@ -121,9 +120,7 @@ class _EventsScreenState extends State<EventsScreen> {
                             children: [
                               Text(
                                 'Upcoming Events',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
+                                style: Theme.of(context).textTheme.titleLarge
                                     ?.copyWith(
                                       fontWeight: FontWeight.w700,
                                       color: AppColors.textPrimary,
@@ -133,9 +130,7 @@ class _EventsScreenState extends State<EventsScreen> {
                               if (filtered.isNotEmpty)
                                 Text(
                                   '${filtered.length} events',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
+                                  style: Theme.of(context).textTheme.bodyMedium
                                       ?.copyWith(
                                         color: AppColors.textSecondary,
                                         fontWeight: FontWeight.w500,
@@ -164,8 +159,7 @@ class _EventsScreenState extends State<EventsScreen> {
                       padding: const EdgeInsets.fromLTRB(20, 14, 20, 120),
                       sliver: SliverList.separated(
                         itemCount: filtered.length,
-                        separatorBuilder: (_, _) =>
-                            const SizedBox(height: 16),
+                        separatorBuilder: (_, _) => const SizedBox(height: 16),
                         itemBuilder: (context, index) {
                           final event = filtered[index];
                           return EventCard(
@@ -221,9 +215,9 @@ class _EventsAppBar extends StatelessWidget {
             child: Text(
               'MeetMap Addis',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                  ),
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
             ),
           ),
           IconButton(

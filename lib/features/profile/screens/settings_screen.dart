@@ -31,10 +31,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         title: const Text(
           'Settings',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         centerTitle: false,
         elevation: 0,
@@ -59,7 +56,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SettingsTile(
                   icon: Icons.person_outline_rounded,
                   title: 'Edit Profile',
-                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.editProfile),
+                  onTap: () =>
+                      Navigator.of(context).pushNamed(AppRoutes.editProfile),
                 ),
                 const Divider(height: 1, indent: 56),
                 SettingsTile(
@@ -161,7 +159,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SettingsTile(
                   icon: Icons.help_outline_rounded,
                   title: 'Help Center',
-                  trailing: const Icon(Icons.open_in_new, size: 18, color: AppColors.outline),
+                  trailing: const Icon(
+                    Icons.open_in_new,
+                    size: 18,
+                    color: AppColors.outline,
+                  ),
                   onTap: () {},
                 ),
                 const Divider(height: 1, indent: 56),
@@ -199,10 +201,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
             SettingsLogoutButton(
               onPressed: () {
-                 Navigator.of(context).pushNamedAndRemoveUntil(
-                  AppRoutes.login,
-                  (route) => false,
-                );
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
               },
             ),
           ],

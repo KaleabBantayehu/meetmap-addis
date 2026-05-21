@@ -122,9 +122,7 @@ class ReviewPhotoTile extends StatelessWidget {
             placeholder: (context, url) => const SizedBox(
               width: 116,
               height: 116,
-              child: Center(
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
             ),
             errorWidget: (context, url, error) => Container(
               width: 116,
@@ -155,5 +153,3 @@ class ReviewPhotoTile extends StatelessWidget {
     );
   }
 }
-
-

@@ -3,13 +3,13 @@ import 'package:meetmap_addis/core/constants/colors.dart';
 
 class GoogleSignInButton extends StatelessWidget {
   final VoidCallback onPressed;
-  
+
   const GoogleSignInButton({super.key, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return SizedBox(
       width: double.infinity,
       height: 56,
@@ -29,9 +29,7 @@ class GoogleSignInButton extends StatelessWidget {
         ),
         style: OutlinedButton.styleFrom(
           backgroundColor: AppColors.surface,
-          side: const BorderSide(
-            color: AppColors.outline,
-          ),
+          side: const BorderSide(color: AppColors.outline),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),

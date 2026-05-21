@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 /// A scalable data model representing a review in MeetMap Addis.
-/// Designed for Firebase/REST integration, supporting ratings, media, 
+/// Designed for Firebase/REST integration, supporting ratings, media,
 /// social engagement, and moderation.
 class ReviewModel {
   final String id;
@@ -10,14 +10,14 @@ class ReviewModel {
   final double rating;
   final String reviewText;
   final List<String> imageUrls;
-  
+
   // Metadata
   final DateTime createdAt;
   final bool isEdited;
-  
+
   // Social Engagement
   final List<String> likedUserIds;
-  
+
   // Moderation
   final int reportCount;
 
@@ -86,8 +86,8 @@ class ReviewModel {
       rating: (map['rating'] ?? 0).toDouble(),
       reviewText: map['reviewText'] ?? '',
       imageUrls: List<String>.from(map['imageUrls'] ?? []),
-      createdAt: map['createdAt'] != null 
-          ? DateTime.parse(map['createdAt']) 
+      createdAt: map['createdAt'] != null
+          ? DateTime.parse(map['createdAt'])
           : DateTime.now(),
       isEdited: map['isEdited'] ?? false,
       likedUserIds: List<String>.from(map['likedUserIds'] ?? []),
@@ -97,30 +97,31 @@ class ReviewModel {
 
   String toJson() => json.encode(toMap());
 
-  factory ReviewModel.fromJson(String source) => ReviewModel.fromMap(json.decode(source));
+  factory ReviewModel.fromJson(String source) =>
+      ReviewModel.fromMap(json.decode(source));
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-  
+
     return other is ReviewModel &&
-      other.id == id &&
-      other.placeId == placeId &&
-      other.userId == userId &&
-      other.rating == rating &&
-      other.reviewText == reviewText &&
-      other.createdAt == createdAt &&
-      other.isEdited == isEdited;
+        other.id == id &&
+        other.placeId == placeId &&
+        other.userId == userId &&
+        other.rating == rating &&
+        other.reviewText == reviewText &&
+        other.createdAt == createdAt &&
+        other.isEdited == isEdited;
   }
 
   @override
   int get hashCode {
     return id.hashCode ^
-      placeId.hashCode ^
-      userId.hashCode ^
-      rating.hashCode ^
-      reviewText.hashCode ^
-      createdAt.hashCode ^
-      isEdited.hashCode;
+        placeId.hashCode ^
+        userId.hashCode ^
+        rating.hashCode ^
+        reviewText.hashCode ^
+        createdAt.hashCode ^
+        isEdited.hashCode;
   }
 }

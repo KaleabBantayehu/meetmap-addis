@@ -80,7 +80,10 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 24,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -98,7 +101,8 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                       CustomTextField(
                         controller: _nameController,
                         hintText: 'e.g. Tomoca Coffee, Bole',
-                        validator: (v) => v!.isEmpty ? 'Please enter a name' : null,
+                        validator: (v) =>
+                            v!.isEmpty ? 'Please enter a name' : null,
                       ),
                       const SizedBox(height: 24),
 
@@ -114,14 +118,21 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                       CustomTextField(
                         controller: _locationController,
                         hintText: 'Search for address...',
-                        prefixIcon: const Icon(Icons.location_on_rounded, color: AppColors.textSecondary),
-                        validator: (v) => v!.isEmpty ? 'Please enter a location' : null,
+                        prefixIcon: const Icon(
+                          Icons.location_on_rounded,
+                          color: AppColors.textSecondary,
+                        ),
+                        validator: (v) =>
+                            v!.isEmpty ? 'Please enter a location' : null,
                       ),
                       const SizedBox(height: 12),
                       Center(
                         child: TextButton.icon(
                           onPressed: () {},
-                          icon: const Icon(Icons.map_rounded, color: AppColors.secondary),
+                          icon: const Icon(
+                            Icons.map_rounded,
+                            color: AppColors.secondary,
+                          ),
                           label: Text(
                             'Select on Map',
                             style: theme.textTheme.bodyMedium?.copyWith(
@@ -163,7 +174,8 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                       const SizedBox(height: 12),
                       PriceRangeInput(
                         selectedPrice: _selectedPrice,
-                        onPriceSelected: (price) => setState(() => _selectedPrice = price),
+                        onPriceSelected: (price) =>
+                            setState(() => _selectedPrice = price),
                       ),
                       const SizedBox(height: 24),
 
@@ -251,7 +263,11 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                                   child: Container(),
                                 ),
                               ),
-                              const Icon(Icons.location_on, size: 48, color: Colors.white),
+                              const Icon(
+                                Icons.location_on,
+                                size: 48,
+                                color: Colors.white,
+                              ),
                             ],
                           ),
                         ),
@@ -308,14 +324,14 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                       ),
                       const SizedBox(height: 8),
                       SocialLinksInput(controller: _socialController),
-                      
+
                       const SizedBox(height: 40),
                     ],
                   ),
                 ),
               ),
             ),
-            
+
             // Sticky Bottom CTA
             Container(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),

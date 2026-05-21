@@ -20,7 +20,7 @@ class CustomFilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     final content = Row(
       mainAxisSize: expanded ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -34,11 +34,7 @@ class CustomFilterChip extends StatelessWidget {
         ),
         if (showCheckmark && isSelected) ...[
           const SizedBox(width: 4),
-          const Icon(
-            Icons.check,
-            size: 16,
-            color: Colors.white,
-          ),
+          const Icon(Icons.check, size: 16, color: Colors.white),
         ],
       ],
     );

@@ -34,7 +34,11 @@ class CategorySelector extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (isSelected) ...[
-                  const Icon(Icons.check_rounded, color: Colors.white, size: 18),
+                  const Icon(
+                    Icons.check_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                   const SizedBox(width: 6),
                 ],
                 Text(

@@ -6,7 +6,7 @@ class AuthProvider with ChangeNotifier {
   final AuthRepository _authRepository;
 
   AuthProvider({required AuthRepository authRepository})
-      : _authRepository = authRepository;
+    : _authRepository = authRepository;
 
   UserModel? _currentUser;
   UserModel? get currentUser => _currentUser;

@@ -4,10 +4,7 @@ import 'package:meetmap_addis/core/constants/colors.dart';
 class SocialLinksInput extends StatelessWidget {
   final TextEditingController controller;
 
-  const SocialLinksInput({
-    super.key,
-    required this.controller,
-  });
+  const SocialLinksInput({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {

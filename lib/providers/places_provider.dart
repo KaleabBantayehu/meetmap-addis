@@ -6,7 +6,7 @@ class PlacesProvider with ChangeNotifier {
   final PlaceRepository _placeRepository;
 
   PlacesProvider({required PlaceRepository placeRepository})
-      : _placeRepository = placeRepository;
+    : _placeRepository = placeRepository;
 
   List<PlaceModel> _places = [];
   List<PlaceModel> get places => _places;

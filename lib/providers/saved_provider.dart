@@ -6,7 +6,7 @@ class SavedProvider with ChangeNotifier {
   final PlaceRepository _placeRepository;
 
   SavedProvider({required PlaceRepository placeRepository})
-      : _placeRepository = placeRepository;
+    : _placeRepository = placeRepository;
 
   List<PlaceModel> _savedPlaces = [];
   List<PlaceModel> get savedPlaces => _savedPlaces;

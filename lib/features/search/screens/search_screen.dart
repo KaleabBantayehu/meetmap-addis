@@ -33,12 +33,12 @@ class _SearchScreenState extends State<SearchScreen> {
 
     final sourcePlaces = normalizedQuery.isEmpty && normalizedCategory.isEmpty
         ? defaultSuggestionIds
-            .map((id) {
-              final found = places.where((place) => place.id == id);
-              return found.isNotEmpty ? found.first : null;
-            })
-            .whereType<PlaceModel>()
-            .toList()
+              .map((id) {
+                final found = places.where((place) => place.id == id);
+                return found.isNotEmpty ? found.first : null;
+              })
+              .whereType<PlaceModel>()
+              .toList()
         : places;
 
     return sourcePlaces.where((place) {
@@ -51,9 +51,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
       final matchesQuery =
           normalizedQuery.isEmpty || searchableText.contains(normalizedQuery);
-      final matchesCategory = normalizedCategory.isEmpty ||
+      final matchesCategory =
+          normalizedCategory.isEmpty ||
           searchableText.contains(normalizedCategory) ||
-          (normalizedCategory == 'cafes' && searchableText.contains('coffee')) ||
+          (normalizedCategory == 'cafes' &&
+              searchableText.contains('coffee')) ||
           (normalizedCategory == 'dining' &&
               (searchableText.contains('dining') ||
                   searchableText.contains('international')));
@@ -176,13 +178,11 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
-
-
   void openPlaceDetails(PlaceModel place) {
     // TODO: Replace mock model navigation with API-backed place lookup.
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => PlaceDetailScreen(place: place)),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => PlaceDetailScreen(place: place)));
   }
 
   String distanceLabelFor(String placeId) {

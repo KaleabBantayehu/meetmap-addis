@@ -3,13 +3,13 @@ import 'package:meetmap_addis/core/constants/colors.dart';
 
 class AuthFooter extends StatelessWidget {
   final VoidCallback onSignUpPressed;
-  
+
   const AuthFooter({super.key, required this.onSignUpPressed});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [

@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 
 class SearchSectionHeader extends StatelessWidget {
-  const SearchSectionHeader({
-    super.key,
-    required this.title,
-    this.trailing,
-  });
+  const SearchSectionHeader({super.key, required this.title, this.trailing});
 
   final String title;
   final Widget? trailing;

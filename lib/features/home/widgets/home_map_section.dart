@@ -22,7 +22,7 @@ class _HomeMapSectionState extends State<HomeMapSection> {
       children: [
         Positioned.fill(
           child: Image.asset(
-             'assets/images/placeholder_map.jpg',
+            'assets/images/placeholder_map.jpg',
             fit: BoxFit.cover,
           ),
         ),

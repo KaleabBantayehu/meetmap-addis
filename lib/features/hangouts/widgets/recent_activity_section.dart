@@ -6,10 +6,7 @@ import 'recent_activity_tile.dart';
 class RecentActivitySection extends StatelessWidget {
   final List<ActivityModel> activities;
 
-  const RecentActivitySection({
-    super.key,
-    required this.activities,
-  });
+  const RecentActivitySection({super.key, required this.activities});
 
   @override
   Widget build(BuildContext context) {

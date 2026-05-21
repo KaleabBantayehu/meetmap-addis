@@ -4,10 +4,7 @@ import 'package:meetmap_addis/core/constants/colors.dart';
 class SettingsLogoutButton extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const SettingsLogoutButton({
-    super.key,
-    required this.onPressed,
-  });
+  const SettingsLogoutButton({super.key, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -32,10 +29,7 @@ class SettingsLogoutButton extends StatelessWidget {
             SizedBox(width: 8),
             Text(
               'Logout',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ],
         ),

@@ -58,10 +58,7 @@ class SettingsHeader extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(
-            Icons.chevron_right,
-            color: AppColors.outline,
-          ),
+          const Icon(Icons.chevron_right, color: AppColors.outline),
         ],
       ),
     );

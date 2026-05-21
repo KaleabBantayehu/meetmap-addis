@@ -17,17 +17,14 @@ class PlaceDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedPlace = place ??
+    final resolvedPlace =
+        place ??
         (Provider.of<PlacesProvider>(context, listen: false).places.isNotEmpty
             ? Provider.of<PlacesProvider>(context, listen: false).places.first
             : null);
 
     if (resolvedPlace == null) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(

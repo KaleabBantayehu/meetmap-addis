@@ -40,13 +40,13 @@ class _HomeScreenState extends State<HomeScreen> {
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : places.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No places found',
-                            style: TextStyle(color: AppColors.textSecondary),
-                          ),
-                        )
-                      : HomeMapSection(place: places.first),
+                  ? const Center(
+                      child: Text(
+                        'No places found',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    )
+                  : HomeMapSection(place: places.first),
             ),
           ],
         ),

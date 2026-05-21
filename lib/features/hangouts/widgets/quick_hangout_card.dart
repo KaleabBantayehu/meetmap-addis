@@ -37,16 +37,17 @@ class QuickHangoutCard extends StatelessWidget {
             children: [
               // Image Thumbnail
               ClipRRect(
-                borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(16),
+                ),
                 child: SizedBox(
                   width: 100,
                   height: double.infinity,
                   child: CachedNetworkImage(
                     imageUrl: hangout.imageUrl,
                     fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: AppColors.surfaceVariant,
-                    ),
+                    placeholder: (context, url) =>
+                        Container(color: AppColors.surfaceVariant),
                     errorWidget: (context, url, error) => Container(
                       color: AppColors.surfaceVariant,
                       child: const Icon(
@@ -57,18 +58,22 @@ class QuickHangoutCard extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               // Content
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         hangout.title,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: AppColors.textPrimary,
                             ),
@@ -87,7 +92,8 @@ class QuickHangoutCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               hangout.location,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
                                     color: AppColors.textSecondary,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -102,7 +108,8 @@ class QuickHangoutCard extends StatelessWidget {
                         children: [
                           Text(
                             hangout.time,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.w600,
                                 ),

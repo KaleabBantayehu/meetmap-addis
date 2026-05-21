@@ -5,10 +5,7 @@ import 'package:meetmap_addis/shared/widgets/dashed_border_painter.dart';
 class ImageUploadSection extends StatelessWidget {
   final VoidCallback onTap;
 
-  const ImageUploadSection({
-    super.key,
-    required this.onTap,
-  });
+  const ImageUploadSection({super.key, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -55,5 +52,3 @@ class ImageUploadSection extends StatelessWidget {
     );
   }
 }
-
-

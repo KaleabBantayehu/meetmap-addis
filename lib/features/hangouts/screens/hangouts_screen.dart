@@ -31,13 +31,7 @@ class HangoutsScreen extends StatefulWidget {
 class _HangoutsScreenState extends State<HangoutsScreen> {
   int _selectedCategoryIndex = 0;
 
-  static const _categories = [
-    'All',
-    'Study',
-    'Coffee',
-    'Date',
-    'Business',
-  ];
+  static const _categories = ['All', 'Study', 'Coffee', 'Date', 'Business'];
 
   @override
   void initState() {
@@ -66,11 +60,7 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
         backgroundColor: AppColors.primaryDark,
         elevation: 6,
         shape: const CircleBorder(),
-        child: const Icon(
-          Icons.add_rounded,
-          color: Colors.white,
-          size: 32,
-        ),
+        child: const Icon(Icons.add_rounded, color: Colors.white, size: 32),
       ),
       body: SafeArea(
         child: Column(
@@ -89,9 +79,9 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                       delegate: SliverChildListDelegate([
                         // Hero section
                         const HangoutsHeader(onlineCount: 12),
-                        
+
                         const SizedBox(height: 24),
-                        
+
                         // Category chips
                         HangoutCategoryChips(
                           categories: _categories,
@@ -100,9 +90,9 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                             setState(() => _selectedCategoryIndex = index);
                           },
                         ),
-                        
+
                         const SizedBox(height: 32),
-                        
+
                         // Active Now Section
                         SectionHeader(
                           title: 'Active Now',
@@ -110,7 +100,7 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                           actionIcon: Icons.map_outlined,
                           onActionTap: () => _showComingSoon(context),
                         ),
-                        
+
                         const SizedBox(height: 16),
 
                         if (isLoading)
@@ -126,7 +116,7 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                             ),
                             const SizedBox(height: 16),
                           ],
-                          
+
                           ...quickHangouts.map(
                             (hangout) => Padding(
                               padding: const EdgeInsets.only(bottom: 16),
@@ -136,25 +126,26 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                               ),
                             ),
                           ),
-                          
+
                           const SizedBox(height: 16),
-                          
+
                           // Top Pick Venues Section
                           SectionHeader(
                             title: 'Top Pick Venues',
                             actionLabel: 'Explore all',
                             onActionTap: () => _showComingSoon(context),
                           ),
-                          
+
                           const SizedBox(height: 16),
-                          
+
                           SizedBox(
                             height: 210, // Fixed height for horizontal list
                             child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               clipBehavior: Clip.none,
                               itemCount: topPickVenues.length,
-                              separatorBuilder: (_, _) => const SizedBox(width: 16),
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(width: 16),
                               itemBuilder: (context, index) {
                                 return TopPickVenueCard(
                                   venue: topPickVenues[index],
@@ -163,16 +154,14 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                               },
                             ),
                           ),
-                          
+
                           const SizedBox(height: 32),
-                          
+
                           // Recent Activity Section
-                          const SectionHeader(
-                            title: 'Recent Activity',
-                          ),
-                          
+                          const SectionHeader(title: 'Recent Activity'),
+
                           const SizedBox(height: 16),
-                          
+
                           RecentActivitySection(activities: recentActivities),
                         ],
                       ]),
@@ -222,9 +211,9 @@ class _TopAppBar extends StatelessWidget {
             child: Text(
               'MeetMap Addis',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
           ),
           IconButton(

@@ -119,12 +119,10 @@ class _SavedScreenState extends State<SavedScreen> {
 
   void openPlaceDetails(PlaceModel place) {
     // TODO: Replace direct mock navigation with backend-backed place lookup.
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => PlaceDetailScreen(place: place)),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => PlaceDetailScreen(place: place)));
   }
-
-
 
   String distanceLabelFor(String placeId) {
     switch (placeId) {

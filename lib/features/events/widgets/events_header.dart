@@ -26,16 +26,16 @@ class EventsHeader extends StatelessWidget {
               Text(
                 'Events',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Discover meetups & experiences in Addis',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ),
@@ -61,9 +61,7 @@ class _FilterIconButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: AppColors.outline.withValues(alpha: 0.4),
-            ),
+            border: Border.all(color: AppColors.outline.withValues(alpha: 0.4)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.04),

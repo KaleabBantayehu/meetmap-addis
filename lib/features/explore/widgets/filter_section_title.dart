@@ -5,11 +5,7 @@ class FilterSectionTitle extends StatelessWidget {
   final String title;
   final String? subtitle;
 
-  const FilterSectionTitle({
-    super.key,
-    required this.title,
-    this.subtitle,
-  });
+  const FilterSectionTitle({super.key, required this.title, this.subtitle});
 
   @override
   Widget build(BuildContext context) {

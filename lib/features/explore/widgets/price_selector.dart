@@ -14,14 +14,12 @@ class PriceSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final prices = ['\$', '\$\$', '\$\$\$', '\$\$\$\$'];
-    
+
     return Row(
       children: prices.map((price) {
         return Expanded(
           child: Padding(
-            padding: EdgeInsets.only(
-              right: price != prices.last ? 12.0 : 0.0,
-            ),
+            padding: EdgeInsets.only(right: price != prices.last ? 12.0 : 0.0),
             child: CustomFilterChip(
               label: price,
               isSelected: selectedPrice == price,

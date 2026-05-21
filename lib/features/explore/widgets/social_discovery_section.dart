@@ -22,23 +22,23 @@ class SocialDiscoverySection extends StatelessWidget {
               Text(
                 'Meet & Connect',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Discover people, conversations, and communities',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ),
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Cards List
         SizedBox(
           height: 104,
@@ -50,27 +50,30 @@ class SocialDiscoverySection extends StatelessWidget {
             children: [
               SocialEntryCard(
                 title: 'Hangouts',
-                description: 'Join coffee chats, study sessions, and local meetups',
+                description:
+                    'Join coffee chats, study sessions, and local meetups',
                 icon: Icons.coffee_rounded,
                 iconColor: const Color(0xFFE65100),
-                iconBackgroundColor: const Color(0xFFE65100).withValues(alpha: 0.1),
+                iconBackgroundColor: const Color(
+                  0xFFE65100,
+                ).withValues(alpha: 0.1),
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const HangoutsScreen(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const HangoutsScreen()),
                   );
                 },
               ),
-              
+
               const SizedBox(width: 16),
-              
+
               SocialEntryCard(
                 title: 'Networking',
                 description: 'Connect with professionals and local communities',
                 icon: Icons.business_center_rounded,
                 iconColor: const Color(0xFF1565C0),
-                iconBackgroundColor: const Color(0xFF1565C0).withValues(alpha: 0.1),
+                iconBackgroundColor: const Color(
+                  0xFF1565C0,
+                ).withValues(alpha: 0.1),
                 onTap: () {
                   // Using named route for better consistency with project architecture
                   Navigator.pushNamed(context, AppRoutes.network);

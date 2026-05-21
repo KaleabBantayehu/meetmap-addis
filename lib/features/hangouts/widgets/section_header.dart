@@ -24,9 +24,9 @@ class SectionHeader extends StatelessWidget {
         Text(
           title,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
         ),
         const Spacer(),
         if (actionLabel != null)
@@ -39,9 +39,9 @@ class SectionHeader extends StatelessWidget {
                 Text(
                   actionLabel!,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 if (actionIcon != null) ...[
                   const SizedBox(width: 4),

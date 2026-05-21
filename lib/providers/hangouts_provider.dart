@@ -6,7 +6,7 @@ class HangoutsProvider with ChangeNotifier {
   final HangoutRepository _hangoutRepository;
 
   HangoutsProvider({required HangoutRepository hangoutRepository})
-      : _hangoutRepository = hangoutRepository;
+    : _hangoutRepository = hangoutRepository;
 
   HangoutModel? _activeHangout;
   HangoutModel? get activeHangout => _activeHangout;

@@ -117,3 +117,26 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+# --- SENSITIVE & PROJECT CONFIGS (CRITICAL) ---
+android/app/google-services.json
+firebase.json
+lib/firebase_options.dart
+.env
+*.env
+service-account*.json
+firebase-adminsdk*.json
+
+# --- IDE & SYSTEM ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- DART/FLUTTER BUILD & CACHE ---
+.dart_tool/
+.packages
+build/
+.pub/
+.pub-cache/
+.flutter-plugins
+.flutter-plugins-dependencies

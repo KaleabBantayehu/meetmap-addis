@@ -13,8 +13,15 @@ class PurposeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final purposes = ['Study', 'Meeting', 'Date', 'Quiet', 'Fast WiFi', 'Outdoor'];
-    
+    final purposes = [
+      'Study',
+      'Meeting',
+      'Date',
+      'Quiet',
+      'Fast WiFi',
+      'Outdoor',
+    ];
+
     return Wrap(
       spacing: 12,
       runSpacing: 12,

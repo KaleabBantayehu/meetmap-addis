@@ -6,7 +6,7 @@ class NetworkProvider with ChangeNotifier {
   final NetworkRepository _networkRepository;
 
   NetworkProvider({required NetworkRepository networkRepository})
-      : _networkRepository = networkRepository;
+    : _networkRepository = networkRepository;
 
   List<UserModel> _suggestedUsers = [];
   List<UserModel> get suggestedUsers => _suggestedUsers;

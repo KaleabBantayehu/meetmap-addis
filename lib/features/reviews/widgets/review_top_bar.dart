@@ -2,11 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 
 class ReviewTopBar extends StatelessWidget {
-  const ReviewTopBar({
-    super.key,
-    required this.onClose,
-    required this.onPost,
-  });
+  const ReviewTopBar({super.key, required this.onClose, required this.onPost});
 
   final VoidCallback onClose;
   final VoidCallback onPost;

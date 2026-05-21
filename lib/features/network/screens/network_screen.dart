@@ -29,7 +29,8 @@ class _NetworkScreenState extends State<NetworkScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<NetworkProvider>(context, listen: false);
-      if (provider.suggestedUsers.isEmpty && provider.trendingReviewers.isEmpty) {
+      if (provider.suggestedUsers.isEmpty &&
+          provider.trendingReviewers.isEmpty) {
         provider.fetchNetworkData();
       }
     });
@@ -154,10 +155,7 @@ class _NetworkScreenState extends State<NetworkScreen> {
           onPressed: onSeeAll,
           child: const Text(
             'View All',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
           ),
         ),
       ],

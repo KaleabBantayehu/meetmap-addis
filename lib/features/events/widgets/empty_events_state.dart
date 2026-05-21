@@ -33,9 +33,9 @@ class EmptyEventsState extends StatelessWidget {
             Text(
               'No events found',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
               textAlign: TextAlign.center,
             ),
 
@@ -44,9 +44,9 @@ class EmptyEventsState extends StatelessWidget {
             Text(
               'Try a different category or\ncheck back again later.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                    height: 1.5,
-                  ),
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
               textAlign: TextAlign.center,
             ),
           ],

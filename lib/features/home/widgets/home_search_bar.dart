@@ -37,22 +37,22 @@ class HomeSearchBar extends StatelessWidget {
                   color: AppColors.textSecondary,
                 ),
               ),
-        
+
               const SizedBox(width: 12),
-        
+
               Expanded(
                 child: Text(
                   'Search venues in Addis...',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
-        
+
               Container(width: 1, height: 30, color: AppColors.outline),
-        
+
               const SizedBox(width: 12),
-        
+
               InkWell(
                 borderRadius: BorderRadius.circular(100),
                 onTap: () {

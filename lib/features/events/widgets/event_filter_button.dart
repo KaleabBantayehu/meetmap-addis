@@ -14,9 +14,7 @@ class EventFilterButton extends StatelessWidget {
       onPressed: onTap,
       backgroundColor: AppColors.primary,
       elevation: 6,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       icon: const Icon(Icons.tune_rounded, color: Colors.white, size: 20),
       label: const Text(
         'Filter',

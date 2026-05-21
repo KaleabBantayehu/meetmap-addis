@@ -24,9 +24,9 @@ class EventCardFooter extends StatelessWidget {
         Text(
           '+$attendeeCount going',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
         ),
 
         const Spacer(),

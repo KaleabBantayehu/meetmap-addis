@@ -34,9 +34,7 @@ class SettingsGroupCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.outline.withValues(alpha: 0.2)),
           ),
-          child: Column(
-            children: children,
-          ),
+          child: Column(children: children),
         ),
       ],
     );

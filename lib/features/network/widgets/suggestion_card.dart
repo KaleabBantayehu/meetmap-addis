@@ -6,11 +6,7 @@ class SuggestionCard extends StatelessWidget {
   final UserModel user;
   final VoidCallback? onFollow;
 
-  const SuggestionCard({
-    super.key,
-    required this.user,
-    this.onFollow,
-  });
+  const SuggestionCard({super.key, required this.user, this.onFollow});
 
   @override
   Widget build(BuildContext context) {
@@ -76,10 +72,7 @@ class SuggestionCard extends StatelessWidget {
               ),
               child: const Text(
                 'FOLLOW',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
               ),
             ),
           ),

@@ -80,8 +80,7 @@ final List<ActivityModel> recentActivities = [
     authorName: 'Maya Tesfaye',
     message: '"Just arrived at the cafe! I\'ve grabbed a table by the window."',
     timestamp: 'now',
-    avatarUrl:
-        'https://i.pravatar.cc/150?img=47',
+    avatarUrl: 'https://i.pravatar.cc/150?img=47',
   ),
   const ActivityModel(
     id: 'a_2',
@@ -95,7 +94,6 @@ final List<ActivityModel> recentActivities = [
     authorName: 'Kaleab Alemu',
     message: '"Running 10 mins late — order without me!"',
     timestamp: '28m ago',
-    avatarUrl:
-        'https://i.pravatar.cc/150?img=11',
+    avatarUrl: 'https://i.pravatar.cc/150?img=11',
   ),
 ];

@@ -45,9 +45,7 @@ class SearchResultCard extends StatelessWidget {
               children: [
                 SearchResultImage(imageUrl: place.imageUrl),
                 const SizedBox(width: 18),
-                Expanded(
-                  child: SearchResultInfo(place: place),
-                ),
+                Expanded(child: SearchResultInfo(place: place)),
                 const SizedBox(width: 10),
                 SizedBox(
                   height: 92,
@@ -92,11 +90,8 @@ class SearchResultImage extends StatelessWidget {
         width: 92,
         height: 92,
         fit: BoxFit.cover,
-        placeholder: (_, _) => Container(
-          width: 92,
-          height: 92,
-          color: AppColors.surfaceVariant,
-        ),
+        placeholder: (_, _) =>
+            Container(width: 92, height: 92, color: AppColors.surfaceVariant),
         errorWidget: (_, _, _) => Container(
           width: 92,
           height: 92,

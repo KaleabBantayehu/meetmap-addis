@@ -50,8 +50,9 @@ class BrowseCategoryGrid extends StatelessWidget {
               spacing: gap,
               runSpacing: 18,
               children: categories.map((category) {
-                final width =
-                    category.isWide ? constraints.maxWidth : tileWidth;
+                final width = category.isWide
+                    ? constraints.maxWidth
+                    : tileWidth;
                 return SizedBox(
                   width: width,
                   child: SearchCategoryTile(

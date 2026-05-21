@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'core/theme/app_theme.dart';
 import 'routes/app_routes.dart';
 import 'core/repositories/mock/mock_place_repository.dart';
-import 'core/repositories/mock/mock_auth_repository.dart';
+import 'core/repositories/firebase/firebase_auth_repository.dart';
 import 'core/repositories/mock/mock_event_repository.dart';
 import 'core/repositories/mock/mock_network_repository.dart';
 import 'core/repositories/mock/mock_hangout_repository.dart';
@@ -13,10 +14,20 @@ import 'providers/saved_provider.dart';
 import 'providers/events_provider.dart';
 import 'providers/network_provider.dart';
 import 'providers/hangouts_provider.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint('Firebase initialization failed: $e');
+  }
+
   final placeRepository = MockPlaceRepository();
-  final authRepository = MockAuthRepository();
+  final authRepository = FirebaseAuthRepository();
   final eventRepository = MockEventRepository();
   final networkRepository = MockNetworkRepository();
   final hangoutRepository = MockHangoutRepository();
@@ -28,7 +39,8 @@ void main() {
           create: (_) => PlacesProvider(placeRepository: placeRepository),
         ),
         ChangeNotifierProvider(
-          create: (_) => AuthProvider(authRepository: authRepository),
+          create: (_) =>
+              AuthProvider(authRepository: authRepository)..checkCurrentUser(),
         ),
         ChangeNotifierProvider(
           create: (_) => SavedProvider(placeRepository: placeRepository),

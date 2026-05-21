@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 
+import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_textfield.dart';
 import '../../../shared/widgets/or_divider.dart';
@@ -39,23 +41,39 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  void _signup() {
+  void _signup() async {
     if (!_formKey.currentState!.validate()) return;
 
     if (!_agreedToTerms) {
-      _showAuthError('Please agree to the Terms of Service and Privacy Policy.');
+      _showAuthError(
+        'Please agree to the Terms of Service and Privacy Policy.',
+      );
       return;
     }
 
     setState(() => _isLoading = true);
 
-    Future.delayed(const Duration(seconds: 1), () {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final success = await authProvider.signup(
+        _emailController.text.trim(),
+        _passwordController.text,
+        _nameController.text.trim(),
+      );
+
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      // TODO: Replace with real Firebase auth. On failure, call _showAuthError().
-      Navigator.pushReplacementNamed(context, '/home');
-    });
+      if (success) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        _showAuthError(authProvider.errorMessage ?? 'Sign up failed');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      _showAuthError('An unexpected error occurred.');
+    }
   }
 
   void _showAuthError(String message) {
@@ -64,9 +82,7 @@ class _SignupScreenState extends State<SignupScreen> {
         content: Text(message),
         backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
@@ -174,8 +190,12 @@ class _SignupScreenState extends State<SignupScreen> {
                               if (value == null || value.trim().isEmpty) {
                                 return 'Please enter your phone number';
                               }
-                              final phoneRegex = RegExp(r'^(?:\+2519|09)\d{8}$');
-                              if (!phoneRegex.hasMatch(value.replaceAll(' ', ''))) {
+                              final phoneRegex = RegExp(
+                                r'^(?:\+2519|09)\d{8}$',
+                              );
+                              if (!phoneRegex.hasMatch(
+                                value.replaceAll(' ', ''),
+                              )) {
                                 return 'Enter a valid Ethiopian phone number';
                               }
                               return null;
@@ -258,7 +278,9 @@ class _SignupScreenState extends State<SignupScreen> {
                         Text(
                           'DEV MODE: UI Navigation Only',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary.withValues(alpha: 0.5),
+                            color: AppColors.textSecondary.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                           textAlign: TextAlign.center,
                         ),

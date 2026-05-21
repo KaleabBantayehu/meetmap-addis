@@ -23,9 +23,9 @@ class FeaturedEventBanner extends StatelessWidget {
             Text(
               'Featured Today',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
             const Spacer(),
             GestureDetector(
@@ -33,9 +33,9 @@ class FeaturedEventBanner extends StatelessWidget {
               child: Text(
                 'View All',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -67,9 +67,8 @@ class FeaturedEventBanner extends StatelessWidget {
                       child: CachedNetworkImage(
                         imageUrl: event.imageUrl,
                         fit: BoxFit.cover,
-                        placeholder: (_, _) => Container(
-                          color: AppColors.surfaceVariant,
-                        ),
+                        placeholder: (_, _) =>
+                            Container(color: AppColors.surfaceVariant),
                         errorWidget: (_, _, _) => Container(
                           color: AppColors.surfaceVariant,
                           child: const Center(
@@ -103,11 +102,7 @@ class FeaturedEventBanner extends StatelessWidget {
                     ),
 
                     // Featured badge
-                    Positioned(
-                      top: 14,
-                      left: 14,
-                      child: _FeaturedBadge(),
-                    ),
+                    Positioned(top: 14, left: 14, child: _FeaturedBadge()),
 
                     // Attendee count badge (top right)
                     Positioned(
@@ -182,9 +177,7 @@ class FeaturedEventBanner extends StatelessWidget {
                             const SizedBox(height: 12),
                             Row(
                               children: [
-                                Expanded(
-                                  child: _JoinButton(onTap: onTap),
-                                ),
+                                Expanded(child: _JoinButton(onTap: onTap)),
                                 const SizedBox(width: 10),
                                 _HostTag(host: event.host),
                               ],

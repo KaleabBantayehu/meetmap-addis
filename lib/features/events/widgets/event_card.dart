@@ -8,11 +8,7 @@ class EventCard extends StatefulWidget {
   final EventModel event;
   final VoidCallback onTap;
 
-  const EventCard({
-    super.key,
-    required this.event,
-    required this.onTap,
-  });
+  const EventCard({super.key, required this.event, required this.onTap});
 
   @override
   State<EventCard> createState() => _EventCardState();
@@ -68,10 +64,10 @@ class _EventCardState extends State<EventCard> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                            color: AppColors.textPrimary,
-                          ),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
 
                     const SizedBox(height: 8),
@@ -87,8 +83,7 @@ class _EventCardState extends State<EventCard> {
                     // Date & time row
                     _MetaRow(
                       icon: Icons.calendar_today_rounded,
-                      label:
-                          '${widget.event.date} · ${widget.event.time}',
+                      label: '${widget.event.date} · ${widget.event.time}',
                     ),
 
                     const SizedBox(height: 10),
@@ -99,9 +94,9 @@ class _EventCardState extends State<EventCard> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                            height: 1.45,
-                          ),
+                        color: AppColors.textSecondary,
+                        height: 1.45,
+                      ),
                     ),
 
                     const SizedBox(height: 14),
@@ -157,9 +152,7 @@ class _EventCardImage extends StatelessWidget {
             CachedNetworkImage(
               imageUrl: imageUrl,
               fit: BoxFit.cover,
-              placeholder: (_, _) => Container(
-                color: AppColors.surfaceVariant,
-              ),
+              placeholder: (_, _) => Container(color: AppColors.surfaceVariant),
               errorWidget: (_, _, _) => Container(
                 color: AppColors.surfaceVariant,
                 child: const Center(
@@ -212,10 +205,7 @@ class _BookmarkButton extends StatelessWidget {
   final bool isBookmarked;
   final VoidCallback onTap;
 
-  const _BookmarkButton({
-    required this.isBookmarked,
-    required this.onTap,
-  });
+  const _BookmarkButton({required this.isBookmarked, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -239,9 +229,7 @@ class _BookmarkButton extends StatelessWidget {
           ],
         ),
         child: Icon(
-          isBookmarked
-              ? Icons.bookmark_rounded
-              : Icons.bookmark_border_rounded,
+          isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
           size: 18,
           color: isBookmarked ? Colors.white : AppColors.primary,
         ),
@@ -254,10 +242,7 @@ class _MetaRow extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _MetaRow({
-    required this.icon,
-    required this.label,
-  });
+  const _MetaRow({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -272,9 +257,9 @@ class _MetaRow extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ],

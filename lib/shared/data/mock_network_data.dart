@@ -34,7 +34,8 @@ class MockNetworkData {
       name: 'Salem H.',
       username: 'salem_eats',
       profileImageUrl: 'https://i.pravatar.cc/150?u=salem',
-      bio: 'Chasing the best macchiato in Bole. Exploring Addis one plate of Tibs at a time. 🇪🇹☕',
+      bio:
+          'Chasing the best macchiato in Bole. Exploring Addis one plate of Tibs at a time. 🇪🇹☕',
       tags: ['COFFEE LOVER', 'FOOD CRITIC', 'TRADITIONAL'],
       recentImageUrls: [
         'https://images.unsplash.com/photo-1541167760496-162955ed8a9f?q=80&w=300&h=300&fit=crop',
@@ -47,7 +48,8 @@ class MockNetworkData {
       name: 'Brook T.',
       username: 'brook_arch',
       profileImageUrl: 'https://i.pravatar.cc/150?u=brook',
-      bio: 'Architectural photographer. Finding beauty in the urban sprawl of Addis. 🏗️📸',
+      bio:
+          'Architectural photographer. Finding beauty in the urban sprawl of Addis. 🏗️📸',
       tags: ['DESIGN', 'PHOTOGRAPHY', 'NIGHTLIFE'],
       recentImageUrls: [
         'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=300&h=300&fit=crop',

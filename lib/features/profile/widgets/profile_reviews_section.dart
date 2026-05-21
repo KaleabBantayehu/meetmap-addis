@@ -60,7 +60,11 @@ class ProfileReviewsSection extends StatelessWidget {
 }
 
 class ProfileReviewCard extends StatelessWidget {
-  const ProfileReviewCard({super.key, required this.review, required this.width});
+  const ProfileReviewCard({
+    super.key,
+    required this.review,
+    required this.width,
+  });
 
   final ProfileReviewData review;
   final double width;
@@ -146,5 +150,3 @@ class ProfileReviewStars extends StatelessWidget {
     );
   }
 }
-
-

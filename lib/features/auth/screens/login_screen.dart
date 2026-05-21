@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 
+import '../../../providers/auth_provider.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/custom_textfield.dart';
 import '../../../shared/widgets/or_divider.dart';
@@ -36,18 +38,31 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _login() {
+  void _login() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
-    Future.delayed(const Duration(seconds: 1), () {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final success = await authProvider.login(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      // TODO: Replace with real Firebase auth. On failure, call _showAuthError().
-      Navigator.pushReplacementNamed(context, '/home');
-    });
+      if (success) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        _showAuthError(authProvider.errorMessage ?? 'Authentication failed');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      _showAuthError('An unexpected error occurred.');
+    }
   }
 
   // ignore: unused_element
@@ -57,9 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
         content: Text(message),
         backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
@@ -73,10 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 28,
-              vertical: 24,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
             child: Form(
               key: _formKey,
               child: Column(
@@ -247,9 +257,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => const SignupScreen(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const SignupScreen()),
                       );
                     },
                   ),

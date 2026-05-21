@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
+import 'package:meetmap_addis/providers/auth_provider.dart';
 import 'package:meetmap_addis/features/profile/widgets/profile_avatar_section.dart';
 import 'package:meetmap_addis/features/profile/widgets/profile_logout_button.dart';
 import 'package:meetmap_addis/features/profile/widgets/profile_reviews_section.dart';
@@ -36,8 +38,8 @@ class ProfileScreen extends StatelessWidget {
                   final horizontalPadding = constraints.maxWidth < 360
                       ? 16.0
                       : constraints.maxWidth > 700
-                          ? 32.0
-                          : 20.0;
+                      ? 32.0
+                      : 20.0;
 
                   return ListView(
                     padding: EdgeInsets.fromLTRB(
@@ -52,7 +54,9 @@ class ProfileScreen extends StatelessWidget {
                         email: 'selam.t@email.com',
                         imageUrl: 'https://i.pravatar.cc/300?img=47',
                         onEditPressed: () {
-                          Navigator.of(context).pushNamed(AppRoutes.editProfile);
+                          Navigator.of(
+                            context,
+                          ).pushNamed(AppRoutes.editProfile);
                         },
                       ),
                       const SizedBox(height: 34),
@@ -71,7 +75,9 @@ class ProfileScreen extends StatelessWidget {
                             Navigator.of(context).pushNamed(AppRoutes.saved);
                           } else if (label == 'Hangouts') {
                             Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const HangoutsScreen()),
+                              MaterialPageRoute(
+                                builder: (_) => const HangoutsScreen(),
+                              ),
                             );
                           }
                         },
@@ -79,9 +85,9 @@ class ProfileScreen extends StatelessWidget {
                       const SizedBox(height: 38),
                       ProfileReviewsSection(
                         onViewAll: () {
-                          Navigator.of(context).pushNamed(
-                            AppRoutes.reviewHistory,
-                          );
+                          Navigator.of(
+                            context,
+                          ).pushNamed(AppRoutes.reviewHistory);
                         },
                       ),
                       const SizedBox(height: 42),
@@ -99,17 +105,24 @@ class ProfileScreen extends StatelessWidget {
                           Navigator.of(context).pushNamed(AppRoutes.settings);
                         },
                         onHelpTap: () {
-                          Navigator.of(context).pushNamed(AppRoutes.helpSupport);
+                          Navigator.of(
+                            context,
+                          ).pushNamed(AppRoutes.helpSupport);
                         },
                       ),
                       const SizedBox(height: 34),
                       ProfileLogoutButton(
-                        onPressed: () {
-                          // TODO: Connect sign out to auth service and session cleanup.
-                          Navigator.of(context).pushNamedAndRemoveUntil(
-                            AppRoutes.login,
-                            (route) => false,
-                          );
+                        onPressed: () async {
+                          await Provider.of<AuthProvider>(
+                            context,
+                            listen: false,
+                          ).logout();
+                          if (context.mounted) {
+                            Navigator.of(context).pushNamedAndRemoveUntil(
+                              AppRoutes.login,
+                              (route) => false,
+                            );
+                          }
                         },
                       ),
                     ],

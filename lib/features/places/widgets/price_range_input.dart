@@ -40,7 +40,7 @@ class PriceRangeInput extends StatelessWidget {
                             color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
-                          )
+                          ),
                         ]
                       : [],
                 ),
@@ -48,7 +48,9 @@ class PriceRangeInput extends StatelessWidget {
                   child: Text(
                     price,
                     style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                       color: isSelected
                           ? AppColors.primaryDark
                           : AppColors.textSecondary,

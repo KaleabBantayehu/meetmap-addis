@@ -40,15 +40,16 @@ class ActiveHangoutCard extends StatelessWidget {
               Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(16),
+                    ),
                     child: AspectRatio(
                       aspectRatio: 16 / 9,
                       child: CachedNetworkImage(
                         imageUrl: hangout.imageUrl,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: AppColors.surfaceVariant,
-                        ),
+                        placeholder: (context, url) =>
+                            Container(color: AppColors.surfaceVariant),
                         errorWidget: (context, url, error) => Container(
                           color: AppColors.surfaceVariant,
                           child: const Icon(
@@ -64,7 +65,10 @@ class ActiveHangoutCard extends StatelessWidget {
                       top: 12,
                       left: 12,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
@@ -100,7 +104,7 @@ class ActiveHangoutCard extends StatelessWidget {
                     ),
                 ],
               ),
-              
+
               // Content Section
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -116,7 +120,8 @@ class ActiveHangoutCard extends StatelessWidget {
                             children: [
                               Text(
                                 hangout.title,
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(
                                       fontWeight: FontWeight.w700,
                                       color: AppColors.textPrimary,
                                     ),
@@ -134,7 +139,10 @@ class ActiveHangoutCard extends StatelessWidget {
                                   const SizedBox(width: 4),
                                   Text(
                                     '${hangout.time} · ${hangout.attendeeCount} attending',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
                                           color: AppColors.textSecondary,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -156,9 +164,9 @@ class ActiveHangoutCard extends StatelessWidget {
                     Text(
                       hangout.description,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                            height: 1.4,
-                          ),
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),

@@ -7,11 +7,7 @@ class TopPickVenueCard extends StatelessWidget {
   final VenueModel venue;
   final VoidCallback onTap;
 
-  const TopPickVenueCard({
-    super.key,
-    required this.venue,
-    required this.onTap,
-  });
+  const TopPickVenueCard({super.key, required this.venue, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -38,15 +34,16 @@ class TopPickVenueCard extends StatelessWidget {
             children: [
               // Image
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
                 child: AspectRatio(
                   aspectRatio: 16 / 10,
                   child: CachedNetworkImage(
                     imageUrl: venue.imageUrl,
                     fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: AppColors.surfaceVariant,
-                    ),
+                    placeholder: (context, url) =>
+                        Container(color: AppColors.surfaceVariant),
                     errorWidget: (context, url, error) => Container(
                       color: AppColors.surfaceVariant,
                       child: const Icon(
@@ -57,7 +54,7 @@ class TopPickVenueCard extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               // Details
               Padding(
                 padding: const EdgeInsets.all(12),
@@ -67,9 +64,9 @@ class TopPickVenueCard extends StatelessWidget {
                     Text(
                       venue.name,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -84,7 +81,8 @@ class TopPickVenueCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           '${venue.rating} · ${venue.location}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
                                 color: AppColors.textSecondary,
                                 fontWeight: FontWeight.w500,
                               ),

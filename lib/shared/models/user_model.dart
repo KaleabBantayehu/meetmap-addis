@@ -139,14 +139,17 @@ class UserModel {
       savedPlaceIds: List<String>.from(map['savedPlaceIds'] ?? []),
       reviewIds: List<String>.from(map['reviewIds'] ?? []),
       joinedHangoutIds: List<String>.from(map['joinedHangoutIds'] ?? []),
-      createdAt: map['createdAt'] != null ? DateTime.tryParse(map['createdAt']) : null,
+      createdAt: map['createdAt'] != null
+          ? DateTime.tryParse(map['createdAt'])
+          : null,
       notificationsEnabled: map['notificationsEnabled'] ?? true,
     );
   }
 
   String toJson() => json.encode(toMap());
 
-  factory UserModel.fromJson(String source) => UserModel.fromMap(json.decode(source));
+  factory UserModel.fromJson(String source) =>
+      UserModel.fromMap(json.decode(source));
 
   @override
   bool operator ==(Object other) {

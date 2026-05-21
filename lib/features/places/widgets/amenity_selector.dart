@@ -37,7 +37,9 @@ class AmenitySelector extends StatelessWidget {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.surface,
+              color: isSelected
+                  ? AppColors.primary.withValues(alpha: 0.1)
+                  : AppColors.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected ? AppColors.primary : AppColors.outline,
@@ -50,13 +52,17 @@ class AmenitySelector extends StatelessWidget {
                 Icon(
                   icon,
                   size: 20,
-                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.textSecondary,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   name,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: isSelected ? AppColors.primaryDark : AppColors.textPrimary,
+                    color: isSelected
+                        ? AppColors.primaryDark
+                        : AppColors.textPrimary,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   ),
                 ),

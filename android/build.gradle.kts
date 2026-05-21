@@ -1,7 +1,11 @@
-allprojects {
+buildscript {
     repositories {
         google()
         mavenCentral()
+    }
+    dependencies {
+        // Use parentheses and double quotes for Kotlin DSL
+        classpath("com.google.gms:google-services:4.4.4")
     }
 }
 

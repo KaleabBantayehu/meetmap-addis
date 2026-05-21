@@ -6,10 +6,7 @@ import 'package:meetmap_addis/shared/models/place_model.dart';
 class PlacePreviewCard extends StatelessWidget {
   final PlaceModel place;
 
-  const PlacePreviewCard({
-    super.key,
-    required this.place,
-  });
+  const PlacePreviewCard({super.key, required this.place});
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +15,7 @@ class PlacePreviewCard extends StatelessWidget {
       padding: const EdgeInsets.all(22),
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(32),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
         children: [
@@ -41,8 +36,7 @@ class PlacePreviewCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
@@ -55,8 +49,7 @@ class PlacePreviewCard extends StatelessWidget {
                               color: place.isOpen
                                   ? const Color(0xFFA7F3D0)
                                   : AppColors.surfaceVariant,
-                              borderRadius:
-                                  BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               place.isOpen ? 'OPEN NOW' : 'CLOSED',
@@ -72,13 +65,8 @@ class PlacePreviewCard extends StatelessWidget {
 
                           Text(
                             '0.4 km away',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color:
-                                      AppColors.textSecondary,
-                                ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: AppColors.textSecondary),
                           ),
                         ],
                       ),
@@ -87,9 +75,7 @@ class PlacePreviewCard extends StatelessWidget {
 
                       Text(
                         place.name,
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall
+                        style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(
                               fontWeight: FontWeight.w700,
                               fontSize: 22,
@@ -120,19 +106,14 @@ class PlacePreviewCard extends StatelessWidget {
 
                           Text(
                             '(1.2k)',
-                            style: TextStyle(
-                              color:
-                                  AppColors.textSecondary,
-                            ),
+                            style: TextStyle(color: AppColors.textSecondary),
                           ),
 
                           const SizedBox(width: 18),
 
                           Text(
                             place.priceRange,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
 
                           const SizedBox(width: 18),
@@ -168,10 +149,7 @@ class PlacePreviewCard extends StatelessWidget {
                   height: 56,
                   child: ElevatedButton.icon(
                     onPressed: () {},
-                    icon: const Icon(
-                      Icons.directions_rounded,
-                      size: 28,
-                    ),
+                    icon: const Icon(Icons.directions_rounded, size: 28),
                     label: const Text('Directions'),
                   ),
                 ),
@@ -206,10 +184,7 @@ class _ActionButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
 
-  const _ActionButton({
-    required this.icon,
-    this.onTap,
-  });
+  const _ActionButton({required this.icon, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -222,15 +197,10 @@ class _ActionButton extends StatelessWidget {
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            border: Border.all(
-              color: AppColors.outline,
-            ),
+            border: Border.all(color: AppColors.outline),
             borderRadius: BorderRadius.circular(18),
           ),
-          child: Icon(
-            icon,
-            color: AppColors.primary,
-          ),
+          child: Icon(icon, color: AppColors.primary),
         ),
       ),
     );

@@ -6,10 +6,7 @@ import 'attendee_avatar_stack.dart';
 class HangoutsHeader extends StatelessWidget {
   final int onlineCount;
 
-  const HangoutsHeader({
-    super.key,
-    this.onlineCount = 12,
-  });
+  const HangoutsHeader({super.key, this.onlineCount = 12});
 
   @override
   Widget build(BuildContext context) {
@@ -50,10 +47,10 @@ class HangoutsHeader extends StatelessWidget {
               Text(
                 'Hangouts',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                      height: 1.1,
-                    ),
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                  height: 1.1,
+                ),
               ),
             ],
           ),
@@ -104,9 +101,9 @@ class HangoutsHeader extends StatelessWidget {
             Text(
               'online now',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
