@@ -7,13 +7,31 @@ class MockPlaceRepository implements PlaceRepository {
   final List<PlaceModel> _savedPlaces = List.from(savedMockPlaces);
 
   @override
-  Future<List<PlaceModel>> getPlaces() async {
+  @Deprecated('Use fetchPlaces instead')
+  Future<List<PlaceModel>> getPlaces() => fetchPlaces();
+
+  @override
+  @Deprecated('Use fetchPlaceById instead')
+  Future<PlaceModel?> getPlaceById(String id) => fetchPlaceById(id);
+
+  @override
+  @Deprecated('Use fetchSavedPlaces instead')
+  Future<List<PlaceModel>> getSavedPlaces() => fetchSavedPlaces();
+
+  @override
+  Future<List<PlaceModel>> fetchPlaces() async {
     await Future.delayed(const Duration(milliseconds: 400));
     return List.from(_places);
   }
 
   @override
-  Future<PlaceModel?> getPlaceById(String id) async {
+  Future<List<PlaceModel>> fetchFeaturedPlaces() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    return _places.where((p) => p.rating >= 4.7).toList();
+  }
+
+  @override
+  Future<PlaceModel?> fetchPlaceById(String id) async {
     await Future.delayed(const Duration(milliseconds: 200));
     try {
       return _places.firstWhere((p) => p.id == id);
@@ -36,7 +54,33 @@ class MockPlaceRepository implements PlaceRepository {
   }
 
   @override
-  Future<List<PlaceModel>> getSavedPlaces() async {
+  Future<List<PlaceModel>> filterPlaces({
+    String? category,
+    String? priceRange,
+    double? minRating,
+    List<String>? amenities,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    return _places.where((place) {
+      bool matches = true;
+      if (category != null && category.isNotEmpty) {
+        matches = matches && place.category.toLowerCase() == category.toLowerCase();
+      }
+      if (priceRange != null && priceRange.isNotEmpty) {
+        matches = matches && place.priceRange == priceRange;
+      }
+      if (minRating != null) {
+        matches = matches && place.rating >= minRating;
+      }
+      if (amenities != null && amenities.isNotEmpty) {
+        matches = matches && amenities.every((a) => place.amenities.contains(a));
+      }
+      return matches;
+    }).toList();
+  }
+
+  @override
+  Future<List<PlaceModel>> fetchSavedPlaces() async {
     await Future.delayed(const Duration(milliseconds: 300));
     return List.from(_savedPlaces);
   }

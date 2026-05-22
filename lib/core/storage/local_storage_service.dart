@@ -62,6 +62,27 @@ class LocalStorageService {
     await _prefs.setString(CacheKeys.savedPlaces, jsonStr);
   }
 
+  // --- All Places Cache ---
+  List<PlaceModel> getCachedPlaces() {
+    final jsonStr = _prefs.getString(CacheKeys.placesCache);
+    if (jsonStr == null) return [];
+    try {
+      final List<dynamic> decoded = json.decode(jsonStr);
+      return decoded
+          .map((item) => PlaceModel.fromMap(Map<String, dynamic>.from(item)))
+          .toList();
+    } catch (e) {
+      debugPrint('Error parsing cached all places: $e');
+      return [];
+    }
+  }
+
+  Future<void> saveCachedPlaces(List<PlaceModel> places) async {
+    final List<Map<String, dynamic>> maps = places.map((p) => p.toMap()).toList();
+    final jsonStr = json.encode(maps);
+    await _prefs.setString(CacheKeys.placesCache, jsonStr);
+  }
+
   // --- General Support for Timestamps and Metadata ---
   String? getString(String key) => _prefs.getString(key);
   Future<void> setString(String key, String value) => _prefs.setString(key, value);

@@ -52,7 +52,7 @@ class SavedProvider with ChangeNotifier {
 
     try {
       if (ConnectivityService.instance.isConnected) {
-        final places = await _placeRepository.getSavedPlaces();
+        final places = await _placeRepository.fetchSavedPlaces();
         _savedPlaces = places;
         _saveToCache();
       } else {

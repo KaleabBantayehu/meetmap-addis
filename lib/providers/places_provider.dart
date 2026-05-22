@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/repositories/place_repository.dart';
 import '../shared/models/place_model.dart';
 import '../core/storage/local_storage_service.dart';
+import '../core/storage/connectivity_service.dart';
 
 class PlacesProvider with ChangeNotifier {
   final PlaceRepository _placeRepository;
@@ -9,6 +10,7 @@ class PlacesProvider with ChangeNotifier {
   PlacesProvider({required PlaceRepository placeRepository})
       : _placeRepository = placeRepository {
     _loadSearchHistory();
+    _loadCachedPlaces();
   }
 
   List<PlaceModel> _places = [];
@@ -32,6 +34,18 @@ class PlacesProvider with ChangeNotifier {
       debugPrint('Loaded ${_recentSearches.length} recent searches from cache.');
     } catch (e) {
       debugPrint('Error loading search history from cache: $e');
+    }
+  }
+
+  void _loadCachedPlaces() {
+    try {
+      _places = LocalStorageService.instance.getCachedPlaces();
+      debugPrint('Loaded ${_places.length} places from cache on startup.');
+      if (_places.isNotEmpty) {
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error preloading places from cache: $e');
     }
   }
 
@@ -74,14 +88,29 @@ class PlacesProvider with ChangeNotifier {
   }
 
   Future<void> fetchPlaces() async {
-    _isLoading = true;
+    if (_places.isEmpty) {
+      _isLoading = true;
+      notifyListeners();
+    }
     _errorMessage = null;
-    notifyListeners();
 
     try {
-      _places = await _placeRepository.getPlaces();
+      if (ConnectivityService.instance.isConnected) {
+        final newPlaces = await _placeRepository.fetchPlaces();
+        _places = newPlaces;
+        await LocalStorageService.instance.saveCachedPlaces(_places);
+        debugPrint('Successfully synced ${_places.length} places from Firestore.');
+      } else {
+        if (_places.isEmpty) {
+          _loadCachedPlaces();
+        }
+      }
     } catch (e) {
       _errorMessage = e.toString();
+      debugPrint('Error fetching places: $e');
+      if (_places.isEmpty) {
+        _loadCachedPlaces();
+      }
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -94,9 +123,21 @@ class PlacesProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _searchResults = await _placeRepository.searchPlaces(query);
+      if (ConnectivityService.instance.isConnected) {
+        _searchResults = await _placeRepository.searchPlaces(query);
+      } else {
+        // Fallback to local fuzzy search
+        final normalized = query.trim().toLowerCase();
+        _searchResults = _places.where((place) {
+          return place.name.toLowerCase().contains(normalized) ||
+              place.category.toLowerCase().contains(normalized) ||
+              place.location.toLowerCase().contains(normalized) ||
+              place.tags.any((t) => t.toLowerCase().contains(normalized));
+        }).toList();
+      }
     } catch (e) {
       _errorMessage = e.toString();
+      debugPrint('Error searching places: $e');
     } finally {
       _isLoading = false;
       notifyListeners();

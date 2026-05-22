@@ -15,6 +15,13 @@ class PlaceModel {
   final double longitude;
   final List<String> tags;
   final int reviewCount;
+  
+  final String description;
+  final int priceLevel;
+  final List<String> imageUrls;
+  final List<String> amenities;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   const PlaceModel({
     required this.id,
@@ -29,6 +36,12 @@ class PlaceModel {
     required this.longitude,
     required this.tags,
     required this.reviewCount,
+    this.description = '',
+    this.priceLevel = 2,
+    this.imageUrls = const [],
+    this.amenities = const [],
+    this.createdAt,
+    this.updatedAt,
   }) : assert(rating >= 0 && rating <= 5);
 
   PlaceModel copyWith({
@@ -44,6 +57,12 @@ class PlaceModel {
     double? longitude,
     List<String>? tags,
     int? reviewCount,
+    String? description,
+    int? priceLevel,
+    List<String>? imageUrls,
+    List<String>? amenities,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return PlaceModel(
       id: id ?? this.id,
@@ -58,7 +77,26 @@ class PlaceModel {
       longitude: longitude ?? this.longitude,
       tags: tags ?? this.tags,
       reviewCount: reviewCount ?? this.reviewCount,
+      description: description ?? this.description,
+      priceLevel: priceLevel ?? this.priceLevel,
+      imageUrls: imageUrls ?? this.imageUrls,
+      amenities: amenities ?? this.amenities,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
+  }
+
+  static DateTime? _parseDate(dynamic val) {
+    if (val == null) return null;
+    if (val is DateTime) return val;
+    if (val is String) return DateTime.tryParse(val);
+    if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
+    if (val.runtimeType.toString() == 'Timestamp' || val.toString().contains('Timestamp')) {
+      try {
+        return (val as dynamic).toDate();
+      } catch (_) {}
+    }
+    return null;
   }
 
   factory PlaceModel.fromMap(Map<String, dynamic> map) {
@@ -75,6 +113,12 @@ class PlaceModel {
       longitude: (map['longitude'] ?? 0).toDouble(),
       tags: List<String>.from(map['tags'] ?? []),
       reviewCount: map['reviewCount'] ?? 0,
+      description: map['description'] ?? '',
+      priceLevel: map['priceLevel'] ?? 2,
+      imageUrls: List<String>.from(map['imageUrls'] ?? []),
+      amenities: List<String>.from(map['amenities'] ?? []),
+      createdAt: _parseDate(map['createdAt']),
+      updatedAt: _parseDate(map['updatedAt']),
     );
   }
 
@@ -92,6 +136,12 @@ class PlaceModel {
       'longitude': longitude,
       'tags': tags,
       'reviewCount': reviewCount,
+      'description': description,
+      'priceLevel': priceLevel,
+      'imageUrls': imageUrls,
+      'amenities': amenities,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 
@@ -116,7 +166,13 @@ class PlaceModel {
         other.latitude == latitude &&
         other.longitude == longitude &&
         listEquals(other.tags, tags) &&
-        other.reviewCount == reviewCount;
+        other.reviewCount == reviewCount &&
+        other.description == description &&
+        other.priceLevel == priceLevel &&
+        listEquals(other.imageUrls, imageUrls) &&
+        listEquals(other.amenities, amenities) &&
+        other.createdAt == createdAt &&
+        other.updatedAt == updatedAt;
   }
 
   @override
@@ -132,6 +188,12 @@ class PlaceModel {
         latitude.hashCode ^
         longitude.hashCode ^
         tags.hashCode ^
-        reviewCount.hashCode;
+        reviewCount.hashCode ^
+        description.hashCode ^
+        priceLevel.hashCode ^
+        imageUrls.hashCode ^
+        amenities.hashCode ^
+        createdAt.hashCode ^
+        updatedAt.hashCode;
   }
 }
