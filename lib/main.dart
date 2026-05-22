@@ -11,9 +11,12 @@ import 'core/repositories/firebase/firebase_auth_repository.dart';
 import 'core/repositories/mock/mock_event_repository.dart';
 import 'core/repositories/mock/mock_network_repository.dart';
 import 'core/repositories/mock/mock_hangout_repository.dart';
+import 'core/repositories/mock/mock_saved_repository.dart';
+import 'core/repositories/mock/mock_review_repository.dart';
 import 'providers/places_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/saved_provider.dart';
+import 'providers/reviews_provider.dart';
 import 'providers/events_provider.dart';
 import 'providers/network_provider.dart';
 import 'providers/hangouts_provider.dart';
@@ -60,6 +63,8 @@ void main() async {
   final eventRepository = MockEventRepository();
   final networkRepository = MockNetworkRepository();
   final hangoutRepository = MockHangoutRepository();
+  final savedRepository = MockSavedRepository();
+  final reviewRepository = MockReviewRepository();
 
   runApp(
     MultiProvider(
@@ -71,8 +76,29 @@ void main() async {
           create: (_) =>
               AuthProvider(authRepository: authRepository)..checkCurrentUser(),
         ),
-        ChangeNotifierProvider(
-          create: (_) => SavedProvider(placeRepository: placeRepository),
+        ChangeNotifierProxyProvider<AuthProvider, SavedProvider>(
+          create: (context) => SavedProvider(
+            savedRepository: savedRepository,
+            authProvider: Provider.of<AuthProvider>(context, listen: false),
+          ),
+          update: (context, authProvider, previous) =>
+              previous ??
+              SavedProvider(
+                savedRepository: savedRepository,
+                authProvider: authProvider,
+              ),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, ReviewsProvider>(
+          create: (context) => ReviewsProvider(
+            reviewRepository: reviewRepository,
+            authProvider: Provider.of<AuthProvider>(context, listen: false),
+          ),
+          update: (context, authProvider, previous) =>
+              previous ??
+              ReviewsProvider(
+                reviewRepository: reviewRepository,
+                authProvider: authProvider,
+              ),
         ),
         ChangeNotifierProvider(
           create: (_) => EventsProvider(eventRepository: eventRepository),

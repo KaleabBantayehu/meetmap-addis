@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
-import '../core/repositories/place_repository.dart';
+import '../core/repositories/saved_repository.dart';
 import '../shared/models/place_model.dart';
 import '../core/storage/local_storage_service.dart';
 import '../core/storage/cache_keys.dart';
 import '../core/storage/connectivity_service.dart';
+import 'auth_provider.dart';
 
 class SavedProvider with ChangeNotifier {
-  final PlaceRepository _placeRepository;
+  final SavedRepository _savedRepository;
+  final AuthProvider _authProvider;
 
-  SavedProvider({required PlaceRepository placeRepository})
-      : _placeRepository = placeRepository {
+  SavedProvider({
+    required SavedRepository savedRepository,
+    required AuthProvider authProvider,
+  })  : _savedRepository = savedRepository,
+        _authProvider = authProvider {
     _loadFromCache();
+    // Auto-fetch if user is already authenticated
+    if (_authProvider.isAuthenticated) {
+      fetchSavedPlaces();
+    }
   }
 
   List<PlaceModel> _savedPlaces = [];
@@ -25,7 +34,8 @@ class SavedProvider with ChangeNotifier {
   void _loadFromCache() {
     try {
       _savedPlaces = LocalStorageService.instance.getSavedPlaces();
-      debugPrint('Preloaded ${_savedPlaces.length} saved places from cache on startup.');
+      debugPrint('Preloaded ${_savedPlaces.length} saved places from cache.');
+      if (_savedPlaces.isNotEmpty) notifyListeners();
     } catch (e) {
       debugPrint('Error preloading saved places: $e');
     }
@@ -39,30 +49,29 @@ class SavedProvider with ChangeNotifier {
         CacheKeys.savedPlacesLastSync,
         DateTime.now().toIso8601String(),
       );
-      debugPrint('Saved ${_savedPlaces.length} places to cache.');
     } catch (e) {
       debugPrint('Error saving places to cache: $e');
     }
   }
 
   Future<void> fetchSavedPlaces() async {
+    final userId = _authProvider.currentUser?.id;
+    if (userId == null) return;
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
       if (ConnectivityService.instance.isConnected) {
-        final places = await _placeRepository.fetchSavedPlaces();
+        final places = await _savedRepository.fetchSavedPlaces(userId);
         _savedPlaces = places;
         _saveToCache();
       } else {
-        debugPrint('Device is offline. Loading saved places from cache.');
         _loadFromCache();
       }
     } catch (e) {
-      _errorMessage = e.toString();
-      debugPrint('Error fetching saved places from repository: $e');
-      // If error occurs, keep cached data
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
       if (_savedPlaces.isEmpty) {
         _loadFromCache();
       }
@@ -76,20 +85,46 @@ class SavedProvider with ChangeNotifier {
     return _savedPlaces.any((p) => p.id == placeId);
   }
 
-  void toggleSaved(PlaceModel place) {
-    final index = _savedPlaces.indexWhere((p) => p.id == place.id);
-    if (index >= 0) {
-      _savedPlaces.removeAt(index);
-    } else {
+  Future<void> toggleSaved(PlaceModel place) async {
+    final userId = _authProvider.currentUser?.id;
+    if (userId == null) {
+      _errorMessage = 'Must be logged in to save places.';
+      notifyListeners();
+      return;
+    }
+
+    final currentlySaved = isSaved(place.id);
+    final isSaving = !currentlySaved;
+
+    // Optimistic UI Update
+    if (isSaving) {
       _savedPlaces.add(place);
+    } else {
+      _savedPlaces.removeWhere((p) => p.id == place.id);
     }
     _saveToCache();
     notifyListeners();
+
+    // Background Backend Sync
+    try {
+      await _savedRepository.toggleSaved(userId, place.id, isSaving);
+    } catch (e) {
+      // Rollback on failure
+      debugPrint('Failed to toggle saved place in backend. Rolling back. $e');
+      if (isSaving) {
+        _savedPlaces.removeWhere((p) => p.id == place.id);
+      } else {
+        _savedPlaces.add(place);
+      }
+      _saveToCache();
+      _errorMessage = 'Failed to sync save status. Please check your connection.';
+      notifyListeners();
+    }
   }
 
   void removeSaved(String placeId) {
-    _savedPlaces.removeWhere((p) => p.id == placeId);
-    _saveToCache();
-    notifyListeners();
+    // Convenience wrapper for UI consistency
+    final place = _savedPlaces.firstWhere((p) => p.id == placeId, orElse: () => throw Exception('Place not found'));
+    toggleSaved(place);
   }
 }

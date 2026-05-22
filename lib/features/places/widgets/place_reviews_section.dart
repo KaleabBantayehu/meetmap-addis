@@ -1,109 +1,140 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/features/reviews/screens/add_review_screen.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
+import 'package:meetmap_addis/shared/models/review_model.dart';
+import 'package:meetmap_addis/providers/reviews_provider.dart';
+import 'package:meetmap_addis/providers/auth_provider.dart';
 
-class PlaceReviewsSection extends StatelessWidget {
+class PlaceReviewsSection extends StatefulWidget {
   const PlaceReviewsSection({super.key, required this.place});
 
   final PlaceModel place;
 
-  static const List<_ReviewPreview> _reviews = [
-    _ReviewPreview(
-      author: 'Miriam A.',
-      date: '2 days ago',
-      rating: 5,
-      text:
-          'Great atmosphere for a quick meeting. The service was warm and the coffee was excellent.',
-    ),
-    _ReviewPreview(
-      author: 'Dawit K.',
-      date: '1 week ago',
-      rating: 4,
-      text:
-          'Comfortable spot with reliable seating. It gets busy around lunch, but still worth it.',
-    ),
-    _ReviewPreview(
-      author: 'Selam T.',
-      date: '3 weeks ago',
-      rating: 5,
-      text:
-          'Loved the location and calm mood. A good place to catch up with friends.',
-    ),
-  ];
+  @override
+  State<PlaceReviewsSection> createState() => _PlaceReviewsSectionState();
+}
+
+class _PlaceReviewsSectionState extends State<PlaceReviewsSection> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ReviewsProvider>().fetchReviews(widget.place.id);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final visibleReviews = _reviews.take(2).toList();
+    return Consumer<ReviewsProvider>(
+      builder: (context, reviewsProvider, child) {
+        final reviews = reviewsProvider.getReviews(widget.place.id);
+        final isLoading = reviewsProvider.isLoading(widget.place.id);
+        final visibleReviews = reviews.take(2).toList();
+        
+        // Calculate dynamic average if we have local reviews
+        final averageRating = reviews.isEmpty 
+            ? widget.place.rating 
+            : reviews.map((r) => r.rating).reduce((a, b) => a + b) / reviews.length;
+        
+        final reviewCount = reviews.isEmpty 
+            ? widget.place.reviewCount 
+            : reviews.length;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  'User Reviews',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'User Reviews',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
+                  if (reviews.length > 2)
+                    TextButton(
+                      onPressed: () => _showAllReviews(context, reviews),
+                      child: const Text('View all'),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '${averageRating.toStringAsFixed(1)} average from $reviewCount reviews',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
                 ),
               ),
-              TextButton(
-                onPressed: () => _showAllReviews(context),
-                child: const Text('View all'),
+              const SizedBox(height: 16),
+              if (isLoading && reviews.isEmpty)
+                const Center(child: CircularProgressIndicator())
+              else if (reviews.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Text(
+                    'No reviews yet. Be the first to review!',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                )
+              else
+                ...visibleReviews.map(
+                  (review) => Padding(
+                    key: ValueKey(review.id), // Added unique key for list integrity
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: _ReviewTile(review: review, placeId: widget.place.id),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.rate_review_rounded),
+                  label: const Text('Write a Review'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () {
+                    final authProvider = context.read<AuthProvider>();
+                    if (!authProvider.isAuthenticated) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please log in to write a review')),
+                      );
+                      return;
+                    }
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => AddReviewScreen(place: widget.place),
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            '${place.rating.toStringAsFixed(1)} average from ${place.reviewCount} reviews',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 16),
-          ...visibleReviews.map(
-            (review) => Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: _ReviewTile(review: review),
-            ),
-          ),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: OutlinedButton.icon(
-              icon: const Icon(Icons.rate_review_rounded),
-              label: const Text('Write a Review'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => AddReviewScreen(place: place),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  void _showAllReviews(BuildContext context) {
+  void _showAllReviews(BuildContext context, List<ReviewModel> allReviews) {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
@@ -113,25 +144,29 @@ class PlaceReviewsSection extends StatelessWidget {
       ),
       builder: (context) {
         return SafeArea(
-          child: ListView(
+          child: ListView.builder( // Changed to builder pattern to protect memory and explicit index boundaries
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
             shrinkWrap: true,
-            children: [
-              Text(
-                'All Reviews',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ..._reviews.map(
-                (review) => Padding(
+            itemCount: allReviews.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: _ReviewTile(review: review),
-                ),
-              ),
-            ],
+                  child: Text(
+                    'All Reviews',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                );
+              }
+              final review = allReviews[index - 1];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _ReviewTile(review: review, placeId: widget.place.id),
+              );
+            },
           ),
         );
       },
@@ -140,12 +175,33 @@ class PlaceReviewsSection extends StatelessWidget {
 }
 
 class _ReviewTile extends StatelessWidget {
-  const _ReviewTile({required this.review});
+  const _ReviewTile({required this.review, required this.placeId});
 
-  final _ReviewPreview review;
+  final ReviewModel review;
+  final String placeId;
+
+  String _formatDate(DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inDays > 7) {
+      return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    } else if (diff.inDays > 0) {
+      return '${diff.inDays} days ago';
+    } else if (diff.inHours > 0) {
+      return '${diff.inHours} hours ago';
+    } else {
+      return 'Just now';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final currentUserId = context.watch<AuthProvider>().currentUser?.id;
+    final isLiked = currentUserId != null && review.likedUserIds.contains(currentUserId);
+    final isOwnReview = currentUserId == review.userId;
+
+    // Defensively clamp rating count between 0 and 5 to protect list loop generation bounds
+    final starCount = review.rating.round().clamp(0, 5);
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -161,13 +217,7 @@ class _ReviewTile extends StatelessWidget {
               CircleAvatar(
                 radius: 18,
                 backgroundColor: AppColors.primaryLight,
-                child: Text(
-                  review.author.isEmpty ? '?' : review.author[0],
-                  style: const TextStyle(
-                    color: AppColors.primaryDark,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                child: const Icon(Icons.person, color: AppColors.primaryDark, size: 20),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -175,14 +225,14 @@ class _ReviewTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      review.author,
+                      isOwnReview ? 'You' : (review.userId.length > 4 ? 'User ${review.userId.substring(0, 4)}' : 'User'),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     Text(
-                      review.date,
+                      _formatDate(review.createdAt),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -193,7 +243,7 @@ class _ReviewTile extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(
-                  review.rating,
+                  starCount,
                   (_) => const Icon(
                     Icons.star_rounded,
                     color: AppColors.accent,
@@ -205,28 +255,60 @@ class _ReviewTile extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            review.text,
+            review.reviewText,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppColors.textSecondary,
               height: 1.45,
             ),
           ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              InkWell(
+                onTap: () {
+                  context.read<ReviewsProvider>().toggleLike(review.id, placeId);
+                },
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isLiked ? Icons.thumb_up_alt_rounded : Icons.thumb_up_alt_outlined,
+                        size: 16,
+                        color: isLiked ? AppColors.primary : AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${review.likedUserIds.length}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: isLiked ? AppColors.primary : AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (isOwnReview)
+                InkWell(
+                  onTap: () {
+                    context.read<ReviewsProvider>().deleteReview(review.id, placeId);
+                  },
+                  borderRadius: BorderRadius.circular(4),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Icon(
+                      Icons.delete_outline,
+                      size: 18,
+                      color: AppColors.error,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );
   }
-}
-
-class _ReviewPreview {
-  const _ReviewPreview({
-    required this.author,
-    required this.date,
-    required this.rating,
-    required this.text,
-  });
-
-  final String author;
-  final String date;
-  final int rating;
-  final String text;
 }

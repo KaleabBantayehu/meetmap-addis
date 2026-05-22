@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import '../../shared/models/place_model.dart';
+import '../../shared/models/review_model.dart';
 import 'cache_keys.dart';
 
 class LocalStorageService {
@@ -81,6 +82,30 @@ class LocalStorageService {
     final List<Map<String, dynamic>> maps = places.map((p) => p.toMap()).toList();
     final jsonStr = json.encode(maps);
     await _prefs.setString(CacheKeys.placesCache, jsonStr);
+  }
+
+  // --- Reviews Cache (per-place) ---
+  List<ReviewModel> getCachedReviews(String placeId) {
+    final jsonStr = _prefs.getString(CacheKeys.reviewsForPlace(placeId));
+    if (jsonStr == null) return [];
+    try {
+      final List<dynamic> decoded = json.decode(jsonStr);
+      return decoded
+          .map((item) => ReviewModel.fromMap(Map<String, dynamic>.from(item)))
+          .toList();
+    } catch (e) {
+      debugPrint('Error parsing cached reviews for $placeId: $e');
+      return [];
+    }
+  }
+
+  Future<void> saveCachedReviews(String placeId, List<ReviewModel> reviews) async {
+    final maps = reviews.map((r) => r.toMap()).toList();
+    await _prefs.setString(CacheKeys.reviewsForPlace(placeId), json.encode(maps));
+  }
+
+  Future<void> clearCachedReviews(String placeId) async {
+    await _prefs.remove(CacheKeys.reviewsForPlace(placeId));
   }
 
   // --- General Support for Timestamps and Metadata ---

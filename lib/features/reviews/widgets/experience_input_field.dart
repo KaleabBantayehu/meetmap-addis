@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 
 class ExperienceInputField extends StatelessWidget {
-  const ExperienceInputField({super.key});
+  const ExperienceInputField({super.key, this.controller});
+
+  final TextEditingController? controller;
 
   @override
   Widget build(BuildContext context) {
@@ -12,6 +14,7 @@ class ExperienceInputField extends StatelessWidget {
         const ReviewSectionLabel('SHARE YOUR EXPERIENCE'),
         const SizedBox(height: 12),
         TextField(
+          controller: controller,
           minLines: 7,
           maxLines: 7,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(

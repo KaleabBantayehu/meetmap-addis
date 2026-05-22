@@ -33,23 +33,42 @@ class MockReviewRepository implements ReviewRepository {
   ];
 
   @override
-  Future<List<ReviewModel>> getReviews(String placeId) async {
+  Future<List<ReviewModel>> fetchReviews(String placeId) async {
     await Future.delayed(const Duration(milliseconds: 300));
     return _reviews.where((r) => r.placeId == placeId).toList();
   }
 
   @override
-  Future<ReviewModel> submitReview(ReviewModel review) async {
+  Future<ReviewModel> createReview(String placeId, ReviewModel review) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    final newReview = ReviewModel(
+    final newReview = review.copyWith(
       id: 'rev_${_reviews.length + 1}',
-      placeId: review.placeId,
-      userId: review.userId,
-      rating: review.rating,
-      reviewText: review.reviewText,
+      placeId: placeId,
       createdAt: DateTime.now(),
     );
     _reviews.add(newReview);
     return newReview;
+  }
+
+  @override
+  Future<void> deleteReview(String reviewId, String placeId) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    _reviews.removeWhere((r) => r.id == reviewId && r.placeId == placeId);
+  }
+
+  @override
+  Future<void> toggleLike(String reviewId, String placeId, String userId, bool isLiking) async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    final index = _reviews.indexWhere((r) => r.id == reviewId);
+    if (index != -1) {
+      final review = _reviews[index];
+      final likes = List<String>.from(review.likedUserIds);
+      if (isLiking) {
+        if (!likes.contains(userId)) likes.add(userId);
+      } else {
+        likes.remove(userId);
+      }
+      _reviews[index] = review.copyWith(likedUserIds: likes);
+    }
   }
 }

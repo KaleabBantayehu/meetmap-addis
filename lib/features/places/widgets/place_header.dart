@@ -1,7 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
+import 'package:meetmap_addis/providers/saved_provider.dart';
 
 class PlaceHeader extends StatelessWidget {
   const PlaceHeader({super.key, required this.place});
@@ -34,10 +36,10 @@ class PlaceHeader extends StatelessWidget {
         ),
       ),
       centerTitle: true,
-      actions: const [
+      actions: [
         Padding(
-          padding: EdgeInsets.only(right: 16),
-          child: FavoritePlaceButton(),
+          padding: const EdgeInsets.only(right: 16),
+          child: FavoritePlaceButton(place: place),
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
@@ -75,29 +77,28 @@ class PlaceHeader extends StatelessWidget {
   }
 }
 
-class FavoritePlaceButton extends StatefulWidget {
-  const FavoritePlaceButton({super.key});
+class FavoritePlaceButton extends StatelessWidget {
+  const FavoritePlaceButton({super.key, required this.place});
 
-  @override
-  State<FavoritePlaceButton> createState() => _FavoritePlaceButtonState();
-}
-
-class _FavoritePlaceButtonState extends State<FavoritePlaceButton> {
-  bool _isFavorite = false;
+  final PlaceModel place;
 
   @override
   Widget build(BuildContext context) {
-    return _HeaderIconButton(
-      icon: _isFavorite
-          ? Icons.favorite_rounded
-          : Icons.favorite_border_rounded,
-      semanticLabel: _isFavorite ? 'Remove from saved places' : 'Save place',
-      onTap: () {
-        setState(() {
-          _isFavorite = !_isFavorite;
-        });
+    return Consumer<SavedProvider>(
+      builder: (context, savedProvider, _) {
+        final isFavorite = savedProvider.isSaved(place.id);
+        
+        return _HeaderIconButton(
+          icon: isFavorite
+              ? Icons.favorite_rounded
+              : Icons.favorite_border_rounded,
+          semanticLabel: isFavorite ? 'Remove from saved places' : 'Save place',
+          onTap: () {
+            savedProvider.toggleSaved(place);
+          },
+          iconColor: isFavorite ? AppColors.error : AppColors.primary,
+        );
       },
-      iconColor: _isFavorite ? AppColors.error : AppColors.primary,
     );
   }
 }
