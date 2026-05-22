@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+
 import 'core/theme/app_theme.dart';
 import 'routes/app_routes.dart';
 import 'core/repositories/mock/mock_place_repository.dart';
@@ -21,6 +24,16 @@ void main() async {
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // Activate Firebase App Check.
+    // In debug/dev builds: uses a debug token (printed to console on first run).
+    //   → Register that token once in: Firebase Console > App Check > your app > Manage debug tokens.
+    // In release builds: uses Play Integrity (no reCAPTCHA fallback).
+    await FirebaseAppCheck.instance.activate(
+      providerAndroid: kDebugMode
+          ? AndroidDebugProvider()
+          : AndroidPlayIntegrityProvider(),
     );
   } catch (e) {
     debugPrint('Firebase initialization failed: $e');

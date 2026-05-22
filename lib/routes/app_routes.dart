@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../features/auth/screens/login_screen.dart';
+import '../features/auth/screens/auth_gate.dart';
 import '../features/explore/screens/explore_screen.dart';
 import '../features/explore/screens/filter_screen.dart';
 import '../features/navigation/screens/main_navigation.dart';
@@ -29,7 +29,7 @@ class AppRoutes {
   static const network = '/network';
 
   static Map<String, WidgetBuilder> routes = {
-    login: (context) => const LoginScreen(),
+    login: (context) => const AuthGate(),
     home: (context) => const MainNavigation(),
     explore: (context) => const ExploreScreen(),
     profile: (context) => const ProfileScreen(),

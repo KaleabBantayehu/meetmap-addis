@@ -41,7 +41,9 @@ dependencies:
   firebase_core: ^4.9.0
   firebase_auth: ^6.5.1
   cloud_firestore: ^6.4.1
-  firebase_storage: ^13.4.1
+  google_sign_in: ^7.2.0
+  firebase_app_check: ^0.4.4+1
+
 
 dev_dependencies:
   flutter_test:
@@ -61,8 +63,8 @@ dev_dependencies:
 flutter:
 
   # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
+  # included with your application, so that you can use the icons in the
+  # material Icons class.
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
@@ -91,7 +93,7 @@ flutter:
           weight: 600
         - asset: assets/fonts/Manrope-Bold.ttf
           weight: 700
-          
+  
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package

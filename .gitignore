@@ -118,9 +118,7 @@ app.*.symbols
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
 # --- SENSITIVE & PROJECT CONFIGS (CRITICAL) ---
-android/app/google-services.json
 firebase.json
-lib/firebase_options.dart
 .env
 *.env
 service-account*.json
@@ -140,3 +138,8 @@ build/
 .pub-cache/
 .flutter-plugins
 .flutter-plugins-dependencies
+
+# Firebase configuration files
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart

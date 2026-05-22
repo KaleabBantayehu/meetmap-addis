@@ -42,6 +42,7 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   void _signup() async {
+    if (_isLoading) return;
     if (!_formKey.currentState!.validate()) return;
 
     if (!_agreedToTerms) {
@@ -52,10 +53,11 @@ class _SignupScreenState extends State<SignupScreen> {
     }
 
     setState(() => _isLoading = true);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    authProvider.clearError();
 
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final success = await authProvider.signup(
+      final success = await authProvider.signupWithEmail(
         _emailController.text.trim(),
         _passwordController.text,
         _nameController.text.trim(),
@@ -65,7 +67,7 @@ class _SignupScreenState extends State<SignupScreen> {
       setState(() => _isLoading = false);
 
       if (success) {
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       } else {
         _showAuthError(authProvider.errorMessage ?? 'Sign up failed');
       }
@@ -73,6 +75,32 @@ class _SignupScreenState extends State<SignupScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       _showAuthError('An unexpected error occurred.');
+    }
+  }
+
+  void _loginWithGoogle() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    authProvider.clearError();
+
+    try {
+      final success = await authProvider.loginWithGoogle();
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (success) {
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      } else {
+        _showAuthError(
+          authProvider.errorMessage ?? 'Google authentication failed',
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      _showAuthError('An unexpected error occurred during Google Sign-In.');
     }
   }
 
@@ -256,7 +284,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         CustomButton(
                           text: 'Create Account',
                           isLoading: _isLoading,
-                          onPressed: _signup,
+                          onPressed: () { _signup(); },
                         ),
 
                         const SizedBox(height: 24),
@@ -266,23 +294,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         const SizedBox(height: 24),
 
                         GoogleSignInButton(
-                          onPressed: () {
-                            // TODO: Google Sign Up
-                            // TODO: replace with real authentication logic (temporary dev routing)
-                            Navigator.pushReplacementNamed(context, '/home');
-                          },
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        Text(
-                          'DEV MODE: UI Navigation Only',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary.withValues(
-                              alpha: 0.5,
-                            ),
-                          ),
-                          textAlign: TextAlign.center,
+                          onPressed: _isLoading ? () {} : () { _loginWithGoogle(); },
                         ),
 
                         const SizedBox(height: 8),

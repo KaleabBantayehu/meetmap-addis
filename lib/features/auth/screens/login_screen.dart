@@ -11,6 +11,7 @@ import '../widgets/auth_header.dart';
 import '../widgets/auth_method_selector.dart';
 import '../widgets/google_signin_button.dart';
 import 'signup_screen.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -39,13 +40,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _login() async {
+    if (_isLoading) return;
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    authProvider.clearError();
 
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final success = await authProvider.login(
+      final success = await authProvider.loginWithEmail(
         _emailController.text.trim(),
         _passwordController.text,
       );
@@ -61,11 +64,38 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _showAuthError('An unexpected error occurred.');
+      // This grabs the real error from your repository and cleans it up
+      _showAuthError(e.toString().replaceAll('Exception: ', ''));
     }
   }
 
-  // ignore: unused_element
+  void _loginWithGoogle() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    authProvider.clearError();
+
+    try {
+      final success = await authProvider.loginWithGoogle();
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (success) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        _showAuthError(
+          authProvider.errorMessage ?? 'Google authentication failed',
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      // This grabs the real error from your repository and cleans it up
+      _showAuthError(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
   void _showAuthError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -175,7 +205,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       TextButton(
                         onPressed: () {
-                          // TODO: forgot password screen
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ForgotPasswordScreen(),
+                            ),
+                          );
                         },
                         child: Text(
                           'Forgot Password?',
@@ -223,7 +258,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   CustomButton(
                     text: 'Sign In',
                     isLoading: _isLoading,
-                    onPressed: _login,
+                    onPressed: () {
+                      _login();
+                    },
                   ),
 
                   const SizedBox(height: 24),
@@ -233,20 +270,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 24),
 
                   GoogleSignInButton(
-                    onPressed: () {
-                      // TODO: Google Sign In
-                      // TODO: replace with real authentication logic (temporary dev routing)
-                      Navigator.pushReplacementNamed(context, '/home');
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  Text(
-                    'DEV MODE: UI Navigation Only',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary.withValues(alpha: 0.5),
-                    ),
+                    onPressed: _isLoading
+                        ? () {}
+                        : () {
+                            _loginWithGoogle();
+                          },
                   ),
 
                   const SizedBox(height: 8),
