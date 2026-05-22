@@ -9,6 +9,7 @@ class SearchScreenHeader extends StatelessWidget {
     required this.onBack,
     required this.onChanged,
     required this.onClear,
+    this.onSubmitted,
   });
 
   final TextEditingController controller;
@@ -16,6 +17,7 @@ class SearchScreenHeader extends StatelessWidget {
   final VoidCallback onBack;
   final ValueChanged<String> onChanged;
   final VoidCallback onClear;
+  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +50,7 @@ class SearchScreenHeader extends StatelessWidget {
               isTyping: isTyping,
               onChanged: onChanged,
               onClear: onClear,
+              onSubmitted: onSubmitted,
             ),
           ),
         ],
@@ -63,12 +66,14 @@ class SearchInputField extends StatelessWidget {
     required this.isTyping,
     required this.onChanged,
     required this.onClear,
+    this.onSubmitted,
   });
 
   final TextEditingController controller;
   final bool isTyping;
   final ValueChanged<String> onChanged;
   final VoidCallback onClear;
+  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -76,6 +81,7 @@ class SearchInputField extends StatelessWidget {
       controller: controller,
       autofocus: true,
       onChanged: onChanged,
+      onSubmitted: onSubmitted,
       textInputAction: TextInputAction.search,
       decoration: InputDecoration(
         hintText: 'Search for cafes, restaurants...',

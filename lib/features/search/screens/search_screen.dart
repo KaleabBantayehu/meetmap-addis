@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
+import 'package:meetmap_addis/core/storage/connectivity_service.dart';
 import 'package:meetmap_addis/features/places/screens/place_detail_screen.dart';
 import 'package:meetmap_addis/features/search/widgets/browse_category_grid.dart';
 import 'package:meetmap_addis/features/search/widgets/recent_search_chips.dart';
@@ -21,9 +23,9 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController searchController = TextEditingController();
-  final List<String> recentSearches = ['Tomoca Coffee', 'Bole Road', 'Co-work'];
   String selectedCategory = '';
   String query = '';
+  Timer? _debounce;
 
   static const List<String> defaultSuggestionIds = ['2', '4', '1', '5'];
 
@@ -78,6 +80,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void dispose() {
     searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -85,9 +88,24 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     final placesProvider = Provider.of<PlacesProvider>(context);
     final savedProvider = Provider.of<SavedProvider>(context);
-    final places = placesProvider.places;
+    
+    // Determine the list of places to display:
+    final List<PlaceModel> results;
+    if (query.trim().isEmpty) {
+      results = defaultSuggestionIds
+          .map((id) {
+            final found = placesProvider.places.where((place) => place.id == id);
+            return found.isNotEmpty ? found.first : null;
+          })
+          .whereType<PlaceModel>()
+          .toList();
+    } else if (ConnectivityService.instance.isConnected) {
+      results = placesProvider.searchResults;
+    } else {
+      results = getFilteredPlaces(placesProvider.places);
+    }
+
     final isLoading = placesProvider.isLoading;
-    final results = getFilteredPlaces(places);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -99,20 +117,37 @@ class _SearchScreenState extends State<SearchScreen> {
               isTyping: query.isNotEmpty,
               onBack: () => Navigator.of(context).pop(),
               onChanged: (value) {
-                // TODO: Debounce and forward search text to backend search API.
-                setState(() => query = value);
+                setState(() {
+                  query = value;
+                });
+                
+                // Debounce the remote search request
+                if (_debounce?.isActive ?? false) _debounce!.cancel();
+                _debounce = Timer(const Duration(milliseconds: 300), () {
+                  if (mounted && value.isNotEmpty && ConnectivityService.instance.isConnected) {
+                    placesProvider.searchPlaces(value);
+                  }
+                });
               },
               onClear: clearSearch,
+              onSubmitted: (value) {
+                if (value.isNotEmpty) {
+                  placesProvider.addRecentSearch(value);
+                  if (ConnectivityService.instance.isConnected) {
+                    placesProvider.searchPlaces(value);
+                  }
+                }
+              },
             ),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 34, 20, 32),
                 children: [
                   RecentSearchChips(
-                    searches: recentSearches,
+                    searches: placesProvider.recentSearches,
                     onSelected: useRecentSearch,
-                    onRemove: removeRecentSearch,
-                    onClearAll: clearRecentSearches,
+                    onRemove: (value) => placesProvider.removeRecentSearch(value),
+                    onClearAll: () => placesProvider.clearRecentSearches(),
                   ),
                   const SizedBox(height: 38),
                   const SearchSectionHeader(title: 'Suggested Places'),
@@ -132,7 +167,14 @@ class _SearchScreenState extends State<SearchScreen> {
                           place: place,
                           distanceLabel: distanceLabelFor(place.id),
                           isSaved: savedProvider.isSaved(place.id),
-                          onTap: () => openPlaceDetails(place),
+                          onTap: () {
+                            if (query.isNotEmpty) {
+                              placesProvider.addRecentSearch(query);
+                            } else {
+                              placesProvider.addRecentSearch(place.name);
+                            }
+                            openPlaceDetails(place);
+                          },
                           onSaveToggle: () => savedProvider.toggleSaved(place),
                         ),
                       ),
@@ -159,27 +201,30 @@ class _SearchScreenState extends State<SearchScreen> {
   void useRecentSearch(String value) {
     searchController.text = value;
     setState(() => query = value);
-  }
-
-  void removeRecentSearch(String value) {
-    // TODO: Persist recent search removals for the signed-in user.
-    setState(() => recentSearches.remove(value));
-  }
-
-  void clearRecentSearches() {
-    // TODO: Clear recent searches through user search history API.
-    setState(recentSearches.clear);
+    
+    final placesProvider = Provider.of<PlacesProvider>(context, listen: false);
+    placesProvider.addRecentSearch(value);
+    
+    if (ConnectivityService.instance.isConnected) {
+      placesProvider.searchPlaces(value);
+    }
   }
 
   void selectCategory(String category) {
-    // TODO: Send category filter to backend search endpoint.
+    final nextCategory = selectedCategory == category ? '' : category;
     setState(() {
-      selectedCategory = selectedCategory == category ? '' : category;
+      selectedCategory = nextCategory;
     });
+    
+    if (ConnectivityService.instance.isConnected) {
+      final activeQuery = nextCategory.isNotEmpty ? nextCategory : query;
+      if (activeQuery.isNotEmpty) {
+        Provider.of<PlacesProvider>(context, listen: false).searchPlaces(activeQuery);
+      }
+    }
   }
 
   void openPlaceDetails(PlaceModel place) {
-    // TODO: Replace mock model navigation with API-backed place lookup.
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => PlaceDetailScreen(place: place)));

@@ -19,8 +19,24 @@ import 'providers/network_provider.dart';
 import 'providers/hangouts_provider.dart';
 import 'firebase_options.dart';
 
+import 'core/storage/local_storage_service.dart';
+import 'core/storage/secure_storage_service.dart';
+import 'core/storage/connectivity_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 1. LocalStorageService.init()
+  // 2. SecureStorageService.init()
+  // 3. ConnectivityService.init()
+  try {
+    await LocalStorageService.init();
+    await SecureStorageService.init();
+    await ConnectivityService.init();
+  } catch (e) {
+    debugPrint('Local services initialization failed: $e');
+  }
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,

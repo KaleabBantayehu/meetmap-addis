@@ -4,6 +4,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import '../../../shared/models/user_model.dart';
 import '../auth_repository.dart';
+import '../../storage/cache_keys.dart';
+import '../../storage/secure_storage_service.dart';
+import '../../storage/local_storage_service.dart';
 
 class FirebaseAuthRepository implements AuthRepository {
   final fb.FirebaseAuth _firebaseAuth = fb.FirebaseAuth.instance;
@@ -37,7 +40,27 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Stream<UserModel?> get authStateChanges {
     return _firebaseAuth.authStateChanges().asyncMap((fbUser) async {
-      if (fbUser == null) return null;
+      if (fbUser == null) {
+        try {
+          await SecureStorageService.instance.delete(CacheKeys.userSession);
+        } catch (_) {}
+        return null;
+      }
+
+      // 1. Try cache first to avoid Firestore lookup if same user is logged in
+      try {
+        final cachedJson = await SecureStorageService.instance.read(CacheKeys.userSession);
+        if (cachedJson != null) {
+          final cachedUser = UserModel.fromJson(cachedJson);
+          if (cachedUser.id == fbUser.uid) {
+            return cachedUser;
+          }
+        }
+      } catch (e) {
+        debugPrint('Error reading user session cache in authStateChanges: $e');
+      }
+
+      // 2. Fetch from Firestore
       try {
         final doc = await _firestore
             .collection('users')
@@ -57,20 +80,54 @@ class FirebaseAuthRepository implements AuthRepository {
               data['createdAt'] = DateTime.now().toIso8601String();
             }
           }
-          return UserModel.fromMap(data);
+          final userModel = UserModel.fromMap(data);
+          // Cache the profile and save last sync timestamp
+          try {
+            await SecureStorageService.instance.write(CacheKeys.userSession, userModel.toJson());
+            await LocalStorageService.instance.setString(
+              CacheKeys.profileLastSync,
+              DateTime.now().toIso8601String(),
+            );
+          } catch (_) {}
+          return userModel;
         }
       } catch (e) {
         debugPrint('Error mapping authStateChanges from Firestore: $e');
       }
-      return _mapFirebaseUser(fbUser);
+
+      // 3. Fallback: map from Firebase Auth
+      final fallbackUser = _mapFirebaseUser(fbUser);
+      try {
+        await SecureStorageService.instance.write(CacheKeys.userSession, fallbackUser.toJson());
+      } catch (_) {}
+      return fallbackUser;
     });
   }
 
   @override
   Future<UserModel?> getCurrentUser() async {
     final user = _firebaseAuth.currentUser;
-    if (user == null) return null;
+    if (user == null) {
+      try {
+        await SecureStorageService.instance.delete(CacheKeys.userSession);
+      } catch (_) {}
+      return null;
+    }
 
+    // 1. Try cache first
+    try {
+      final cachedJson = await SecureStorageService.instance.read(CacheKeys.userSession);
+      if (cachedJson != null) {
+        final cachedUser = UserModel.fromJson(cachedJson);
+        if (cachedUser.id == user.uid) {
+          return cachedUser;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error reading user session cache in getCurrentUser: $e');
+    }
+
+    // 2. Fetch from Firestore
     try {
       final doc = await _firestore
           .collection('users')
@@ -90,13 +147,26 @@ class FirebaseAuthRepository implements AuthRepository {
             data['createdAt'] = DateTime.now().toIso8601String();
           }
         }
-        return UserModel.fromMap(data);
+        final userModel = UserModel.fromMap(data);
+        try {
+          await SecureStorageService.instance.write(CacheKeys.userSession, userModel.toJson());
+          await LocalStorageService.instance.setString(
+            CacheKeys.profileLastSync,
+            DateTime.now().toIso8601String(),
+          );
+        } catch (_) {}
+        return userModel;
       }
     } catch (e) {
       debugPrint('Error getting current user from Firestore: $e');
     }
 
-    return _mapFirebaseUser(user);
+    // 3. Fallback: map from Firebase Auth
+    final fallbackUser = _mapFirebaseUser(user);
+    try {
+      await SecureStorageService.instance.write(CacheKeys.userSession, fallbackUser.toJson());
+    } catch (_) {}
+    return fallbackUser;
   }
 
   @override
