@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
+import 'package:meetmap_addis/providers/auth_provider.dart';
+import 'package:meetmap_addis/shared/models/user_model.dart';
+import 'package:provider/provider.dart';
 import '../widgets/labeled_text_field.dart';
 import '../widgets/profile_image_picker.dart';
 
@@ -21,13 +24,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: 'Selamawit T.');
-    _emailController = TextEditingController(text: 'selam.t@meetmap.et');
-    _phoneController = TextEditingController(text: '+251 911 234 567');
-    _bioController = TextEditingController(
-      text:
-          'Marketing Strategist & Tech Enthusiast based in Bole. Love connecting with fellow professionals and exploring the hidden cafe gems of Addis Ababa.',
-    );
+    final user = context.read<AuthProvider>().currentUser;
+    _nameController = TextEditingController(text: user?.name ?? '');
+    _emailController = TextEditingController(text: user?.email ?? '');
+    _phoneController = TextEditingController(text: user?.phoneNumber ?? '');
+    _bioController = TextEditingController(text: user?.bio ?? '');
   }
 
   @override
@@ -41,6 +42,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+    final user = authProvider.currentUser;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -60,14 +64,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         elevation: 0,
         actions: [
           TextButton(
-            onPressed: () {
-              // TODO: Implement save logic
-              Navigator.of(context).pop();
-            },
-            child: const Text(
-              'Save',
+            onPressed: user == null || authProvider.isLoading
+                ? null
+                : () => _saveProfile(context, user),
+            child: Text(
+              authProvider.isLoading ? 'Saving' : 'Save',
               style: TextStyle(
-                color: AppColors.textSecondary,
+                color: user == null
+                    ? AppColors.textSecondary
+                    : AppColors.primary,
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
@@ -82,9 +87,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 20),
-            const ProfileImagePicker(
-              imageUrl: 'https://i.pravatar.cc/300?img=47',
-            ),
+            ProfileImagePicker(imageUrl: user?.profileImageUrl ?? ''),
             const SizedBox(height: 32),
             LabeledTextField(
               label: 'Full Name',
@@ -168,5 +171,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _saveProfile(BuildContext context, UserModel user) async {
+    final updatedUser = user.copyWith(
+      name: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      phoneNumber: _phoneController.text.trim(),
+      bio: _bioController.text.trim(),
+    );
+    final authProvider = context.read<AuthProvider>();
+    final success = await authProvider.updateProfile(updatedUser);
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? 'Profile updated.'
+              : authProvider.errorMessage ?? 'Failed to update profile.',
+        ),
+        backgroundColor: success ? AppColors.primary : AppColors.error,
+      ),
+    );
+    if (success) Navigator.of(context).pop();
   }
 }

@@ -1,29 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:meetmap_addis/shared/models/place_model.dart';
 import 'custom_filter_chip.dart';
 
 class PriceSelector extends StatelessWidget {
-  final String selectedPrice;
-  final ValueChanged<String> onPriceSelected;
+  final int? selectedPriceLevel;
+  final ValueChanged<int> onPriceSelected;
 
   const PriceSelector({
     super.key,
-    required this.selectedPrice,
+    required this.selectedPriceLevel,
     required this.onPriceSelected,
   });
 
   @override
   Widget build(BuildContext context) {
-    final prices = ['\$', '\$\$', '\$\$\$', '\$\$\$\$'];
-
     return Row(
-      children: prices.map((price) {
+      children: PlaceModel.priceLevels.map((level) {
         return Expanded(
           child: Padding(
-            padding: EdgeInsets.only(right: price != prices.last ? 12.0 : 0.0),
+            padding: EdgeInsets.only(
+              right: level != PlaceModel.priceLevels.last ? 12.0 : 0.0,
+            ),
             child: CustomFilterChip(
-              label: price,
-              isSelected: selectedPrice == price,
-              onTap: () => onPriceSelected(price),
+              label: PlaceModel.priceLabelFor(level),
+              isSelected: selectedPriceLevel == level,
+              onTap: () => onPriceSelected(level),
               expanded: true,
             ),
           ),

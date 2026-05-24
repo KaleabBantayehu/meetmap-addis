@@ -60,11 +60,7 @@ class PlaceInfoSection extends StatelessWidget {
             children: [
               _RatingMeta(place: place, reviewLabel: reviewLabel),
               _MetaDivider(),
-              _TextMeta(
-                value: place.priceRange.isEmpty
-                    ? 'Price unavailable'
-                    : place.priceRange,
-              ),
+              _TextMeta(value: place.priceSummary),
               _MetaDivider(),
               _TextMeta(
                 value: place.category.isEmpty

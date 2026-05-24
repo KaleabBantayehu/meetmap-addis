@@ -3,6 +3,7 @@ import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/routes/app_routes.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/hangouts_provider.dart';
+import '../screens/add_hangout_screen.dart';
 import '../widgets/hangouts_header.dart';
 import '../widgets/hangout_category_chips.dart';
 import '../widgets/section_header.dart';
@@ -56,7 +57,9 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showComingSoon(context),
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const AddHangoutScreen()),
+        ),
         backgroundColor: AppColors.primaryDark,
         elevation: 6,
         shape: const CircleBorder(),

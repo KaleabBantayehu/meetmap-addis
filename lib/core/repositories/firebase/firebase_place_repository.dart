@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../shared/models/place_model.dart';
 import '../place_repository.dart';
@@ -5,6 +6,7 @@ import '../repository_error_mapper.dart';
 
 class FirebasePlaceRepository implements PlaceRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   PlaceModel _mapDocToPlace(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? {};
@@ -146,18 +148,24 @@ class FirebasePlaceRepository implements PlaceRepository {
     }
 
     try {
+      final currentUserId = _auth.currentUser?.uid;
+      if (currentUserId == null || currentUserId.isEmpty) {
+        throw Exception('Please sign in to create a place.');
+      }
+
       final docRef = _firestore.collection('places').doc();
 
-      final data = place.toMap();
+      final placeWithOwnership = place.copyWith(createdBy: currentUserId);
+      final data = placeWithOwnership.toMap();
       data['id'] = docRef.id;
       data['createdAt'] = FieldValue.serverTimestamp();
       data['updatedAt'] = FieldValue.serverTimestamp();
 
       await docRef.set(data).timeout(const Duration(seconds: 4));
 
-      return place.copyWith(id: docRef.id);
+      return placeWithOwnership.copyWith(id: docRef.id);
     } catch (e) {
-      throw Exception(mapRepositoryError(e, 'Failed to create place'));
+      throw Exception(cleanExceptionMessage(e, 'Failed to create place'));
     }
   }
 
@@ -171,7 +179,7 @@ class FirebasePlaceRepository implements PlaceRepository {
     if (place.category.trim().isEmpty) {
       return 'Please select a category.';
     }
-    if (place.priceRange.trim().isEmpty) {
+    if (place.normalizedPriceLevel < 1 || place.normalizedPriceLevel > 4) {
       return 'Please select a price range.';
     }
     if (place.imageUrl.trim().isEmpty && place.imageUrls.isEmpty) {

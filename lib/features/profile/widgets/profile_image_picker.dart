@@ -13,6 +13,8 @@ class ProfileImagePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageProvider = imageUrl.isEmpty ? null : NetworkImage(imageUrl);
+
     return Center(
       child: Column(
         children: [
@@ -32,8 +34,15 @@ class ProfileImagePicker extends StatelessWidget {
                 ),
                 child: CircleAvatar(
                   radius: 60,
-                  backgroundImage: NetworkImage(imageUrl),
+                  backgroundImage: imageProvider,
                   backgroundColor: AppColors.imagePlaceholder,
+                  child: imageProvider == null
+                      ? const Icon(
+                          Icons.person_rounded,
+                          color: AppColors.textSecondary,
+                          size: 48,
+                        )
+                      : null,
                 ),
               ),
               Positioned(

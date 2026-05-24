@@ -157,7 +157,7 @@ class ExplorePlaceCard extends StatelessWidget {
         const SizedBox(width: 8),
 
         Text(
-          place.priceRange,
+          place.priceSummary,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ],

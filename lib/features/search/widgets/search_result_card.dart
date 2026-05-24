@@ -45,6 +45,7 @@ class SearchResultCard extends StatelessWidget {
               children: [
                 SearchResultImage(imageUrl: place.imageUrl),
                 const SizedBox(width: 18),
+                // Expanded here keeps the middle info block from overflowing the card
                 Expanded(child: SearchResultInfo(place: place)),
                 const SizedBox(width: 10),
                 SizedBox(
@@ -126,6 +127,7 @@ class SearchResultInfo extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
+        // Row 1: Rating and Price Summary wrapped safely
         Row(
           children: [
             const Icon(Icons.star_rounded, color: AppColors.accent, size: 20),
@@ -147,20 +149,26 @@ class SearchResultInfo extends StatelessWidget {
                 ),
               ),
             ),
-            Text(
-              place.priceRange,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
+            // Flexible prevents long dynamic price strings from breaking the Row
+            Flexible(
+              child: Text(
+                place.priceSummary,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
+        // Row 2: Fixed the main location overflow issue here
         Text(
           '${place.category} - ${place.location}',
           maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+          overflow: TextOverflow.ellipsis, // 🛠️ Replaces overflowing text with "..." safely
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: AppColors.textSecondary.withValues(alpha: 0.82),
             fontWeight: FontWeight.w500,

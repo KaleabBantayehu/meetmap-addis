@@ -4,11 +4,11 @@ import 'package:meetmap_addis/shared/models/event_model.dart';
 import 'package:meetmap_addis/routes/app_routes.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/events_provider.dart';
+import '../screens/add_event_screen.dart';
 import '../widgets/events_header.dart';
 import '../widgets/event_category_chips.dart';
 import '../widgets/featured_event_banner.dart';
 import '../widgets/event_card.dart';
-import '../widgets/event_filter_button.dart';
 import '../widgets/empty_events_state.dart';
 
 void _showComingSoon(BuildContext context) {
@@ -71,7 +71,13 @@ class _EventsScreenState extends State<EventsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      floatingActionButton: EventFilterButton(onTap: () {}),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const AddEventScreen()),
+        ),
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
       body: SafeArea(
         child: Column(
           children: [

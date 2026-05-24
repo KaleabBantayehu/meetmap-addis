@@ -17,6 +17,8 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().currentUser;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -50,9 +52,9 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     children: [
                       ProfileAvatarSection(
-                        name: 'Selamawit T.',
-                        email: 'selam.t@email.com',
-                        imageUrl: 'https://i.pravatar.cc/300?img=47',
+                        name: user?.name ?? 'MeetMap User',
+                        email: user?.email ?? 'No email available',
+                        imageUrl: user?.profileImageUrl ?? '',
                         onEditPressed: () {
                           Navigator.of(
                             context,

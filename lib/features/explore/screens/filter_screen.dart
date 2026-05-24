@@ -17,7 +17,7 @@ class FilterScreen extends StatefulWidget {
 }
 
 class _FilterScreenState extends State<FilterScreen> {
-  String _selectedPrice = '\$';
+  int? _selectedPriceLevel = 1;
   List<String> _selectedPurposes = ['Study', 'Date'];
   String _selectedRating = '4.5+';
   List<String> _selectedAmenities = ['Power Outlets', 'AC'];
@@ -45,7 +45,7 @@ class _FilterScreenState extends State<FilterScreen> {
 
   void _resetAll() {
     setState(() {
-      _selectedPrice = '';
+      _selectedPriceLevel = null;
       _selectedPurposes = [];
       _selectedRating = '';
       _selectedAmenities = [];
@@ -105,9 +105,9 @@ class _FilterScreenState extends State<FilterScreen> {
                     const FilterSectionTitle(title: 'Price Range'),
                     const SizedBox(height: 16),
                     PriceSelector(
-                      selectedPrice: _selectedPrice,
+                      selectedPriceLevel: _selectedPriceLevel,
                       onPriceSelected: (val) =>
-                          setState(() => _selectedPrice = val),
+                          setState(() => _selectedPriceLevel = val),
                     ),
 
                     const SizedBox(height: 32),
@@ -251,7 +251,7 @@ class _FilterScreenState extends State<FilterScreen> {
                         onPressed: () {
                           // TODO: Apply filters and query API/Firestore
                           Navigator.pop(context, {
-                            'price': _selectedPrice,
+                            'priceLevel': _selectedPriceLevel,
                             'purposes': _selectedPurposes,
                             'rating': _selectedRating,
                             'amenities': _selectedAmenities,

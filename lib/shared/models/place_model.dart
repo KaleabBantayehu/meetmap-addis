@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 class PlaceModel {
+  static const List<int> priceLevels = [1, 2, 3, 4];
+
   final String id;
   final String name;
   final String imageUrl;
@@ -15,13 +17,14 @@ class PlaceModel {
   final double longitude;
   final List<String> tags;
   final int reviewCount;
-  
+
   final String description;
   final int priceLevel;
   final List<String> imageUrls;
   final List<String> amenities;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? createdBy;
 
   const PlaceModel({
     required this.id,
@@ -42,7 +45,50 @@ class PlaceModel {
     this.amenities = const [],
     this.createdAt,
     this.updatedAt,
+    this.createdBy,
   }) : assert(rating >= 0 && rating <= 5);
+
+  int get normalizedPriceLevel => normalizePriceLevel(priceLevel, priceRange);
+
+  String get priceLabel => priceLabelFor(normalizedPriceLevel);
+
+  String get priceDisplay => priceDisplayFor(normalizedPriceLevel);
+
+  String get priceSummary => '$priceLabel • $priceDisplay';
+
+  static int normalizePriceLevel(int? level, [String? legacyPriceRange]) {
+    if (level != null && level >= 1 && level <= 4) {
+      return level;
+    }
+
+    return switch (legacyPriceRange?.trim()) {
+      r'$' => 1,
+      r'$$' => 2,
+      r'$$$' => 3,
+      r'$$$$' => 4,
+      _ => 2,
+    };
+  }
+
+  static String priceLabelFor(int level) {
+    return switch (normalizePriceLevel(level)) {
+      1 => 'Budget',
+      2 => 'Moderate',
+      3 => 'Premium',
+      4 => 'Luxury',
+      _ => 'Moderate',
+    };
+  }
+
+  static String priceDisplayFor(int level) {
+    return switch (normalizePriceLevel(level)) {
+      1 => 'Under 300 ETB',
+      2 => '300–600 ETB',
+      3 => '600–1500 ETB',
+      4 => '1500+ ETB',
+      _ => '300–600 ETB',
+    };
+  }
 
   PlaceModel copyWith({
     String? id,
@@ -63,6 +109,7 @@ class PlaceModel {
     List<String>? amenities,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? createdBy,
   }) {
     return PlaceModel(
       id: id ?? this.id,
@@ -83,6 +130,7 @@ class PlaceModel {
       amenities: amenities ?? this.amenities,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      createdBy: createdBy ?? this.createdBy,
     );
   }
 
@@ -91,7 +139,8 @@ class PlaceModel {
     if (val is DateTime) return val;
     if (val is String) return DateTime.tryParse(val);
     if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
-    if (val.runtimeType.toString() == 'Timestamp' || val.toString().contains('Timestamp')) {
+    if (val.runtimeType.toString() == 'Timestamp' ||
+        val.toString().contains('Timestamp')) {
       try {
         return (val as dynamic).toDate();
       } catch (_) {}
@@ -114,11 +163,17 @@ class PlaceModel {
       tags: List<String>.from(map['tags'] ?? []),
       reviewCount: map['reviewCount'] ?? 0,
       description: map['description'] ?? '',
-      priceLevel: map['priceLevel'] ?? 2,
+      priceLevel: normalizePriceLevel(
+        map['priceLevel'] is int
+            ? map['priceLevel'] as int
+            : int.tryParse('${map['priceLevel'] ?? ''}'),
+        map['priceRange'] as String?,
+      ),
       imageUrls: List<String>.from(map['imageUrls'] ?? []),
       amenities: List<String>.from(map['amenities'] ?? []),
       createdAt: _parseDate(map['createdAt']),
       updatedAt: _parseDate(map['updatedAt']),
+      createdBy: map['createdBy'] as String?,
     );
   }
 
@@ -137,11 +192,12 @@ class PlaceModel {
       'tags': tags,
       'reviewCount': reviewCount,
       'description': description,
-      'priceLevel': priceLevel,
+      'priceLevel': normalizedPriceLevel,
       'imageUrls': imageUrls,
       'amenities': amenities,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'createdBy': createdBy,
     };
   }
 
@@ -172,7 +228,8 @@ class PlaceModel {
         listEquals(other.imageUrls, imageUrls) &&
         listEquals(other.amenities, amenities) &&
         other.createdAt == createdAt &&
-        other.updatedAt == updatedAt;
+        other.updatedAt == updatedAt &&
+        other.createdBy == createdBy;
   }
 
   @override
@@ -194,6 +251,7 @@ class PlaceModel {
         imageUrls.hashCode ^
         amenities.hashCode ^
         createdAt.hashCode ^
-        updatedAt.hashCode;
+        updatedAt.hashCode ^
+        createdBy.hashCode;
   }
 }

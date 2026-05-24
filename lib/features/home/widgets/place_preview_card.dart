@@ -27,9 +27,11 @@ class PlacePreviewCard extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: SafeArea(
-        top: false, // Ensures padding respects device bottom navigation bars/notches safely
+        top:
+            false, // Ensures padding respects device bottom navigation bars/notches safely
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Forces the sheet to cleanly hug its content
+          mainAxisSize:
+              MainAxisSize.min, // Forces the sheet to cleanly hug its content
           children: [
             // Bottom Sheet Drag Handle Bar
             Container(
@@ -80,7 +82,8 @@ class PlacePreviewCard extends StatelessWidget {
                           Flexible(
                             child: Text(
                               '0.4 km away',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
                                     color: AppColors.textSecondary,
                                     fontSize: 13,
                                   ),
@@ -97,7 +100,8 @@ class PlacePreviewCard extends StatelessWidget {
                         place.name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
                               fontWeight: FontWeight.w700,
                               fontSize: 20,
                             ),
@@ -135,7 +139,7 @@ class PlacePreviewCard extends StatelessWidget {
                             style: TextStyle(color: AppColors.textSecondary),
                           ),
                           Text(
-                            place.priceRange,
+                            place.priceSummary,
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 13,

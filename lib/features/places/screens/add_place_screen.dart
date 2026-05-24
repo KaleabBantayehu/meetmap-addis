@@ -33,7 +33,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   final _socialController = TextEditingController();
 
   String _selectedCategory = '';
-  String _selectedPrice = '\$\$';
+  int _selectedPriceLevel = 2;
   final List<String> _selectedPurposes = [];
   final List<String> _selectedAmenities = [];
   File? _selectedImage;
@@ -86,16 +86,6 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
       return;
     }
 
-    if (_selectedPrice.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a price range'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
-
     if (_descriptionController.text.trim().length < 20) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -135,14 +125,14 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
         category: _selectedCategory,
         location: _locationController.text.trim(),
         rating: 0,
-        priceRange: _selectedPrice,
+        priceRange: '',
         isOpen: true,
         latitude: 0,
         longitude: 0,
         tags: List<String>.from(_selectedPurposes),
         reviewCount: 0,
         description: _descriptionController.text.trim(),
-        priceLevel: _selectedPrice.length,
+        priceLevel: _selectedPriceLevel,
         imageUrls: [imageUrl],
         amenities: List<String>.from(_selectedAmenities),
       );
@@ -302,9 +292,9 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                       ),
                       const SizedBox(height: 12),
                       PriceRangeInput(
-                        selectedPrice: _selectedPrice,
+                        selectedPriceLevel: _selectedPriceLevel,
                         onPriceSelected: (price) =>
-                            setState(() => _selectedPrice = price),
+                            setState(() => _selectedPriceLevel = price),
                       ),
                       const SizedBox(height: 24),
 

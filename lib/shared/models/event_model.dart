@@ -12,6 +12,7 @@ class EventModel {
   final int attendeeCount;
   final String description;
   final bool isFeatured;
+  final String? createdBy;
 
   const EventModel({
     required this.id,
@@ -25,6 +26,7 @@ class EventModel {
     required this.attendeeCount,
     required this.description,
     this.isFeatured = false,
+    this.createdBy,
   });
 
   EventModel copyWith({
@@ -39,6 +41,7 @@ class EventModel {
     int? attendeeCount,
     String? description,
     bool? isFeatured,
+    String? createdBy,
   }) {
     return EventModel(
       id: id ?? this.id,
@@ -52,6 +55,7 @@ class EventModel {
       attendeeCount: attendeeCount ?? this.attendeeCount,
       description: description ?? this.description,
       isFeatured: isFeatured ?? this.isFeatured,
+      createdBy: createdBy ?? this.createdBy,
     );
   }
 
@@ -68,6 +72,7 @@ class EventModel {
       attendeeCount: map['attendeeCount'] ?? 0,
       description: map['description'] ?? '',
       isFeatured: map['isFeatured'] ?? false,
+      createdBy: map['createdBy'] as String?,
     );
   }
 
@@ -84,6 +89,7 @@ class EventModel {
       'attendeeCount': attendeeCount,
       'description': description,
       'isFeatured': isFeatured,
+      'createdBy': createdBy,
     };
   }
 
@@ -107,7 +113,8 @@ class EventModel {
         other.imageUrl == imageUrl &&
         other.attendeeCount == attendeeCount &&
         other.description == description &&
-        other.isFeatured == isFeatured;
+        other.isFeatured == isFeatured &&
+        other.createdBy == createdBy;
   }
 
   @override
@@ -122,6 +129,7 @@ class EventModel {
         imageUrl.hashCode ^
         attendeeCount.hashCode ^
         description.hashCode ^
-        isFeatured.hashCode;
+        isFeatured.hashCode ^
+        createdBy.hashCode;
   }
 }

@@ -49,7 +49,9 @@ class FirebaseAuthRepository implements AuthRepository {
 
       // 1. Try cache first to avoid Firestore lookup if same user is logged in
       try {
-        final cachedJson = await SecureStorageService.instance.read(CacheKeys.userSession);
+        final cachedJson = await SecureStorageService.instance.read(
+          CacheKeys.userSession,
+        );
         if (cachedJson != null) {
           final cachedUser = UserModel.fromJson(cachedJson);
           if (cachedUser.id == fbUser.uid) {
@@ -83,7 +85,10 @@ class FirebaseAuthRepository implements AuthRepository {
           final userModel = UserModel.fromMap(data);
           // Cache the profile and save last sync timestamp
           try {
-            await SecureStorageService.instance.write(CacheKeys.userSession, userModel.toJson());
+            await SecureStorageService.instance.write(
+              CacheKeys.userSession,
+              userModel.toJson(),
+            );
             await LocalStorageService.instance.setString(
               CacheKeys.profileLastSync,
               DateTime.now().toIso8601String(),
@@ -98,7 +103,10 @@ class FirebaseAuthRepository implements AuthRepository {
       // 3. Fallback: map from Firebase Auth
       final fallbackUser = _mapFirebaseUser(fbUser);
       try {
-        await SecureStorageService.instance.write(CacheKeys.userSession, fallbackUser.toJson());
+        await SecureStorageService.instance.write(
+          CacheKeys.userSession,
+          fallbackUser.toJson(),
+        );
       } catch (_) {}
       return fallbackUser;
     });
@@ -116,7 +124,9 @@ class FirebaseAuthRepository implements AuthRepository {
 
     // 1. Try cache first
     try {
-      final cachedJson = await SecureStorageService.instance.read(CacheKeys.userSession);
+      final cachedJson = await SecureStorageService.instance.read(
+        CacheKeys.userSession,
+      );
       if (cachedJson != null) {
         final cachedUser = UserModel.fromJson(cachedJson);
         if (cachedUser.id == user.uid) {
@@ -149,7 +159,10 @@ class FirebaseAuthRepository implements AuthRepository {
         }
         final userModel = UserModel.fromMap(data);
         try {
-          await SecureStorageService.instance.write(CacheKeys.userSession, userModel.toJson());
+          await SecureStorageService.instance.write(
+            CacheKeys.userSession,
+            userModel.toJson(),
+          );
           await LocalStorageService.instance.setString(
             CacheKeys.profileLastSync,
             DateTime.now().toIso8601String(),
@@ -164,7 +177,10 @@ class FirebaseAuthRepository implements AuthRepository {
     // 3. Fallback: map from Firebase Auth
     final fallbackUser = _mapFirebaseUser(user);
     try {
-      await SecureStorageService.instance.write(CacheKeys.userSession, fallbackUser.toJson());
+      await SecureStorageService.instance.write(
+        CacheKeys.userSession,
+        fallbackUser.toJson(),
+      );
     } catch (_) {}
     return fallbackUser;
   }
@@ -203,7 +219,9 @@ class FirebaseAuthRepository implements AuthRepository {
           return UserModel.fromMap(data);
         }
       } catch (e) {
-        debugPrint('Error fetching user profile from Firestore during login: $e');
+        debugPrint(
+          'Error fetching user profile from Firestore during login: $e',
+        );
       }
 
       return _mapFirebaseUser(user);
@@ -245,7 +263,9 @@ class FirebaseAuthRepository implements AuthRepository {
             .set(userMap)
             .timeout(const Duration(seconds: 4));
       } catch (firestoreError) {
-        debugPrint('Error saving user profile to Firestore during signup: $firestoreError');
+        debugPrint(
+          'Error saving user profile to Firestore during signup: $firestoreError',
+        );
         try {
           await _firebaseAuth.signOut();
         } catch (_) {}
@@ -254,7 +274,9 @@ class FirebaseAuthRepository implements AuthRepository {
             firestoreError.toString().contains('disabled') ||
             firestoreError.toString().contains('TimeoutException') ||
             firestoreError.toString().contains('timeout')) {
-          throw Exception('Database services are currently unavailable. Please try again later.');
+          throw Exception(
+            'Database services are currently unavailable. Please try again later.',
+          );
         }
         throw Exception('Failed to create user profile. Please try again.');
       }
@@ -279,6 +301,41 @@ class FirebaseAuthRepository implements AuthRepository {
     await _firebaseAuth.signOut();
   }
 
+  @override
+  Future<UserModel> updateProfile(UserModel user) async {
+    try {
+      final currentUser = _firebaseAuth.currentUser;
+      if (currentUser == null || currentUser.uid != user.id) {
+        throw Exception('Please sign in to update your profile.');
+      }
+
+      final userMap = _buildUserFirestoreMap(user);
+      userMap['updatedAt'] = FieldValue.serverTimestamp();
+      await _firestore
+          .collection('users')
+          .doc(user.id)
+          .set(userMap, SetOptions(merge: true))
+          .timeout(const Duration(seconds: 4));
+
+      if (currentUser.displayName != user.name) {
+        await currentUser.updateDisplayName(user.name);
+      }
+
+      await SecureStorageService.instance.write(
+        CacheKeys.userSession,
+        user.toJson(),
+      );
+      await LocalStorageService.instance.setString(
+        CacheKeys.profileLastSync,
+        DateTime.now().toIso8601String(),
+      );
+      return user;
+    } catch (e) {
+      if (e.toString().contains('Please sign in')) rethrow;
+      throw Exception('Failed to update profile. Please try again.');
+    }
+  }
+
   static const List<String> _googleScopes = ['email', 'profile'];
 
   @override
@@ -291,8 +348,9 @@ class FirebaseAuthRepository implements AuthRepository {
       GoogleSignInClientAuthorization? clientAuth = await googleUser
           .authorizationClient
           .authorizationForScopes(_googleScopes);
-      clientAuth ??= await googleUser.authorizationClient
-          .authorizeScopes(_googleScopes);
+      clientAuth ??= await googleUser.authorizationClient.authorizeScopes(
+        _googleScopes,
+      );
 
       final fb.AuthCredential credential = fb.GoogleAuthProvider.credential(
         accessToken: clientAuth.accessToken,
@@ -302,7 +360,7 @@ class FirebaseAuthRepository implements AuthRepository {
       final fb.UserCredential userCredential = await _firebaseAuth
           .signInWithCredential(credential);
       final fb.User? user = userCredential.user;
-      
+
       if (user == null) {
         throw fb.FirebaseAuthException(
           code: 'user-not-found',
@@ -345,9 +403,13 @@ class FirebaseAuthRepository implements AuthRepository {
             firestoreError.toString().contains('disabled') ||
             firestoreError.toString().contains('TimeoutException') ||
             firestoreError.toString().contains('timeout')) {
-          throw Exception('Database services are currently unavailable. Please try again later.');
+          throw Exception(
+            'Database services are currently unavailable. Please try again later.',
+          );
         }
-        throw Exception('Failed to retrieve or create user profile. Please try again.');
+        throw Exception(
+          'Failed to retrieve or create user profile. Please try again.',
+        );
       }
 
       return userModel;
@@ -386,38 +448,53 @@ class FirebaseAuthRepository implements AuthRepository {
 
   String _getResetErrorMessage(String code) {
     switch (code) {
-      case 'user-not-found': 
+      case 'user-not-found':
         return 'No account found with this email.';
-      case 'invalid-email': 
+      case 'invalid-email':
         return 'Invalid email format.';
-      default: 
+      default:
         return 'Reset failed. Please try again.';
     }
   }
 
   String _getLoginErrorMessage(String code) {
     switch (code) {
-      case 'user-not-found': return 'No account found with this email.';
-      case 'wrong-password': return 'Incorrect password.';
-      case 'invalid-email': return 'Invalid email address format.';
+      case 'user-not-found':
+        return 'No account found with this email.';
+      case 'wrong-password':
+        return 'Incorrect password.';
+      case 'invalid-email':
+        return 'Invalid email address format.';
       case 'invalid-credential':
-      case 'INVALID_LOGIN_CREDENTIALS': return 'Invalid email or password.';
-      case 'too-many-requests': return 'Too many failed attempts. Please try again later.';
-      case 'network-request-failed': return 'Network unavailable. Please try again.';
-      case 'user-disabled': return 'This account has been disabled.';
-      case 'sign_in_canceled': return 'Google sign in was canceled.';
-      default: return 'Authentication failed. Please check your credentials.';
+      case 'INVALID_LOGIN_CREDENTIALS':
+        return 'Invalid email or password.';
+      case 'too-many-requests':
+        return 'Too many failed attempts. Please try again later.';
+      case 'network-request-failed':
+        return 'Network unavailable. Please try again.';
+      case 'user-disabled':
+        return 'This account has been disabled.';
+      case 'sign_in_canceled':
+        return 'Google sign in was canceled.';
+      default:
+        return 'Authentication failed. Please check your credentials.';
     }
   }
 
   String _getSignupErrorMessage(String code) {
     switch (code) {
-      case 'email-already-in-use': return 'The email address is already registered.';
-      case 'weak-password': return 'The password is too weak. Please use at least 6 characters.';
-      case 'invalid-email': return 'Invalid email address format.';
-      case 'network-request-failed': return 'Network unavailable. Please try again.';
-      case 'operation-not-allowed': return 'Email and password signup is not enabled. Please contact support.';
-      default: return 'Sign up failed. Please check your information.';
+      case 'email-already-in-use':
+        return 'The email address is already registered.';
+      case 'weak-password':
+        return 'The password is too weak. Please use at least 6 characters.';
+      case 'invalid-email':
+        return 'Invalid email address format.';
+      case 'network-request-failed':
+        return 'Network unavailable. Please try again.';
+      case 'operation-not-allowed':
+        return 'Email and password signup is not enabled. Please contact support.';
+      default:
+        return 'Sign up failed. Please check your information.';
     }
   }
 } // End of FirebaseAuthRepository Class

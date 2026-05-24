@@ -10,6 +10,7 @@ class HangoutModel {
   final int attendeeCount;
   final String description;
   final bool isLive;
+  final String? createdBy;
 
   const HangoutModel({
     required this.id,
@@ -21,6 +22,7 @@ class HangoutModel {
     required this.attendeeCount,
     required this.description,
     this.isLive = false,
+    this.createdBy,
   });
 
   HangoutModel copyWith({
@@ -33,6 +35,7 @@ class HangoutModel {
     int? attendeeCount,
     String? description,
     bool? isLive,
+    String? createdBy,
   }) {
     return HangoutModel(
       id: id ?? this.id,
@@ -44,6 +47,7 @@ class HangoutModel {
       attendeeCount: attendeeCount ?? this.attendeeCount,
       description: description ?? this.description,
       isLive: isLive ?? this.isLive,
+      createdBy: createdBy ?? this.createdBy,
     );
   }
 
@@ -58,6 +62,7 @@ class HangoutModel {
       attendeeCount: map['attendeeCount'] ?? 0,
       description: map['description'] ?? '',
       isLive: map['isLive'] ?? false,
+      createdBy: map['createdBy'] as String?,
     );
   }
 
@@ -72,6 +77,7 @@ class HangoutModel {
       'attendeeCount': attendeeCount,
       'description': description,
       'isLive': isLive,
+      'createdBy': createdBy,
     };
   }
 
@@ -93,7 +99,8 @@ class HangoutModel {
         other.imageUrl == imageUrl &&
         other.attendeeCount == attendeeCount &&
         other.description == description &&
-        other.isLive == isLive;
+        other.isLive == isLive &&
+        other.createdBy == createdBy;
   }
 
   @override
@@ -106,7 +113,8 @@ class HangoutModel {
         imageUrl.hashCode ^
         attendeeCount.hashCode ^
         description.hashCode ^
-        isLive.hashCode;
+        isLive.hashCode ^
+        createdBy.hashCode;
   }
 }
 

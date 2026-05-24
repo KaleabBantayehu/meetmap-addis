@@ -11,9 +11,9 @@ import 'core/repositories/firebase/firebase_place_repository.dart';
 import 'core/repositories/firebase/firebase_auth_repository.dart';
 import 'core/repositories/firebase/firebase_saved_repository.dart';
 import 'core/repositories/firebase/firebase_review_repository.dart';
-import 'core/repositories/mock/mock_event_repository.dart';
-import 'core/repositories/mock/mock_network_repository.dart';
-import 'core/repositories/mock/mock_hangout_repository.dart';
+import 'core/repositories/firebase/firebase_event_repository.dart';
+import 'core/repositories/firebase/firebase_network_repository.dart';
+import 'core/repositories/firebase/firebase_hangout_repository.dart';
 import 'providers/places_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/saved_provider.dart';
@@ -62,9 +62,9 @@ void main() async {
 
   final placeRepository = FirebasePlaceRepository();
   final authRepository = FirebaseAuthRepository();
-  final eventRepository = MockEventRepository();
-  final networkRepository = MockNetworkRepository();
-  final hangoutRepository = MockHangoutRepository();
+  final eventRepository = FirebaseEventRepository();
+  final networkRepository = FirebaseNetworkRepository();
+  final hangoutRepository = FirebaseHangoutRepository();
   final savedRepository = FirebaseSavedRepository();
   final reviewRepository = FirebaseReviewRepository();
 

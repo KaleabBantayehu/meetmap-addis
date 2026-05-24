@@ -93,7 +93,7 @@ class SavedPlaceCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            '${place.priceRange} - ${place.category}',
+                            '${place.priceSummary} - ${place.category}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.bodyLarge

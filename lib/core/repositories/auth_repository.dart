@@ -8,4 +8,5 @@ abstract class AuthRepository {
   Stream<UserModel?> get authStateChanges;
   Future<UserModel> signInWithGoogle();
   Future<void> sendPasswordResetEmail(String email);
+  Future<UserModel> updateProfile(UserModel user);
 }

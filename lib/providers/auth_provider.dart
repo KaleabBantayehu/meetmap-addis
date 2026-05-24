@@ -50,7 +50,7 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       return false;
-    } 
+    }
   }
 
   Future<bool> signupWithEmail(
@@ -140,6 +140,23 @@ class AuthProvider extends ChangeNotifier {
       _currentUser = await _authRepository.getCurrentUser();
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> updateProfile(UserModel user) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _currentUser = await _authRepository.updateProfile(user);
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();

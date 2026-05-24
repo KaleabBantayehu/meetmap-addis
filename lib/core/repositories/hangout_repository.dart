@@ -4,4 +4,5 @@ abstract class HangoutRepository {
   Future<List<HangoutModel>> getHangouts();
   Future<List<VenueModel>> getTopPickVenues();
   Future<List<ActivityModel>> getRecentActivities();
+  Future<HangoutModel> createHangout(HangoutModel hangout);
 }

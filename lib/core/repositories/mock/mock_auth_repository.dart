@@ -85,18 +85,26 @@ class MockAuthRepository implements AuthRepository {
   @override
   Future<void> sendPasswordResetEmail(String email) async {
     await Future.delayed(const Duration(milliseconds: 400));
-    
+
     // Simulate error if string is missing basic validation
     if (email.isEmpty || !email.contains('@')) {
       throw Exception('Invalid email format.');
     }
-    
+
     // Simulate user-not-found for an explicit fake testing scenario
     if (email == 'notfound@meetmap.com') {
       throw Exception('No account found with this email.');
     }
-    
+
     // Success scenario does nothing, representing standard email dispatch
     return;
+  }
+
+  @override
+  Future<UserModel> updateProfile(UserModel user) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    _currentUser = user;
+    _authStateController.add(_currentUser);
+    return user;
   }
 }

@@ -112,7 +112,7 @@ class MockPlaceRepository implements PlaceRepository {
     if (place.category.trim().isEmpty) {
       return 'Please select a category.';
     }
-    if (place.priceRange.trim().isEmpty) {
+    if (place.normalizedPriceLevel < 1 || place.normalizedPriceLevel > 4) {
       return 'Please select a price range.';
     }
     if (place.imageUrl.trim().isEmpty && place.imageUrls.isEmpty) {

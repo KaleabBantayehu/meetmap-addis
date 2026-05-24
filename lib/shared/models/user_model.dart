@@ -50,6 +50,19 @@ class UserModel {
     this.notificationsEnabled = true,
   });
 
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    if (value.runtimeType.toString() == 'Timestamp' ||
+        value.toString().contains('Timestamp')) {
+      try {
+        return (value as dynamic).toDate();
+      } catch (_) {}
+    }
+    return null;
+  }
+
   /// Helper getter for follower count derived from the IDs list
   int get followerCount => followerIds.length;
 
@@ -123,12 +136,12 @@ class UserModel {
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
-      id: map['id'] ?? '',
+      id: map['id'] ?? map['uid'] ?? '',
       name: map['name'] ?? '',
       username: map['username'] as String?,
       email: map['email'] as String?,
       phoneNumber: map['phoneNumber'] as String?,
-      profileImageUrl: map['profileImageUrl'] ?? '',
+      profileImageUrl: map['profileImageUrl'] ?? map['photoUrl'] ?? '',
       title: map['title'] as String?,
       bio: map['bio'] as String?,
       tags: List<String>.from(map['tags'] ?? []),
@@ -139,9 +152,7 @@ class UserModel {
       savedPlaceIds: List<String>.from(map['savedPlaceIds'] ?? []),
       reviewIds: List<String>.from(map['reviewIds'] ?? []),
       joinedHangoutIds: List<String>.from(map['joinedHangoutIds'] ?? []),
-      createdAt: map['createdAt'] != null
-          ? DateTime.tryParse(map['createdAt'])
-          : null,
+      createdAt: _parseDate(map['createdAt']),
       notificationsEnabled: map['notificationsEnabled'] ?? true,
     );
   }
