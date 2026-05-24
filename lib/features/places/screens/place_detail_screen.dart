@@ -17,14 +17,23 @@ class PlaceDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final placesProvider = context.watch<PlacesProvider>();
     final resolvedPlace =
         place ??
-        (Provider.of<PlacesProvider>(context, listen: false).places.isNotEmpty
-            ? Provider.of<PlacesProvider>(context, listen: false).places.first
-            : null);
+        (placesProvider.places.isNotEmpty ? placesProvider.places.first : null);
 
     if (resolvedPlace == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: placesProvider.isLoading
+              ? const CircularProgressIndicator()
+              : const Text(
+                  'Place details are unavailable.',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+        ),
+      );
     }
 
     return Scaffold(

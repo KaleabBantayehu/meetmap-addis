@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../shared/models/review_model.dart';
 import '../review_repository.dart';
+import '../repository_error_mapper.dart';
 
 class FirebaseReviewRepository implements ReviewRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -23,7 +24,7 @@ class FirebaseReviewRepository implements ReviewRepository {
           .timeout(const Duration(seconds: 4));
       return snapshot.docs.map(_mapDocToReview).toList();
     } catch (e) {
-      throw Exception('Failed to fetch reviews: $e');
+      throw Exception(mapRepositoryError(e, 'Failed to load reviews'));
     }
   }
 
@@ -35,14 +36,15 @@ class FirebaseReviewRepository implements ReviewRepository {
           .doc(placeId)
           .collection('reviews')
           .doc(review.id);
-      
+
       final data = review.toMap();
-      data['createdAt'] = FieldValue.serverTimestamp(); // Ensure accurate backend timestamp
-      
+      data['createdAt'] =
+          FieldValue.serverTimestamp(); // Ensure accurate backend timestamp
+
       await docRef.set(data).timeout(const Duration(seconds: 4));
       return review;
     } catch (e) {
-      throw Exception('Failed to create review: $e');
+      throw Exception(mapRepositoryError(e, 'Failed to create review'));
     }
   }
 
@@ -57,12 +59,17 @@ class FirebaseReviewRepository implements ReviewRepository {
           .delete()
           .timeout(const Duration(seconds: 4));
     } catch (e) {
-      throw Exception('Failed to delete review: $e');
+      throw Exception(mapRepositoryError(e, 'Failed to delete review'));
     }
   }
 
   @override
-  Future<void> toggleLike(String reviewId, String placeId, String userId, bool isLiking) async {
+  Future<void> toggleLike(
+    String reviewId,
+    String placeId,
+    String userId,
+    bool isLiking,
+  ) async {
     try {
       final docRef = _firestore
           .collection('places')
@@ -70,20 +77,24 @@ class FirebaseReviewRepository implements ReviewRepository {
           .collection('reviews')
           .doc(reviewId);
 
-      await _firestore.runTransaction((transaction) async {
-        final doc = await transaction.get(docRef);
-        if (!doc.exists) throw Exception('Review not found');
+      await _firestore
+          .runTransaction((transaction) async {
+            final doc = await transaction.get(docRef);
+            if (!doc.exists) throw Exception('Review not found');
 
-        final currentLikes = List<String>.from(doc.data()?['likedUserIds'] ?? []);
-        if (isLiking) {
-          if (!currentLikes.contains(userId)) currentLikes.add(userId);
-        } else {
-          currentLikes.remove(userId);
-        }
-        transaction.update(docRef, {'likedUserIds': currentLikes});
-      }).timeout(const Duration(seconds: 4));
+            final currentLikes = List<String>.from(
+              doc.data()?['likedUserIds'] ?? [],
+            );
+            if (isLiking) {
+              if (!currentLikes.contains(userId)) currentLikes.add(userId);
+            } else {
+              currentLikes.remove(userId);
+            }
+            transaction.update(docRef, {'likedUserIds': currentLikes});
+          })
+          .timeout(const Duration(seconds: 4));
     } catch (e) {
-      throw Exception('Failed to toggle like: $e');
+      throw Exception(mapRepositoryError(e, 'Failed to update review'));
     }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/repositories/repository_error_mapper.dart';
 import '../core/repositories/review_repository.dart';
 import '../shared/models/review_model.dart';
 import '../core/storage/local_storage_service.dart';
@@ -12,8 +13,8 @@ class ReviewsProvider with ChangeNotifier {
   ReviewsProvider({
     required ReviewRepository reviewRepository,
     required AuthProvider authProvider,
-  })  : _reviewRepository = reviewRepository,
-        _authProvider = authProvider;
+  }) : _reviewRepository = reviewRepository,
+       _authProvider = authProvider;
 
   final Map<String, List<ReviewModel>> _reviewsByPlace = {};
   Map<String, List<ReviewModel>> get reviewsByPlace => _reviewsByPlace;
@@ -64,7 +65,7 @@ class ReviewsProvider with ChangeNotifier {
         _saveToCache(placeId);
       }
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = cleanExceptionMessage(e, 'Failed to load reviews');
       debugPrint('Failed to fetch reviews: $e');
     } finally {
       _loadingStates[placeId] = false;
@@ -91,7 +92,9 @@ class ReviewsProvider with ChangeNotifier {
     try {
       final savedReview = await _reviewRepository.createReview(placeId, review);
       // Replace optimistic instance with saved (which might have accurate backend ID/timestamp)
-      final index = _reviewsByPlace[placeId]!.indexWhere((r) => r.id == review.id);
+      final index = _reviewsByPlace[placeId]!.indexWhere(
+        (r) => r.id == review.id,
+      );
       if (index != -1) {
         _reviewsByPlace[placeId]![index] = savedReview;
         _saveToCache(placeId);
@@ -156,7 +159,7 @@ class ReviewsProvider with ChangeNotifier {
     } else {
       likes.remove(userId);
     }
-    
+
     currentList[reviewIndex] = review.copyWith(likedUserIds: likes);
     _reviewsByPlace[placeId] = currentList;
     _saveToCache(placeId);

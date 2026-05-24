@@ -27,7 +27,7 @@ class ExploreScreen extends StatefulWidget {
 class _ExploreScreenState extends State<ExploreScreen> {
   int selectedCategoryIndex = 0;
 
-  final categories = ['Cafés', 'Restaurants', 'Coworking', 'Hotels'];
+  final categories = ['Cafes', 'Restaurants', 'Coworking', 'Hotels'];
 
   @override
   void initState() {
@@ -43,8 +43,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
   @override
   Widget build(BuildContext context) {
     final placesProvider = Provider.of<PlacesProvider>(context);
-    final places = placesProvider.places;
+    final allPlaces = placesProvider.places;
     final isLoading = placesProvider.isLoading;
+
+    final selectedCategory = categories[selectedCategoryIndex].toLowerCase();
+    final places = allPlaces.where((place) {
+      if (selectedCategory == 'cafes') {
+        return place.category.toLowerCase().contains('cafe') ||
+            place.name.toLowerCase().contains('coffee');
+      }
+      return place.category.toLowerCase().contains(
+        selectedCategory.substring(0, selectedCategory.length - 1),
+      );
+    }).toList();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(

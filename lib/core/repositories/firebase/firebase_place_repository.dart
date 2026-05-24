@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../shared/models/place_model.dart';
 import '../place_repository.dart';
+import '../repository_error_mapper.dart';
 
 class FirebasePlaceRepository implements PlaceRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -32,7 +33,7 @@ class FirebasePlaceRepository implements PlaceRepository {
           .timeout(const Duration(seconds: 4));
       return snapshot.docs.map(_mapDocToPlace).toList();
     } catch (e) {
-      throw Exception('Failed to load places from Firestore: $e');
+      throw Exception(mapRepositoryError(e, 'Failed to load places'));
     }
   }
 
@@ -52,7 +53,7 @@ class FirebasePlaceRepository implements PlaceRepository {
       if (e.toString().contains('failed: precond')) {
         return filterPlaces(minRating: 4.5);
       }
-      throw Exception('Failed to load featured places: $e');
+      throw Exception(mapRepositoryError(e, 'Failed to load featured places'));
     }
   }
 
@@ -67,7 +68,7 @@ class FirebasePlaceRepository implements PlaceRepository {
       if (!doc.exists) return null;
       return _mapDocToPlace(doc);
     } catch (e) {
-      throw Exception('Failed to load place details: $e');
+      throw Exception(mapRepositoryError(e, 'Failed to load place details'));
     }
   }
 
@@ -75,7 +76,7 @@ class FirebasePlaceRepository implements PlaceRepository {
   Future<List<PlaceModel>> searchPlaces(String query) async {
     try {
       if (query.isEmpty) return fetchPlaces();
-      
+
       // Prefix search using Firestore rules
       final snapshot = await _firestore
           .collection('places')
@@ -85,7 +86,7 @@ class FirebasePlaceRepository implements PlaceRepository {
           .timeout(const Duration(seconds: 4));
       return snapshot.docs.map(_mapDocToPlace).toList();
     } catch (e) {
-      throw Exception('Search failed: $e');
+      throw Exception(mapRepositoryError(e, 'Search failed'));
     }
   }
 
@@ -102,7 +103,8 @@ class FirebasePlaceRepository implements PlaceRepository {
       return allPlaces.where((place) {
         bool matches = true;
         if (category != null && category.isNotEmpty) {
-          matches = matches && place.category.toLowerCase() == category.toLowerCase();
+          matches =
+              matches && place.category.toLowerCase() == category.toLowerCase();
         }
         if (priceRange != null && priceRange.isNotEmpty) {
           matches = matches && place.priceRange == priceRange;
@@ -111,12 +113,13 @@ class FirebasePlaceRepository implements PlaceRepository {
           matches = matches && place.rating >= minRating;
         }
         if (amenities != null && amenities.isNotEmpty) {
-          matches = matches && amenities.every((a) => place.amenities.contains(a));
+          matches =
+              matches && amenities.every((a) => place.amenities.contains(a));
         }
         return matches;
       }).toList();
     } catch (e) {
-      throw Exception('Filter failed: $e');
+      throw Exception(mapRepositoryError(e, 'Filter failed'));
     }
   }
 
@@ -131,7 +134,49 @@ class FirebasePlaceRepository implements PlaceRepository {
           .timeout(const Duration(seconds: 4));
       return snapshot.docs.map(_mapDocToPlace).toList();
     } catch (e) {
-      throw Exception('Failed to load saved places: $e');
+      throw Exception(mapRepositoryError(e, 'Failed to load saved places'));
     }
+  }
+
+  @override
+  Future<PlaceModel> createPlace(PlaceModel place) async {
+    final validationMessage = _validatePlace(place);
+    if (validationMessage != null) {
+      throw Exception(validationMessage);
+    }
+
+    try {
+      final docRef = _firestore.collection('places').doc();
+
+      final data = place.toMap();
+      data['id'] = docRef.id;
+      data['createdAt'] = FieldValue.serverTimestamp();
+      data['updatedAt'] = FieldValue.serverTimestamp();
+
+      await docRef.set(data).timeout(const Duration(seconds: 4));
+
+      return place.copyWith(id: docRef.id);
+    } catch (e) {
+      throw Exception(mapRepositoryError(e, 'Failed to create place'));
+    }
+  }
+
+  String? _validatePlace(PlaceModel place) {
+    if (place.name.trim().length < 3) {
+      return 'Place name must be at least 3 characters.';
+    }
+    if (place.description.trim().length < 20) {
+      return 'Description must be at least 20 characters.';
+    }
+    if (place.category.trim().isEmpty) {
+      return 'Please select a category.';
+    }
+    if (place.priceRange.trim().isEmpty) {
+      return 'Please select a price range.';
+    }
+    if (place.imageUrl.trim().isEmpty && place.imageUrls.isEmpty) {
+      return 'Please upload at least one image.';
+    }
+    return null;
   }
 }

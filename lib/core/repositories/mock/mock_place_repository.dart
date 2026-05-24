@@ -64,7 +64,8 @@ class MockPlaceRepository implements PlaceRepository {
     return _places.where((place) {
       bool matches = true;
       if (category != null && category.isNotEmpty) {
-        matches = matches && place.category.toLowerCase() == category.toLowerCase();
+        matches =
+            matches && place.category.toLowerCase() == category.toLowerCase();
       }
       if (priceRange != null && priceRange.isNotEmpty) {
         matches = matches && place.priceRange == priceRange;
@@ -73,7 +74,8 @@ class MockPlaceRepository implements PlaceRepository {
         matches = matches && place.rating >= minRating;
       }
       if (amenities != null && amenities.isNotEmpty) {
-        matches = matches && amenities.every((a) => place.amenities.contains(a));
+        matches =
+            matches && amenities.every((a) => place.amenities.contains(a));
       }
       return matches;
     }).toList();
@@ -83,5 +85,39 @@ class MockPlaceRepository implements PlaceRepository {
   Future<List<PlaceModel>> fetchSavedPlaces() async {
     await Future.delayed(const Duration(milliseconds: 300));
     return List.from(_savedPlaces);
+  }
+
+  @override
+  Future<PlaceModel> createPlace(PlaceModel place) async {
+    await Future.delayed(const Duration(seconds: 1));
+    final validationMessage = _validatePlace(place);
+    if (validationMessage != null) {
+      throw Exception(validationMessage);
+    }
+
+    final newPlace = place.copyWith(
+      id: 'mock_${DateTime.now().millisecondsSinceEpoch}',
+    );
+    _places.add(newPlace);
+    return newPlace;
+  }
+
+  String? _validatePlace(PlaceModel place) {
+    if (place.name.trim().length < 3) {
+      return 'Place name must be at least 3 characters.';
+    }
+    if (place.description.trim().length < 20) {
+      return 'Description must be at least 20 characters.';
+    }
+    if (place.category.trim().isEmpty) {
+      return 'Please select a category.';
+    }
+    if (place.priceRange.trim().isEmpty) {
+      return 'Please select a price range.';
+    }
+    if (place.imageUrl.trim().isEmpty && place.imageUrls.isEmpty) {
+      return 'Please upload at least one image.';
+    }
+    return null;
   }
 }

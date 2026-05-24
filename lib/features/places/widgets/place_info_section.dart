@@ -9,6 +9,10 @@ class PlaceInfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tags = (place.tags.isNotEmpty ? place.tags : [place.category])
+        .where((item) => item.trim().isNotEmpty)
+        .toList();
+    final amenities = place.amenities.where((item) => item.trim().isNotEmpty);
     final reviewLabel = place.reviewCount >= 1000
         ? '${(place.reviewCount / 1000).toStringAsFixed(1)}k reviews'
         : '${place.reviewCount} reviews';
@@ -56,17 +60,37 @@ class PlaceInfoSection extends StatelessWidget {
             children: [
               _RatingMeta(place: place, reviewLabel: reviewLabel),
               _MetaDivider(),
-              _TextMeta(value: place.priceRange),
+              _TextMeta(
+                value: place.priceRange.isEmpty
+                    ? 'Price unavailable'
+                    : place.priceRange,
+              ),
               _MetaDivider(),
-              _TextMeta(value: place.category),
+              _TextMeta(
+                value: place.category.isEmpty
+                    ? 'Uncategorized'
+                    : place.category,
+              ),
             ],
           ),
-          const SizedBox(height: 18),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: place.tags.map((tag) => _TrustChip(label: tag)).toList(),
-          ),
+          if (tags.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: tags.map((tag) => _TrustChip(label: tag)).toList(),
+            ),
+          ],
+          if (amenities.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: amenities
+                  .map((amenity) => _AmenityChip(label: amenity))
+                  .toList(),
+            ),
+          ],
         ],
       ),
     );
@@ -182,6 +206,30 @@ class _MetaDivider extends StatelessWidget {
       decoration: const BoxDecoration(
         color: AppColors.outline,
         shape: BoxShape.circle,
+      ),
+    );
+  }
+}
+
+class _AmenityChip extends StatelessWidget {
+  const _AmenityChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

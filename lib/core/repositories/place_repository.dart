@@ -12,7 +12,6 @@ abstract class PlaceRepository {
   @Deprecated('Use fetchSavedPlaces instead')
   Future<List<PlaceModel>> getSavedPlaces();
 
-  // New clean future interface
   Future<List<PlaceModel>> fetchPlaces();
   Future<List<PlaceModel>> fetchFeaturedPlaces();
   Future<PlaceModel?> fetchPlaceById(String id);
@@ -23,4 +22,5 @@ abstract class PlaceRepository {
     List<String>? amenities,
   });
   Future<List<PlaceModel>> fetchSavedPlaces();
+  Future<PlaceModel> createPlace(PlaceModel place);
 }

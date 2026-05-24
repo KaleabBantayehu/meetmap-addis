@@ -9,6 +9,10 @@ class PlaceDescription extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final description = place.description.trim().isNotEmpty
+        ? place.description.trim()
+        : 'Details for this place are not available yet.';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -27,7 +31,7 @@ class PlaceDescription extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            '${place.name} is a trusted ${place.category.toLowerCase()} spot in ${place.location}, loved for its warm atmosphere, reliable service, and meet-up friendly setting. It works well for studying, casual conversations, and discovering a classic Addis coffee mood.',
+            description,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: AppColors.textSecondary,
               height: 1.55,

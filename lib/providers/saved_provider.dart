@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/repositories/repository_error_mapper.dart';
 import '../core/repositories/saved_repository.dart';
 import '../shared/models/place_model.dart';
 import '../core/storage/local_storage_service.dart';
@@ -13,8 +14,8 @@ class SavedProvider with ChangeNotifier {
   SavedProvider({
     required SavedRepository savedRepository,
     required AuthProvider authProvider,
-  })  : _savedRepository = savedRepository,
-        _authProvider = authProvider {
+  }) : _savedRepository = savedRepository,
+       _authProvider = authProvider {
     _loadFromCache();
     // Auto-fetch if user is already authenticated
     if (_authProvider.isAuthenticated) {
@@ -44,7 +45,9 @@ class SavedProvider with ChangeNotifier {
   void _saveToCache() {
     try {
       LocalStorageService.instance.saveSavedPlaces(_savedPlaces);
-      LocalStorageService.instance.saveSavedPlaceIds(_savedPlaces.map((p) => p.id).toList());
+      LocalStorageService.instance.saveSavedPlaceIds(
+        _savedPlaces.map((p) => p.id).toList(),
+      );
       LocalStorageService.instance.setString(
         CacheKeys.savedPlacesLastSync,
         DateTime.now().toIso8601String(),
@@ -71,7 +74,7 @@ class SavedProvider with ChangeNotifier {
         _loadFromCache();
       }
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = cleanExceptionMessage(e, 'Failed to load saved places');
       if (_savedPlaces.isEmpty) {
         _loadFromCache();
       }
@@ -117,14 +120,18 @@ class SavedProvider with ChangeNotifier {
         _savedPlaces.add(place);
       }
       _saveToCache();
-      _errorMessage = 'Failed to sync save status. Please check your connection.';
+      _errorMessage =
+          'Failed to sync save status. Please check your connection.';
       notifyListeners();
     }
   }
 
   void removeSaved(String placeId) {
     // Convenience wrapper for UI consistency
-    final place = _savedPlaces.firstWhere((p) => p.id == placeId, orElse: () => throw Exception('Place not found'));
+    final place = _savedPlaces.firstWhere(
+      (p) => p.id == placeId,
+      orElse: () => throw Exception('Place not found'),
+    );
     toggleSaved(place);
   }
 }

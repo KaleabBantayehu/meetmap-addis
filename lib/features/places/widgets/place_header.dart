@@ -12,6 +12,10 @@ class PlaceHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final headerImageUrl = place.imageUrl.isNotEmpty
+        ? place.imageUrl
+        : (place.imageUrls.isNotEmpty ? place.imageUrls.first : '');
+
     return SliverAppBar(
       expandedHeight: 330,
       pinned: true,
@@ -48,7 +52,7 @@ class PlaceHeader extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             CachedNetworkImage(
-              imageUrl: place.imageUrl,
+              imageUrl: headerImageUrl,
               fit: BoxFit.cover,
               placeholder: (context, url) {
                 return const _HeaderImagePlaceholder();
@@ -87,7 +91,7 @@ class FavoritePlaceButton extends StatelessWidget {
     return Consumer<SavedProvider>(
       builder: (context, savedProvider, _) {
         final isFavorite = savedProvider.isSaved(place.id);
-        
+
         return _HeaderIconButton(
           icon: isFavorite
               ? Icons.favorite_rounded

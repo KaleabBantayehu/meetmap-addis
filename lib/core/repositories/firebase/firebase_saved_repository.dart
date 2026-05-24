@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../shared/models/place_model.dart';
 import '../saved_repository.dart';
+import '../repository_error_mapper.dart';
 
 class FirebaseSavedRepository implements SavedRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -31,16 +32,16 @@ class FirebaseSavedRepository implements SavedRepository {
           .timeout(const Duration(seconds: 4));
 
       final List<PlaceModel> savedPlaces = [];
-      
+
       // Fetch details for each saved place
-      for (var doc in snapshot.docs) {
+      for (final doc in snapshot.docs) {
         final placeId = doc.id;
         final placeDoc = await _firestore
             .collection('places')
             .doc(placeId)
             .get()
             .timeout(const Duration(seconds: 4));
-            
+
         if (placeDoc.exists && placeDoc.data() != null) {
           final data = placeDoc.data()!;
           data['id'] = placeDoc.id;
@@ -49,7 +50,7 @@ class FirebaseSavedRepository implements SavedRepository {
       }
       return savedPlaces;
     } catch (e) {
-      throw Exception('Failed to fetch saved places from Firestore: $e');
+      throw Exception(mapRepositoryError(e, 'Failed to load saved places'));
     }
   }
 
@@ -63,14 +64,14 @@ class FirebaseSavedRepository implements SavedRepository {
           .doc(placeId);
 
       if (isSaving) {
-        await docRef.set({
-          'savedAt': FieldValue.serverTimestamp(),
-        }).timeout(const Duration(seconds: 4));
+        await docRef
+            .set({'savedAt': FieldValue.serverTimestamp()})
+            .timeout(const Duration(seconds: 4));
       } else {
         await docRef.delete().timeout(const Duration(seconds: 4));
       }
     } catch (e) {
-      throw Exception('Failed to toggle saved status: $e');
+      throw Exception(mapRepositoryError(e, 'Failed to update saved places'));
     }
   }
 

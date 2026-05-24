@@ -1,5 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
+import 'package:meetmap_addis/core/services/cloudinary_service.dart';
+import 'package:meetmap_addis/core/storage/connectivity_service.dart';
+import 'package:meetmap_addis/shared/models/place_model.dart';
+import 'package:meetmap_addis/providers/places_provider.dart';
 import 'package:meetmap_addis/shared/widgets/custom_textfield.dart';
 import 'package:meetmap_addis/shared/widgets/custom_button.dart';
 import 'package:meetmap_addis/features/places/widgets/add_place_header.dart';
@@ -29,8 +36,11 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
   String _selectedPrice = '\$\$';
   final List<String> _selectedPurposes = [];
   final List<String> _selectedAmenities = [];
+  File? _selectedImage;
 
-  bool _isLoading = false;
+  final CloudinaryService _cloudinaryService = CloudinaryService();
+  bool _isUploading = false;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -42,23 +52,136 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
     super.dispose();
   }
 
-  void _submit() async {
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<void> _submit() async {
+    if (_isUploading || _isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
-
-    // Mock API call
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (mounted) {
-      setState(() => _isLoading = false);
+    if (_selectedCategory.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Venue added successfully!'),
-          backgroundColor: AppColors.primary,
+          content: Text('Please select a category'),
+          backgroundColor: AppColors.error,
         ),
       );
-      Navigator.of(context).pop();
+      return;
+    }
+
+    if (_selectedImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please upload at least one image'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedPrice.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a price range'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    if (_descriptionController.text.trim().length < 20) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Description must be at least 20 characters'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    if (!ConnectivityService.instance.isConnected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Internet connection required to publish a place.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isUploading = true;
+      _isSubmitting = true;
+    });
+
+    final placeProvider = context.read<PlacesProvider>();
+    try {
+      final imageUrl = await _cloudinaryService.uploadImage(_selectedImage!);
+      if (!mounted) return;
+
+      setState(() => _isUploading = false);
+
+      final newPlace = PlaceModel(
+        id: '',
+        name: _nameController.text.trim(),
+        imageUrl: imageUrl,
+        category: _selectedCategory,
+        location: _locationController.text.trim(),
+        rating: 0,
+        priceRange: _selectedPrice,
+        isOpen: true,
+        latitude: 0,
+        longitude: 0,
+        tags: List<String>.from(_selectedPurposes),
+        reviewCount: 0,
+        description: _descriptionController.text.trim(),
+        priceLevel: _selectedPrice.length,
+        imageUrls: [imageUrl],
+        amenities: List<String>.from(_selectedAmenities),
+      );
+
+      final success = await placeProvider.addPlace(newPlace);
+      if (!mounted) return;
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Place published successfully.'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+        Navigator.of(context).pop();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(placeProvider.errorMessage ?? 'Failed to add place'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
+      final message = error.toString().replaceFirst('Exception: ', '');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message.isEmpty ? 'Unable to upload image' : message),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+          _isSubmitting = false;
+        });
+      }
     }
   }
 
@@ -101,8 +224,14 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                       CustomTextField(
                         controller: _nameController,
                         hintText: 'e.g. Tomoca Coffee, Bole',
-                        validator: (v) =>
-                            v!.isEmpty ? 'Please enter a name' : null,
+                        validator: (value) {
+                          final name = value?.trim() ?? '';
+                          if (name.isEmpty) return 'Please enter a name';
+                          if (name.length < 3) {
+                            return 'Name must be at least 3 characters';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 24),
 
@@ -235,9 +364,11 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                       ),
                       const SizedBox(height: 12),
                       ImageUploadSection(
-                        onTap: () {
-                          // Mock photo picker
-                        },
+                        onTap: _isUploading || _isSubmitting
+                            ? null
+                            : _pickImage,
+                        selectedImage: _selectedImage,
+                        isUploading: _isUploading,
                       ),
                       const SizedBox(height: 20),
 
@@ -253,7 +384,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              // Mock grid lines
+                              // Decorative map grid lines.
                               Opacity(
                                 opacity: 0.2,
                                 child: GridPaper(
@@ -295,6 +426,15 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                             borderSide: BorderSide.none,
                           ),
                         ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter a description';
+                          }
+                          if (value.trim().length < 20) {
+                            return 'Description must be at least 20 characters';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 24),
 
@@ -349,9 +489,9 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   CustomButton(
-                    text: 'Add Place',
-                    isLoading: _isLoading,
-                    onPressed: _submit,
+                    text: _isUploading ? 'Uploading Image' : 'Add Place',
+                    isLoading: _isUploading || _isSubmitting,
+                    onPressed: _isUploading || _isSubmitting ? null : _submit,
                   ),
                   const SizedBox(height: 12),
                   Text(

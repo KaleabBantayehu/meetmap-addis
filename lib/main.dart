@@ -3,16 +3,17 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'core/theme/app_theme.dart';
 import 'routes/app_routes.dart';
-import 'core/repositories/mock/mock_place_repository.dart';
+import 'core/repositories/firebase/firebase_place_repository.dart';
 import 'core/repositories/firebase/firebase_auth_repository.dart';
+import 'core/repositories/firebase/firebase_saved_repository.dart';
+import 'core/repositories/firebase/firebase_review_repository.dart';
 import 'core/repositories/mock/mock_event_repository.dart';
 import 'core/repositories/mock/mock_network_repository.dart';
 import 'core/repositories/mock/mock_hangout_repository.dart';
-import 'core/repositories/mock/mock_saved_repository.dart';
-import 'core/repositories/mock/mock_review_repository.dart';
 import 'providers/places_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/saved_provider.dart';
@@ -36,6 +37,7 @@ void main() async {
     await LocalStorageService.init();
     await SecureStorageService.init();
     await ConnectivityService.init();
+    await dotenv.load(fileName: '.env');
   } catch (e) {
     debugPrint('Local services initialization failed: $e');
   }
@@ -58,13 +60,13 @@ void main() async {
     debugPrint('Firebase initialization failed: $e');
   }
 
-  final placeRepository = MockPlaceRepository();
+  final placeRepository = FirebasePlaceRepository();
   final authRepository = FirebaseAuthRepository();
   final eventRepository = MockEventRepository();
   final networkRepository = MockNetworkRepository();
   final hangoutRepository = MockHangoutRepository();
-  final savedRepository = MockSavedRepository();
-  final reviewRepository = MockReviewRepository();
+  final savedRepository = FirebaseSavedRepository();
+  final reviewRepository = FirebaseReviewRepository();
 
   runApp(
     MultiProvider(
