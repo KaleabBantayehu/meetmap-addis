@@ -113,7 +113,10 @@ class _AddEventScreenState extends State<AddEventScreen> {
 
     final provider = context.read<EventsProvider>();
     try {
-      final imageUrl = await _cloudinaryService.uploadImage(_selectedImage!);
+      final imageUrl = await _cloudinaryService.uploadImage(
+        _selectedImage!,
+        'meetmap/events',
+      );
       if (!mounted) return;
       setState(() => _isUploading = false);
 

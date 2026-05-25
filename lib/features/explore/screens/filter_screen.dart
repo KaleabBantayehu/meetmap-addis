@@ -19,7 +19,7 @@ class FilterScreen extends StatefulWidget {
 class _FilterScreenState extends State<FilterScreen> {
   int? _selectedPriceLevel = 1;
   List<String> _selectedPurposes = ['Study', 'Date'];
-  String _selectedRating = '4.5+';
+  String _selectedRating = 'Any';
   List<String> _selectedAmenities = ['Power Outlets', 'AC'];
   String _radius = '5km';
 
@@ -47,7 +47,7 @@ class _FilterScreenState extends State<FilterScreen> {
     setState(() {
       _selectedPriceLevel = null;
       _selectedPurposes = [];
-      _selectedRating = '';
+      _selectedRating = 'Any';
       _selectedAmenities = [];
       _radius = '5km';
     });

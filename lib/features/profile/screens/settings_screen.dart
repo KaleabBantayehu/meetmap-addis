@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
+import 'package:meetmap_addis/providers/auth_provider.dart';
 import 'package:meetmap_addis/routes/app_routes.dart';
+import 'package:provider/provider.dart';
 import '../widgets/settings_header.dart';
 import '../widgets/settings_group_card.dart';
 import '../widgets/settings_tile.dart';
@@ -19,9 +21,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool emailAlerts = false;
   bool smsUpdates = false;
   bool darkMode = false;
+  bool _isResetLoading = false;
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().currentUser;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -43,10 +47,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             const SizedBox(height: 12),
             SettingsHeader(
-              name: 'Selamawit T.',
-              imageUrl: 'https://i.pravatar.cc/300?img=47',
+              name: user?.name ?? 'MeetMap User',
+              imageUrl: user?.profileImageUrl ?? '',
+              username: user?.username,
+              email: user?.email,
+              bio: user?.bio,
               onViewProfile: () {
-                // Already on profile flow, but could navigate to public profile view
+                Navigator.of(context).pop();
               },
             ),
 
@@ -63,7 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SettingsTile(
                   icon: Icons.lock_outline_rounded,
                   title: 'Change Password',
-                  onTap: () {},
+                  onTap: _isResetLoading ? null : _sendResetEmail,
                 ),
                 const Divider(height: 1, indent: 56),
                 SettingsTile(
@@ -200,7 +207,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
 
             SettingsLogoutButton(
-              onPressed: () {
+              onPressed: () async {
+                await context.read<AuthProvider>().signOut();
+                if (!context.mounted) return;
                 Navigator.of(
                   context,
                 ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
@@ -208,6 +217,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _sendResetEmail() async {
+    final email = context.read<AuthProvider>().currentUser?.email?.trim() ?? '';
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No email found for this account.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isResetLoading = true);
+    final error = await context.read<AuthProvider>().resetPassword(email);
+    if (!mounted) return;
+    setState(() => _isResetLoading = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? 'Password reset email sent.'),
+        backgroundColor: error == null ? AppColors.primary : AppColors.error,
       ),
     );
   }

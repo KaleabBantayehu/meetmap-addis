@@ -111,7 +111,10 @@ class _AddHangoutScreenState extends State<AddHangoutScreen> {
 
     final provider = context.read<HangoutsProvider>();
     try {
-      final imageUrl = await _cloudinaryService.uploadImage(_selectedImage!);
+      final imageUrl = await _cloudinaryService.uploadImage(
+        _selectedImage!,
+        'meetmap/hangouts',
+      );
       if (!mounted) return;
       setState(() => _isUploading = false);
 

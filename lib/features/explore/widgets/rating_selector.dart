@@ -14,13 +14,15 @@ class RatingSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const options = ['Any', '3.0+', '3.5+', '4.0+', '4.5+'];
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: List.generate(5, (index) {
@@ -34,17 +36,19 @@ class RatingSelector extends StatelessWidget {
               );
             }),
           ),
-          const Spacer(),
-          CustomFilterChip(
-            label: '4.0+',
-            isSelected: selectedRating == '4.0+',
-            onTap: () => onRatingSelected('4.0+'),
-          ),
-          const SizedBox(width: 8),
-          CustomFilterChip(
-            label: '4.5+',
-            isSelected: selectedRating == '4.5+',
-            onTap: () => onRatingSelected('4.5+'),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: options
+                .map(
+                  (option) => CustomFilterChip(
+                    label: option,
+                    isSelected: selectedRating == option,
+                    onTap: () => onRatingSelected(option),
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),

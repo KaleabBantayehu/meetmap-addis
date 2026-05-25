@@ -4,12 +4,18 @@ import 'package:meetmap_addis/core/constants/colors.dart';
 class SettingsHeader extends StatelessWidget {
   final String name;
   final String imageUrl;
+  final String? username;
+  final String? email;
+  final String? bio;
   final VoidCallback? onViewProfile;
 
   const SettingsHeader({
     super.key,
     required this.name,
     required this.imageUrl,
+    this.username,
+    this.email,
+    this.bio,
     this.onViewProfile,
   });
 
@@ -42,6 +48,34 @@ class SettingsHeader extends StatelessWidget {
                     color: AppColors.textPrimary,
                   ),
                 ),
+                const SizedBox(height: 4),
+                if (username != null && username!.isNotEmpty)
+                  Text(
+                    '@$username',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                if (email != null && email!.isNotEmpty)
+                  Text(
+                    email!,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                if (bio != null && bio!.isNotEmpty)
+                  Text(
+                    bio!,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 const SizedBox(height: 4),
                 GestureDetector(
                   onTap: onViewProfile,

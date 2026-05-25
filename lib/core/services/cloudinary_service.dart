@@ -10,7 +10,7 @@ class CloudinaryService {
 
   final http.Client _client;
 
-  Future<String> uploadImage(File imageFile) async {
+  Future<String> uploadImage(File imageFile, String folder) async {
     final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME']?.trim();
     final uploadPreset = dotenv.env['CLOUDINARY_UPLOAD_PRESET']?.trim();
 
@@ -28,6 +28,7 @@ class CloudinaryService {
       );
       final request = http.MultipartRequest('POST', uri)
         ..fields['upload_preset'] = uploadPreset
+        ..fields['folder'] = folder
         ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
 
       final streamedResponse = await _client

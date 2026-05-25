@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/constants/colors.dart';
 import '../../../shared/models/user_model.dart';
 
 class TrendingReviewerCard extends StatelessWidget {
   final UserModel user;
   final VoidCallback? onFollow;
+  final bool isFollowing;
+  final bool isLoading;
+  final int followerCount;
 
-  const TrendingReviewerCard({super.key, required this.user, this.onFollow});
+  const TrendingReviewerCard({
+    super.key,
+    required this.user,
+    this.onFollow,
+    this.isFollowing = false,
+    this.isLoading = false,
+    this.followerCount = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +71,7 @@ class TrendingReviewerCard extends StatelessWidget {
                       ],
                     ),
                     Text(
-                      '@${user.username ?? ''} • ${(user.followerCount / 1000).toStringAsFixed(1)}k followers',
+                      '@${user.username ?? ''} • ${_followersLabel(followerCount)} followers',
                       style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondary,
@@ -70,10 +81,12 @@ class TrendingReviewerCard extends StatelessWidget {
                 ),
               ),
               ElevatedButton(
-                onPressed: onFollow,
+                onPressed: isLoading ? null : onFollow,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  backgroundColor: isFollowing
+                      ? AppColors.surfaceVariant
+                      : AppColors.primary,
+                  foregroundColor: isFollowing ? AppColors.textPrimary : Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 8,
@@ -83,9 +96,9 @@ class TrendingReviewerCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-                child: const Text(
-                  'Follow',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                child: Text(
+                  isLoading ? '...' : (isFollowing ? 'Following' : 'Follow'),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -183,5 +196,12 @@ class TrendingReviewerCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _followersLabel(int count) {
+    if (count >= 1000) {
+      return '${(count / 1000).toStringAsFixed(1)}k';
+    }
+    return '$count';
   }
 }

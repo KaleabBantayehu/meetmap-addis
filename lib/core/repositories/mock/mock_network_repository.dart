@@ -14,4 +14,26 @@ class MockNetworkRepository implements NetworkRepository {
     await Future.delayed(const Duration(milliseconds: 400));
     return List.from(MockNetworkData.trendingReviewers);
   }
+
+  @override
+  Future<void> followUser(String currentUserId, String targetUserId) async {
+    await Future.delayed(const Duration(milliseconds: 150));
+  }
+
+  @override
+  Future<void> unfollowUser(String currentUserId, String targetUserId) async {
+    await Future.delayed(const Duration(milliseconds: 150));
+  }
+
+  @override
+  Future<bool> isFollowing(String currentUserId, String targetUserId) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    return false;
+  }
+
+  @override
+  Future<int> getFollowerCount(String userId) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    return 0;
+  }
 }

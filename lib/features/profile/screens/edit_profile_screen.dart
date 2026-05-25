@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
+import 'package:meetmap_addis/core/services/cloudinary_service.dart';
 import 'package:meetmap_addis/providers/auth_provider.dart';
 import 'package:meetmap_addis/shared/models/user_model.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +19,8 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   bool isPrivateProfile = true;
+  bool _isUploadingImage = false;
+  final CloudinaryService _cloudinaryService = CloudinaryService();
 
   late TextEditingController _nameController;
   late TextEditingController _emailController;
@@ -87,7 +93,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 20),
-            ProfileImagePicker(imageUrl: user?.profileImageUrl ?? ''),
+            ProfileImagePicker(
+              imageUrl: user?.profileImageUrl ?? '',
+              onPickImage: user == null || _isUploadingImage
+                  ? null
+                  : () => _changeProfileImage(user),
+            ),
+            if (_isUploadingImage) ...[
+              const SizedBox(height: 12),
+              const Center(child: CircularProgressIndicator()),
+            ],
             const SizedBox(height: 32),
             LabeledTextField(
               label: 'Full Name',
@@ -195,5 +210,51 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ),
     );
     if (success) Navigator.of(context).pop();
+  }
+
+  Future<void> _changeProfileImage(UserModel user) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null || !mounted) return;
+
+    setState(() => _isUploadingImage = true);
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final imageUrl = await _cloudinaryService.uploadImage(
+        File(picked.path),
+        'meetmap/profiles',
+      );
+
+      final authProvider = context.read<AuthProvider>();
+      final success = await authProvider.updateProfile(
+        user.copyWith(profileImageUrl: imageUrl),
+      );
+      if (!mounted) return;
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            success
+                ? 'Profile photo updated.'
+                : authProvider.errorMessage ?? 'Failed to update profile photo.',
+          ),
+          backgroundColor: success ? AppColors.primary : AppColors.error,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      final message = error.toString().replaceFirst('Exception: ', '');
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(message.isEmpty ? 'Unable to upload image.' : message),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+      }
+    }
   }
 }

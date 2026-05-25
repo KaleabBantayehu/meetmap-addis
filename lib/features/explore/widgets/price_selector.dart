@@ -14,20 +14,14 @@ class PriceSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
       children: PlaceModel.priceLevels.map((level) {
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(
-              right: level != PlaceModel.priceLevels.last ? 12.0 : 0.0,
-            ),
-            child: CustomFilterChip(
-              label: PlaceModel.priceLabelFor(level),
-              isSelected: selectedPriceLevel == level,
-              onTap: () => onPriceSelected(level),
-              expanded: true,
-            ),
-          ),
+        return CustomFilterChip(
+          label: PlaceModel.priceLabelFor(level),
+          isSelected: selectedPriceLevel == level,
+          onTap: () => onPriceSelected(level),
         );
       }).toList(),
     );

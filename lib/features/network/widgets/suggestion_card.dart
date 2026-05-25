@@ -5,8 +5,16 @@ import '../../../shared/models/user_model.dart';
 class SuggestionCard extends StatelessWidget {
   final UserModel user;
   final VoidCallback? onFollow;
+  final bool isFollowing;
+  final bool isLoading;
 
-  const SuggestionCard({super.key, required this.user, this.onFollow});
+  const SuggestionCard({
+    super.key,
+    required this.user,
+    this.onFollow,
+    this.isFollowing = false,
+    this.isLoading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -60,19 +68,23 @@ class SuggestionCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: onFollow,
+              onPressed: isLoading ? null : onFollow,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                backgroundColor: isFollowing
+                    ? AppColors.surfaceVariant
+                    : AppColors.primary,
+                foregroundColor: isFollowing ? AppColors.textPrimary : Colors.white,
                 padding: EdgeInsets.zero,
                 minimumSize: const Size(0, 34),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text(
-                'FOLLOW',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+              child: Text(
+                isLoading
+                    ? '...'
+                    : (isFollowing ? 'FOLLOWING' : 'FOLLOW'),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
               ),
             ),
           ),

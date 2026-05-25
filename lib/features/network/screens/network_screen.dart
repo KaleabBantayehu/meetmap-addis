@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../../core/constants/colors.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/network_provider.dart';
+import '../../../shared/models/user_model.dart';
 import '../widgets/network_search_bar.dart';
 import '../widgets/suggestion_card.dart';
 import '../widgets/trending_reviewer_card.dart';
@@ -28,20 +31,30 @@ class _NetworkScreenState extends State<NetworkScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<NetworkProvider>(context, listen: false);
-      if (provider.suggestedUsers.isEmpty &&
-          provider.trendingReviewers.isEmpty) {
-        provider.fetchNetworkData();
+      final provider = context.read<NetworkProvider>();
+      final currentUserId = context.read<AuthProvider>().currentUser?.id;
+      if (provider.suggestedUsers.isEmpty && provider.trendingReviewers.isEmpty) {
+        provider.fetchNetworkData().then((_) {
+          if (!mounted || currentUserId == null || currentUserId.isEmpty) return;
+          provider.loadFollowState(currentUserId);
+        });
+      } else if (currentUserId != null && currentUserId.isNotEmpty) {
+        provider.loadFollowState(currentUserId);
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final networkProvider = Provider.of<NetworkProvider>(context);
-    final suggested = networkProvider.suggestedUsers;
-    final trending = networkProvider.trendingReviewers;
-    final isLoading = networkProvider.isLoading;
+    final networkProvider = context.watch<NetworkProvider>();
+    final currentUserId = context.watch<AuthProvider>().currentUser?.id;
+    final isSearch = networkProvider.hasActiveSearch;
+    final suggested = isSearch
+        ? networkProvider.searchResults
+        : networkProvider.suggestedUsers;
+    final trending = isSearch
+        ? networkProvider.searchResults
+        : networkProvider.trendingReviewers;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -71,70 +84,150 @@ class _NetworkScreenState extends State<NetworkScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16),
-            const NetworkSearchBar(),
-            const SizedBox(height: 24),
-            _buildSectionHeader('Suggested for you', onSeeAll: () {}),
-            const SizedBox(height: 16),
-            if (isLoading)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 40),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (suggested.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 32),
-                child: Center(
-                  child: Text(
-                    'No suggestions yet — check back soon.',
-                    style: TextStyle(color: AppColors.textSecondary),
-                  ),
-                ),
-              )
-            else
-              SizedBox(
-                height: 230,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: suggested.length,
-                  clipBehavior: Clip.none,
-                  itemBuilder: (context, index) {
-                    return SuggestionCard(
-                      user: suggested[index],
-                      onFollow: () {},
-                    );
-                  },
-                ),
-              ),
-            const SizedBox(height: 32),
-            const Text(
-              'Trending Reviewers',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
+            NetworkSearchBar(
+              onChanged: (value) {
+                networkProvider.searchUsers(value);
+              },
             ),
+            const SizedBox(height: 24),
+            if (!isSearch) _buildSectionHeader('Suggested for you', onSeeAll: () {}),
             const SizedBox(height: 16),
-            if (isLoading)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 40),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: trending.length,
-                itemBuilder: (context, index) {
-                  return TrendingReviewerCard(
-                    user: trending[index],
-                    onFollow: () {},
-                  );
-                },
+            _buildSuggestedList(
+              networkProvider: networkProvider,
+              currentUserId: currentUserId,
+              suggested: suggested,
+            ),
+            const SizedBox(height: 32),
+            if (!isSearch)
+              const Text(
+                'Trending Reviewers',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
+            const SizedBox(height: 16),
+            _buildTrendingList(
+              networkProvider: networkProvider,
+              currentUserId: currentUserId,
+              trending: trending,
+            ),
             const SizedBox(height: 24),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestedList({
+    required NetworkProvider networkProvider,
+    required String? currentUserId,
+    required List<UserModel> suggested,
+  }) {
+    if (networkProvider.isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (suggested.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 32),
+        child: Center(
+          child: Text(
+            'No users found.',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
+      );
+    }
+    return SizedBox(
+      height: 230,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: suggested.length,
+        clipBehavior: Clip.none,
+        itemBuilder: (context, index) {
+          final user = suggested[index];
+          return SuggestionCard(
+            user: user,
+            isFollowing: networkProvider.isFollowing(user.id),
+            isLoading: networkProvider.isFollowActionInProgress(user.id),
+            onFollow: currentUserId == null || currentUserId.isEmpty
+                ? null
+                : () => _onFollowTap(
+                    networkProvider: networkProvider,
+                    currentUserId: currentUserId,
+                    user: user,
+                  ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTrendingList({
+    required NetworkProvider networkProvider,
+    required String? currentUserId,
+    required List<UserModel> trending,
+  }) {
+    if (networkProvider.isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (trending.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Center(
+          child: Text(
+            'No users found.',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
+      );
+    }
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: trending.length,
+      itemBuilder: (context, index) {
+        final user = trending[index];
+        return TrendingReviewerCard(
+          user: user,
+          followerCount: networkProvider.followerCountFor(user),
+          isFollowing: networkProvider.isFollowing(user.id),
+          isLoading: networkProvider.isFollowActionInProgress(user.id),
+          onFollow: currentUserId == null || currentUserId.isEmpty
+              ? null
+              : () => _onFollowTap(
+                  networkProvider: networkProvider,
+                  currentUserId: currentUserId,
+                  user: user,
+                ),
+        );
+      },
+    );
+  }
+
+  Future<void> _onFollowTap({
+    required NetworkProvider networkProvider,
+    required String currentUserId,
+    required UserModel user,
+  }) async {
+    final ok = await networkProvider.toggleFollow(
+      currentUserId: currentUserId,
+      targetUser: user,
+    );
+    if (!mounted || ok) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          networkProvider.errorMessage ?? 'Unable to update follow status.',
+        ),
+        backgroundColor: AppColors.error,
       ),
     );
   }

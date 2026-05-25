@@ -113,7 +113,10 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
 
     final placeProvider = context.read<PlacesProvider>();
     try {
-      final imageUrl = await _cloudinaryService.uploadImage(_selectedImage!);
+      final imageUrl = await _cloudinaryService.uploadImage(
+        _selectedImage!,
+        'meetmap/places',
+      );
       if (!mounted) return;
 
       setState(() => _isUploading = false);
