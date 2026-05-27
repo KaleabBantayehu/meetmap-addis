@@ -225,9 +225,9 @@ class TrendingReviewerCard extends StatelessWidget {
         child: CachedNetworkImage(
           imageUrl: url,
           fit: BoxFit.cover,
-          placeholder: (_, __) =>
+          placeholder: (_, url) =>
               Container(color: AppColors.surfaceVariant),
-          errorWidget: (_, __, ___) =>
+          errorWidget: (_, url, err) =>
               Container(color: AppColors.surfaceVariant),
         ),
       ),
@@ -245,9 +245,9 @@ class TrendingReviewerCard extends StatelessWidget {
             child: CachedNetworkImage(
               imageUrl: url,
               fit: BoxFit.cover,
-              placeholder: (_, __) =>
+              placeholder: (_, url) =>
                   Container(color: AppColors.surfaceVariant),
-              errorWidget: (_, __, ___) =>
+              errorWidget: (_, url, err) =>
                   Container(color: AppColors.surfaceVariant),
             ),
           ),
@@ -304,9 +304,9 @@ class _UserAvatar extends StatelessWidget {
                 width: radius * 2,
                 height: radius * 2,
                 fit: BoxFit.cover,
-                placeholder: (_, __) =>
+                placeholder: (_, url) =>
                     Container(color: AppColors.surfaceVariant),
-                errorWidget: (_, __, ___) => Icon(
+                errorWidget: (_, url, err) => Icon(
                   Icons.person_rounded,
                   color: AppColors.textSecondary,
                   size: radius,

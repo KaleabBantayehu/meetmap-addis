@@ -354,12 +354,14 @@ class PlacesProvider with ChangeNotifier {
     return degree * math.pi / 180;
   }
 
-  Future<DirectionsResult?> getDirectionsToPlace({
+  Future<DirectionsResult?> getDirectionsToCoords({
     required double userLat,
     required double userLng,
-    required PlaceModel place,
+    required double destLat,
+    required double destLng,
+    required String id,
   }) async {
-    final cacheKey = '${place.id}_$userLat' '_$userLng';
+    final cacheKey = '${id}_${userLat}_$userLng';
     if (_directionsCache.containsKey(cacheKey)) {
       return _directionsCache[cacheKey];
     }
@@ -367,8 +369,8 @@ class PlacesProvider with ChangeNotifier {
     final result = await _directionsService.getDirections(
       originLat: userLat,
       originLng: userLng,
-      destLat: place.latitude,
-      destLng: place.longitude,
+      destLat: destLat,
+      destLng: destLng,
     );
 
     if (result != null) {
@@ -376,6 +378,20 @@ class PlacesProvider with ChangeNotifier {
     }
 
     return result;
+  }
+
+  Future<DirectionsResult?> getDirectionsToPlace({
+    required double userLat,
+    required double userLng,
+    required PlaceModel place,
+  }) async {
+    return getDirectionsToCoords(
+      userLat: userLat,
+      userLng: userLng,
+      destLat: place.latitude,
+      destLng: place.longitude,
+      id: place.id,
+    );
   }
 
   void clearDirectionsCache() {

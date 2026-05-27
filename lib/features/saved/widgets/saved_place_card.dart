@@ -140,18 +140,28 @@ class SavedPlaceImage extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          CachedNetworkImage(
-            imageUrl: imageUrl,
-            fit: BoxFit.cover,
-            placeholder: (_, _) => Container(color: AppColors.surfaceVariant),
-            errorWidget: (_, _, _) => Container(
-              color: AppColors.surfaceVariant,
-              child: const Icon(
-                Icons.image_not_supported_outlined,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
+          imageUrl.trim().isEmpty
+              ? Container(
+                  color: AppColors.surfaceVariant,
+                  child: const Center(
+                    child: Icon(
+                      Icons.image_not_supported_outlined,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                )
+              : CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  fit: BoxFit.cover,
+                  placeholder: (_, _) => Container(color: AppColors.surfaceVariant),
+                  errorWidget: (_, _, _) => Container(
+                    color: AppColors.surfaceVariant,
+                    child: const Icon(
+                      Icons.image_not_supported_outlined,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
           Positioned(
             left: 20,
             bottom: 20,

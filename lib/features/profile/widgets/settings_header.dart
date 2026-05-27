@@ -32,8 +32,16 @@ class SettingsHeader extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 30,
-            backgroundImage: NetworkImage(imageUrl),
             backgroundColor: AppColors.imagePlaceholder,
+            backgroundImage: imageUrl.trim().isNotEmpty
+                ? NetworkImage(imageUrl)
+                : null,
+            child: imageUrl.trim().isEmpty
+                ? const Icon(
+                    Icons.person,
+                    color: AppColors.textSecondary,
+                  )
+                : null,
           ),
           const SizedBox(width: 16),
           Expanded(

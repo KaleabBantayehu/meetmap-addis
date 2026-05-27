@@ -39,19 +39,29 @@ class TopPickVenueCard extends StatelessWidget {
                 ),
                 child: AspectRatio(
                   aspectRatio: 16 / 10,
-                  child: CachedNetworkImage(
-                    imageUrl: venue.imageUrl,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) =>
-                        Container(color: AppColors.surfaceVariant),
-                    errorWidget: (context, url, error) => Container(
-                      color: AppColors.surfaceVariant,
-                      child: const Icon(
-                        Icons.image_not_supported_outlined,
-                        color: AppColors.textSecondary,
+                  child: venue.imageUrl.trim().isEmpty
+                    ? Container(
+                        color: AppColors.surfaceVariant,
+                        child: const Center(
+                          child: Icon(
+                            Icons.image_not_supported_outlined,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      )
+                    : CachedNetworkImage(
+                        imageUrl: venue.imageUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) =>
+                            Container(color: AppColors.surfaceVariant),
+                        errorWidget: (context, url, error) => Container(
+                          color: AppColors.surfaceVariant,
+                          child: const Icon(
+                            Icons.image_not_supported_outlined,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
                 ),
               ),
 
@@ -79,15 +89,17 @@ class TopPickVenueCard extends StatelessWidget {
                           color: AppColors.accent,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          '${venue.rating} · ${venue.location}',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        Flexible(
+                          child: Text(
+                            '${venue.rating} · ${venue.location}',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),

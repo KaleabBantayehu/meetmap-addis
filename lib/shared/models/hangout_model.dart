@@ -11,6 +11,8 @@ class HangoutModel {
   final String description;
   final bool isLive;
   final String? createdBy;
+  final double? latitude;
+  final double? longitude;
 
   const HangoutModel({
     required this.id,
@@ -23,6 +25,8 @@ class HangoutModel {
     required this.description,
     this.isLive = false,
     this.createdBy,
+    this.latitude,
+    this.longitude,
   });
 
   HangoutModel copyWith({
@@ -36,6 +40,8 @@ class HangoutModel {
     String? description,
     bool? isLive,
     String? createdBy,
+    double? latitude,
+    double? longitude,
   }) {
     return HangoutModel(
       id: id ?? this.id,
@@ -48,6 +54,8 @@ class HangoutModel {
       description: description ?? this.description,
       isLive: isLive ?? this.isLive,
       createdBy: createdBy ?? this.createdBy,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
 
@@ -63,6 +71,8 @@ class HangoutModel {
       description: map['description'] ?? '',
       isLive: map['isLive'] ?? false,
       createdBy: map['createdBy'] as String?,
+      latitude: (map['latitude'] as num?)?.toDouble(),
+      longitude: (map['longitude'] as num?)?.toDouble(),
     );
   }
 
@@ -78,6 +88,8 @@ class HangoutModel {
       'description': description,
       'isLive': isLive,
       'createdBy': createdBy,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 
@@ -100,7 +112,9 @@ class HangoutModel {
         other.attendeeCount == attendeeCount &&
         other.description == description &&
         other.isLive == isLive &&
-        other.createdBy == createdBy;
+        other.createdBy == createdBy &&
+        other.latitude == latitude &&
+        other.longitude == longitude;
   }
 
   @override
@@ -114,7 +128,9 @@ class HangoutModel {
         attendeeCount.hashCode ^
         description.hashCode ^
         isLive.hashCode ^
-        createdBy.hashCode;
+        createdBy.hashCode ^
+        (latitude?.hashCode ?? 0) ^
+        (longitude?.hashCode ?? 0);
   }
 }
 

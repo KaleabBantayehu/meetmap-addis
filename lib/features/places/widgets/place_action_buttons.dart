@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
+import 'package:meetmap_addis/features/places/screens/place_map_screen.dart';
 import 'package:meetmap_addis/features/reviews/screens/add_review_screen.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
 
@@ -16,8 +18,28 @@ class PlaceActionButtons extends StatelessWidget {
           child: _PlaceActionButton(
             icon: Icons.call_rounded,
             label: 'Call',
-            semanticLabel: 'Call ${place.name}',
-            onTap: () {},
+            semanticLabel: 'Copy phone number for ${place.name}',
+            onTap: () {
+              final phone = place.phone;
+              if (phone != null && phone.isNotEmpty) {
+                Clipboard.setData(ClipboardData(text: phone));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Phone number copied: $phone'),
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('No phone number available'),
+                    behavior: SnackBarBehavior.floating,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
           ),
         ),
         const SizedBox(width: 12),
@@ -27,7 +49,13 @@ class PlaceActionButtons extends StatelessWidget {
             label: 'Directions',
             semanticLabel: 'Get directions to ${place.name}',
             isPrimary: true,
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => PlaceMapScreen(place: place),
+                ),
+              );
+            },
           ),
         ),
         const SizedBox(width: 12),

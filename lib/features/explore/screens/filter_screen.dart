@@ -16,18 +16,43 @@ import '../widgets/rating_selector.dart';
 const _kRadiusOptions = ['1km', '2km', '5km', '10km', '25km'];
 
 class FilterScreen extends StatefulWidget {
-  const FilterScreen({super.key});
+  final String activeCategory;
+  final int? initialPriceLevel;
+  final List<String> initialPurposes;
+  final String initialRating;
+  final List<String> initialAmenities;
+  final String initialRadius;
+
+  const FilterScreen({
+    super.key,
+    this.activeCategory = '',
+    this.initialPriceLevel,
+    this.initialPurposes = const [],
+    this.initialRating = 'Any',
+    this.initialAmenities = const [],
+    this.initialRadius = '5km',
+  });
 
   @override
   State<FilterScreen> createState() => _FilterScreenState();
 }
 
 class _FilterScreenState extends State<FilterScreen> {
-  int? _selectedPriceLevel = 1;
-  List<String> _selectedPurposes = ['Study', 'Date'];
+  int? _selectedPriceLevel;
+  List<String> _selectedPurposes = [];
   String _selectedRating = 'Any';
-  List<String> _selectedAmenities = ['Power Outlets', 'AC'];
+  List<String> _selectedAmenities = [];
   String _radius = '5km';
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedPriceLevel = widget.initialPriceLevel;
+    _selectedPurposes = List.from(widget.initialPurposes);
+    _selectedRating = widget.initialRating;
+    _selectedAmenities = List.from(widget.initialAmenities);
+    _radius = widget.initialRadius;
+  }
 
   void _togglePurpose(String purpose) {
     setState(() {
@@ -147,13 +172,33 @@ class _FilterScreenState extends State<FilterScreen> {
         : double.tryParse(_selectedRating.replaceAll('+', '')) ?? 0.0;
     final radiusKm = double.tryParse(_radius.replaceAll('km', '')) ?? 5.0;
 
-    return places.where((place) {
+    // Filter by active category first
+    final normalizedCategory = widget.activeCategory.toLowerCase();
+    var filtered = places.where((place) {
+      final placeCat = place.category.toLowerCase();
+      final placeName = place.name.toLowerCase();
+      if (normalizedCategory.isEmpty) return true;
+      if (normalizedCategory == 'cafes') {
+        return placeCat.contains('cafe') || placeName.contains('coffee');
+      }
+      final String matchPattern;
+      if (normalizedCategory.endsWith('s') && normalizedCategory.length > 1) {
+        matchPattern = normalizedCategory.substring(0, normalizedCategory.length - 1);
+      } else {
+        matchPattern = normalizedCategory;
+      }
+      return placeCat.contains(matchPattern);
+    }).toList();
+
+    return filtered.where((place) {
       // Rating gate
       if (minRating > 0 && place.rating < minRating) return false;
 
       // Price gate
       if (_selectedPriceLevel != null &&
-          place.normalizedPriceLevel != _selectedPriceLevel) return false;
+          place.normalizedPriceLevel != _selectedPriceLevel) {
+        return false;
+      }
 
       // Radius gate (only if we have location)
       if (locationProvider.hasLocation) {
@@ -173,6 +218,18 @@ class _FilterScreenState extends State<FilterScreen> {
           ),
         );
         if (!matchesAll) return false;
+      }
+
+      // Purposes/Tags gate
+      if (_selectedPurposes.isNotEmpty) {
+        final matchesAny = _selectedPurposes.any(
+          (p) => place.tags.any(
+            (tag) => tag.toLowerCase().contains(p.toLowerCase()) ||
+                     place.name.toLowerCase().contains(p.toLowerCase()) ||
+                     place.category.toLowerCase().contains(p.toLowerCase())
+          ),
+        );
+        if (!matchesAny) return false;
       }
 
       return true;

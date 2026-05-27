@@ -86,23 +86,33 @@ class SearchResultImage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
-      child: CachedNetworkImage(
-        imageUrl: imageUrl,
-        width: 92,
-        height: 92,
-        fit: BoxFit.cover,
-        placeholder: (_, _) =>
-            Container(width: 92, height: 92, color: AppColors.surfaceVariant),
-        errorWidget: (_, _, _) => Container(
-          width: 92,
-          height: 92,
-          color: AppColors.surfaceVariant,
-          child: const Icon(
-            Icons.image_not_supported_outlined,
-            color: AppColors.textSecondary,
-          ),
-        ),
-      ),
+      child: imageUrl.trim().isEmpty
+          ? Container(
+              width: 92,
+              height: 92,
+              color: AppColors.surfaceVariant,
+              child: const Icon(
+                Icons.image_not_supported_outlined,
+                color: AppColors.textSecondary,
+              ),
+            )
+          : CachedNetworkImage(
+              imageUrl: imageUrl,
+              width: 92,
+              height: 92,
+              fit: BoxFit.cover,
+              placeholder: (_, _) =>
+                  Container(width: 92, height: 92, color: AppColors.surfaceVariant),
+              errorWidget: (_, _, _) => Container(
+                width: 92,
+                height: 92,
+                color: AppColors.surfaceVariant,
+                child: const Icon(
+                  Icons.image_not_supported_outlined,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
     );
   }
 }

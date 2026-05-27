@@ -5,6 +5,9 @@ import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/core/services/gebeta_map_service.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
 import 'package:meetmap_addis/providers/location_provider.dart';
+import 'package:meetmap_addis/providers/places_provider.dart';
+import 'package:meetmap_addis/core/services/gebeta_directions_service.dart' show DirectionsResult;
+import 'package:meetmap_addis/core/storage/connectivity_service.dart';
 import 'package:provider/provider.dart';
 
 class PlaceMapScreen extends StatefulWidget {
@@ -25,6 +28,45 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
   Point<double> _pinPoint = const Point(0, 0);
   bool _pinVisible = false;
 
+  DirectionsResult? _directionsResult;
+  bool _isLoadingDirections = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDirections();
+  }
+
+  Future<void> _fetchDirections() async {
+    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+    final placesProvider = Provider.of<PlacesProvider>(context, listen: false);
+    if (!locationProvider.hasLocation) return;
+
+    setState(() {
+      _isLoadingDirections = true;
+    });
+
+    try {
+      final result = await placesProvider.getDirectionsToPlace(
+        userLat: locationProvider.currentLatitude!,
+        userLng: locationProvider.currentLongitude!,
+        place: widget.place,
+      );
+      if (mounted) {
+        setState(() {
+          _directionsResult = result;
+        });
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingDirections = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasCoords =
@@ -35,7 +77,38 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
       body: Stack(
         children: [
           // ── Map ──────────────────────────────────────────────────────────
-          if (hasCoords && _mapService.isConfigured)
+          if (!ConnectivityService.instance.isConnected)
+            Positioned.fill(
+              child: Container(
+                color: const Color(0xFFF0EFEA),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.wifi_off_rounded,
+                        size: 72,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'You are offline',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Map cannot be loaded without an internet connection.',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          else if (hasCoords && _mapService.isConfigured)
             Positioned.fill(
               child: GebetaMap(
                 compassViewPosition: CompassViewPosition.topRight,
@@ -181,6 +254,8 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
                 child: _PlaceInfoCard(
                   place: widget.place,
                   onCenterTap: _centerOnPlace,
+                  directions: _directionsResult,
+                  isLoading: _isLoadingDirections,
                 ),
               ),
             ),
@@ -328,10 +403,14 @@ class _PlaceInfoCard extends StatelessWidget {
   const _PlaceInfoCard({
     required this.place,
     required this.onCenterTap,
+    this.directions,
+    this.isLoading = false,
   });
 
   final PlaceModel place;
   final VoidCallback onCenterTap;
+  final DirectionsResult? directions;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -348,70 +427,149 @@ class _PlaceInfoCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              Icons.place_rounded,
-              color: AppColors.primary,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 14),
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  place.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    color: AppColors.textPrimary,
+          Row(
+            children: [
+              // Icon
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.place_rounded,
+                  color: AppColors.primary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 14),
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      place.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${place.location}, Addis Ababa',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Centre button
+              GestureDetector(
+                onTap: onCenterTap,
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.my_location_rounded,
+                    color: Colors.white,
+                    size: 20,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '${place.location}, Addis Ababa',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
+              ),
+            ],
+          ),
+          if (isLoading || directions != null) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: AppColors.outline),
+            const SizedBox(height: 12),
+            if (isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Centre button
-          GestureDetector(
-            onTap: onCenterTap,
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(12),
+              )
+            else if (directions != null)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _InfoItem(
+                    icon: Icons.navigation_rounded,
+                    label: 'Distance',
+                    value: directions!.distanceDisplay,
+                  ),
+                  Container(
+                    width: 1,
+                    height: 28,
+                    color: AppColors.outline,
+                  ),
+                  _InfoItem(
+                    icon: Icons.access_time_rounded,
+                    label: 'Duration',
+                    value: directions!.durationDisplay,
+                  ),
+                ],
               ),
-              child: const Icon(
-                Icons.my_location_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ),
+          ],
         ],
       ),
+    );
+  }
+}
+
+class _InfoItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _InfoItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: AppColors.primary, size: 20),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+            ),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

@@ -89,27 +89,38 @@ class ExplorePlaceCard extends StatelessWidget {
           child: AspectRatio(
             aspectRatio: 16 / 9,
 
-            child: CachedNetworkImage(
-              imageUrl: imageUrl,
-              fit: BoxFit.cover,
-
-              placeholder: (_, _) {
-                return Container(color: AppColors.surfaceVariant);
-              },
-
-              errorWidget: (_, _, _) {
-                return Container(
-                  color: AppColors.surfaceVariant,
-                  child: const Center(
-                    child: Icon(
-                      Icons.image_not_supported_outlined,
-                      size: 36,
-                      color: AppColors.textSecondary,
+            child: imageUrl.isEmpty
+                ? Container(
+                    color: AppColors.surfaceVariant,
+                    child: const Center(
+                      child: Icon(
+                        Icons.image_not_supported_outlined,
+                        size: 36,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
+                  )
+                : CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.cover,
+
+                    placeholder: (_, _) {
+                      return Container(color: AppColors.surfaceVariant);
+                    },
+
+                    errorWidget: (_, _, _) {
+                      return Container(
+                        color: AppColors.surfaceVariant,
+                        child: const Center(
+                          child: Icon(
+                            Icons.image_not_supported_outlined,
+                            size: 36,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ),
 

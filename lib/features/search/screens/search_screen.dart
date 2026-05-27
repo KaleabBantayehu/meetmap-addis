@@ -13,6 +13,7 @@ import 'package:meetmap_addis/shared/models/place_model.dart';
 import 'package:provider/provider.dart';
 import 'package:meetmap_addis/providers/places_provider.dart';
 import 'package:meetmap_addis/providers/saved_provider.dart';
+import 'package:meetmap_addis/providers/location_provider.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -88,6 +89,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     final placesProvider = Provider.of<PlacesProvider>(context);
     final savedProvider = Provider.of<SavedProvider>(context);
+    final locationProvider = Provider.of<LocationProvider>(context);
     
     // Determine the list of places to display:
     final List<PlaceModel> results;
@@ -161,23 +163,36 @@ class _SearchScreenState extends State<SearchScreen> {
                     SearchEmptyState(query: query)
                   else
                     ...results.map(
-                      (place) => Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: SearchResultCard(
-                          place: place,
-                          distanceLabel: distanceLabelFor(place.id),
-                          isSaved: savedProvider.isSaved(place.id),
-                          onTap: () {
-                            if (query.isNotEmpty) {
-                              placesProvider.addRecentSearch(query);
-                            } else {
-                              placesProvider.addRecentSearch(place.name);
-                            }
-                            openPlaceDetails(place);
-                          },
-                          onSaveToggle: () => savedProvider.toggleSaved(place),
-                        ),
-                      ),
+                      (place) {
+                        final String distLabel;
+                        if (locationProvider.hasLocation) {
+                          final km = placesProvider.getDistanceToPlace(
+                            userLat: locationProvider.currentLatitude!,
+                            userLng: locationProvider.currentLongitude!,
+                            place: place,
+                          );
+                          distLabel = '${km.toStringAsFixed(1)} km away';
+                        } else {
+                          distLabel = 'Nearby';
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: SearchResultCard(
+                            place: place,
+                            distanceLabel: distLabel,
+                            isSaved: savedProvider.isSaved(place.id),
+                            onTap: () {
+                              if (query.isNotEmpty) {
+                                placesProvider.addRecentSearch(query);
+                              } else {
+                                placesProvider.addRecentSearch(place.name);
+                              }
+                              openPlaceDetails(place);
+                            },
+                            onSaveToggle: () => savedProvider.toggleSaved(place),
+                          ),
+                        );
+                      },
                     ),
                   const SizedBox(height: 34),
                   BrowseCategoryGrid(
@@ -230,18 +245,4 @@ class _SearchScreenState extends State<SearchScreen> {
     ).push(MaterialPageRoute(builder: (_) => PlaceDetailScreen(place: place)));
   }
 
-  String distanceLabelFor(String placeId) {
-    switch (placeId) {
-      case '1':
-        return '2.4 km';
-      case '2':
-        return '1.2 km';
-      case '4':
-        return '0.8 km';
-      case '5':
-        return '3.1 km';
-      default:
-        return '1.8 km';
-    }
-  }
 }

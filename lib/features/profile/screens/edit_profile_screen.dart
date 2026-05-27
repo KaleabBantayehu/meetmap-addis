@@ -219,6 +219,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     setState(() => _isUploadingImage = true);
     final messenger = ScaffoldMessenger.of(context);
+    final authProvider = context.read<AuthProvider>();
 
     try {
       final imageUrl = await _cloudinaryService.uploadImage(
@@ -226,7 +227,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'meetmap/profiles',
       );
 
-      final authProvider = context.read<AuthProvider>();
       final success = await authProvider.updateProfile(
         user.copyWith(profileImageUrl: imageUrl),
       );

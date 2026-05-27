@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../shared/models/user_model.dart';
 import '../network_repository.dart';
@@ -49,6 +50,11 @@ class FirebaseNetworkRepository implements NetworkRepository {
 
   @override
   Future<void> followUser(String currentUserId, String targetUserId) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null || currentUser.uid != currentUserId) {
+      throw Exception('User not authenticated or unauthorized');
+    }
+
     try {
       final followingRef = _firestore
           .collection('users')
@@ -78,6 +84,11 @@ class FirebaseNetworkRepository implements NetworkRepository {
 
   @override
   Future<void> unfollowUser(String currentUserId, String targetUserId) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null || currentUser.uid != currentUserId) {
+      throw Exception('User not authenticated or unauthorized');
+    }
+
     try {
       final followingRef = _firestore
           .collection('users')

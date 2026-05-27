@@ -113,12 +113,25 @@ class ReviewsProvider with ChangeNotifier {
   }
 
   Future<void> deleteReview(String reviewId, String placeId) async {
-    // Optimistic Delete
+    final currentUserId = _authProvider.currentUser?.id;
+    if (currentUserId == null) {
+      _errorMessage = 'Must be logged in to delete reviews.';
+      notifyListeners();
+      return;
+    }
+
     final currentList = _reviewsByPlace[placeId] ?? [];
     final reviewIndex = currentList.indexWhere((r) => r.id == reviewId);
     if (reviewIndex == -1) return;
 
     final reviewToRestore = currentList[reviewIndex];
+    if (reviewToRestore.userId != currentUserId) {
+      _errorMessage = 'You are not authorized to delete this review.';
+      notifyListeners();
+      return;
+    }
+
+    // Optimistic Delete
     currentList.removeAt(reviewIndex);
     _reviewsByPlace[placeId] = currentList;
     _saveToCache(placeId);

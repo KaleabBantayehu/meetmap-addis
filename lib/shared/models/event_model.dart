@@ -13,6 +13,8 @@ class EventModel {
   final String description;
   final bool isFeatured;
   final String? createdBy;
+  final double latitude;
+  final double longitude;
 
   const EventModel({
     required this.id,
@@ -27,6 +29,8 @@ class EventModel {
     required this.description,
     this.isFeatured = false,
     this.createdBy,
+    this.latitude = 9.0300,
+    this.longitude = 38.7400,
   });
 
   EventModel copyWith({
@@ -42,6 +46,8 @@ class EventModel {
     String? description,
     bool? isFeatured,
     String? createdBy,
+    double? latitude,
+    double? longitude,
   }) {
     return EventModel(
       id: id ?? this.id,
@@ -56,6 +62,8 @@ class EventModel {
       description: description ?? this.description,
       isFeatured: isFeatured ?? this.isFeatured,
       createdBy: createdBy ?? this.createdBy,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
 
@@ -73,6 +81,8 @@ class EventModel {
       description: map['description'] ?? '',
       isFeatured: map['isFeatured'] ?? false,
       createdBy: map['createdBy'] as String?,
+      latitude: (map['latitude'] as num?)?.toDouble() ?? 9.0300,
+      longitude: (map['longitude'] as num?)?.toDouble() ?? 38.7400,
     );
   }
 
@@ -90,6 +100,8 @@ class EventModel {
       'description': description,
       'isFeatured': isFeatured,
       'createdBy': createdBy,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 
@@ -114,7 +126,9 @@ class EventModel {
         other.attendeeCount == attendeeCount &&
         other.description == description &&
         other.isFeatured == isFeatured &&
-        other.createdBy == createdBy;
+        other.createdBy == createdBy &&
+        other.latitude == latitude &&
+        other.longitude == longitude;
   }
 
   @override
@@ -130,6 +144,8 @@ class EventModel {
         attendeeCount.hashCode ^
         description.hashCode ^
         isFeatured.hashCode ^
-        createdBy.hashCode;
+        createdBy.hashCode ^
+        latitude.hashCode ^
+        longitude.hashCode;
   }
 }

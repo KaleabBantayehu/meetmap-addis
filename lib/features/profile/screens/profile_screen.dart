@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/providers/auth_provider.dart';
+import 'package:meetmap_addis/providers/saved_provider.dart';
+import 'package:meetmap_addis/providers/hangouts_provider.dart';
+import 'package:meetmap_addis/providers/events_provider.dart';
 import 'package:meetmap_addis/features/profile/widgets/profile_avatar_section.dart';
 import 'package:meetmap_addis/features/profile/widgets/profile_logout_button.dart';
 import 'package:meetmap_addis/features/profile/widgets/profile_reviews_section.dart';
@@ -18,6 +21,9 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().currentUser;
+    final savedCount = context.watch<SavedProvider>().savedPlaces.length;
+    final hangoutsCount = context.watch<HangoutsProvider>().quickHangouts.length;
+    final eventsCount = context.watch<EventsProvider>().events.length;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -25,9 +31,12 @@ class ProfileScreen extends StatelessWidget {
         child: Column(
           children: [
             ProfileTopBar(
-              onBackPressed: () {
-                if (Navigator.of(context).canPop()) {
+              onBackPressed: () async {
+                final navigator = Navigator.of(context, rootNavigator: true);
+                if (await navigator.maybePop()) {
                   Navigator.of(context).pop();
+                } else {
+                  Navigator.of(context).pushNamed(AppRoutes.explore);
                 }
               },
               onSettingsPressed: () {
@@ -63,16 +72,14 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 34),
                       ProfileStatsSection(
-                        stats: const [
-                          ProfileStatData(label: 'Reviews', value: '12'),
-                          ProfileStatData(label: 'Saved', value: '24'),
-                          ProfileStatData(label: 'Hangouts', value: '8'),
+                        stats: [
+                          ProfileStatData(label: 'Events', value: '$eventsCount'),
+                          ProfileStatData(label: 'Saved', value: '$savedCount'),
+                          ProfileStatData(label: 'Hangouts', value: '$hangoutsCount'),
                         ],
                         onStatSelected: (label) {
-                          if (label == 'Reviews') {
-                            Navigator.of(
-                              context,
-                            ).pushNamed(AppRoutes.reviewHistory);
+                          if (label == 'Events') {
+                            // Focus navigation on appropriate screens
                           } else if (label == 'Saved') {
                             Navigator.of(context).pushNamed(AppRoutes.saved);
                           } else if (label == 'Hangouts') {

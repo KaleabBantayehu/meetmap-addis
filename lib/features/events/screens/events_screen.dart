@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:meetmap_addis/features/events/screens/event_detail_screen.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/shared/models/event_model.dart';
 import 'package:meetmap_addis/routes/app_routes.dart';
+import 'package:meetmap_addis/shared/widgets/app_menu_button.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/events_provider.dart';
 import '../screens/add_event_screen.dart';
@@ -10,16 +12,6 @@ import '../widgets/event_category_chips.dart';
 import '../widgets/featured_event_banner.dart';
 import '../widgets/event_card.dart';
 import '../widgets/empty_events_state.dart';
-
-void _showComingSoon(BuildContext context) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Coming soon!'),
-      behavior: SnackBarBehavior.floating,
-      duration: Duration(seconds: 2),
-    ),
-  );
-}
 
 class EventsScreen extends StatefulWidget {
   const EventsScreen({super.key});
@@ -105,7 +97,13 @@ class _EventsScreenState extends State<EventsScreen> {
                           if (featuredEvent != null)
                             FeaturedEventBanner(
                               event: featuredEvent,
-                              onTap: () {},
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => EventDetailScreen(event: featuredEvent),
+                                  ),
+                                );
+                              },
                             ),
 
                           const SizedBox(height: 24),
@@ -155,6 +153,40 @@ class _EventsScreenState extends State<EventsScreen> {
                       hasScrollBody: false,
                       child: Center(child: CircularProgressIndicator()),
                     )
+                  else if (eventsProvider.errorMessage != null && filtered.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 48),
+                              const SizedBox(height: 16),
+                              Text(
+                                eventsProvider.errorMessage!,
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton.icon(
+                                onPressed: () => eventsProvider.fetchEvents(),
+                                icon: const Icon(Icons.refresh_rounded),
+                                label: const Text('Retry'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
                   else if (filtered.isEmpty)
                     const SliverFillRemaining(
                       hasScrollBody: false,
@@ -172,7 +204,11 @@ class _EventsScreenState extends State<EventsScreen> {
                             key: ValueKey(event.id),
                             event: event,
                             onTap: () {
-                              // TODO: Navigate to EventDetailScreen(event)
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => EventDetailScreen(event: event),
+                                ),
+                              );
                             },
                           );
                         },
@@ -208,14 +244,7 @@ class _EventsAppBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => _showComingSoon(context),
-            icon: const Icon(
-              Icons.menu_rounded,
-              size: 28,
-              color: AppColors.primary,
-            ),
-          ),
+          const AppMenuButton(),
           const SizedBox(width: 4),
           Expanded(
             child: Text(

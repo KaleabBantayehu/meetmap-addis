@@ -20,8 +20,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool pushNotifications = true;
   bool emailAlerts = false;
   bool smsUpdates = false;
-  bool darkMode = false;
   bool _isResetLoading = false;
+
+  void _showComingSoon(String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature will be available in the next update!'),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.primary,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +86,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SettingsTile(
                   icon: Icons.link_rounded,
                   title: 'Linked Accounts',
-                  onTap: () {},
+                  onTap: () => _showComingSoon('Linked Accounts'),
                 ),
               ],
             ),
@@ -87,19 +97,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SettingsTile(
                   icon: Icons.visibility_outlined,
                   title: 'Profile Visibility',
-                  onTap: () {},
+                  onTap: () => _showComingSoon('Profile Visibility'),
                 ),
                 const Divider(height: 1, indent: 56),
                 SettingsTile(
                   icon: Icons.block_flipped,
                   title: 'Blocked Users',
-                  onTap: () {},
+                  onTap: () => _showComingSoon('Blocked Users list'),
                 ),
                 const Divider(height: 1, indent: 56),
                 SettingsTile(
                   icon: Icons.share_outlined,
                   title: 'Data Sharing',
-                  onTap: () {},
+                  onTap: () => _showComingSoon('Data Sharing settings'),
                 ),
               ],
             ),
@@ -131,25 +141,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
 
             SettingsGroupCard(
-              title: 'APPEARANCE',
-              children: [
-                SettingsToggleTile(
-                  icon: Icons.dark_mode_outlined,
-                  title: 'Dark Mode',
-                  value: darkMode,
-                  onChanged: (val) => setState(() => darkMode = val),
-                ),
-                const Divider(height: 1, indent: 56),
-                SettingsTile(
-                  icon: Icons.palette_outlined,
-                  title: 'App Theme',
-                  subtitle: 'DeepGreen',
-                  onTap: () {},
-                ),
-              ],
-            ),
-
-            SettingsGroupCard(
               title: 'PERSONAL',
               children: [
                 SettingsTile(
@@ -171,19 +162,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     size: 18,
                     color: AppColors.outline,
                   ),
-                  onTap: () {},
+                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.helpSupport),
                 ),
                 const Divider(height: 1, indent: 56),
                 SettingsTile(
                   icon: Icons.contact_support_outlined,
                   title: 'Contact Us',
-                  onTap: () {},
+                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.helpSupport),
                 ),
                 const Divider(height: 1, indent: 56),
                 SettingsTile(
                   icon: Icons.policy_outlined,
                   title: 'Privacy Policy',
-                  onTap: () {},
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Privacy Policy'),
+                        content: const SingleChildScrollView(
+                          child: Text(
+                            'MeetMap Addis is committed to protecting your privacy. We collect location metrics, user reviews, and hangout coordinates exclusively to render local maps, calculate coordinate distance metrics, and personalize discovery within Addis Ababa.\n\nAll personal data, review history, and social network logs are secured within encrypted Firestore schemas, and we never sell user data to third parties.\n\nEffective Date: May 2026.',
+                            style: TextStyle(height: 1.5),
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Close'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -201,7 +211,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SettingsTile(
                   icon: Icons.star_outline_rounded,
                   title: 'Rate App',
-                  onTap: () {},
+                  onTap: () => _showComingSoon('Rating the app'),
                 ),
               ],
             ),

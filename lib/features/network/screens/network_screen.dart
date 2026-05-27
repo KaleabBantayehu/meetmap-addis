@@ -6,19 +6,11 @@ import '../../../core/constants/colors.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/network_provider.dart';
 import '../../../shared/models/user_model.dart';
+import '../../../shared/widgets/app_menu_button.dart';
 import '../widgets/network_search_bar.dart';
 import '../widgets/suggestion_card.dart';
 import '../widgets/trending_reviewer_card.dart';
 
-void _showComingSoon(BuildContext context) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Coming soon!'),
-      behavior: SnackBarBehavior.floating,
-      duration: Duration(seconds: 2),
-    ),
-  );
-}
 
 class NetworkScreen extends StatefulWidget {
   const NetworkScreen({super.key});
@@ -50,26 +42,26 @@ class _NetworkScreenState extends State<NetworkScreen> {
     final networkProvider = context.watch<NetworkProvider>();
     final currentUserId = context.watch<AuthProvider>().currentUser?.id;
     final isSearch = networkProvider.hasActiveSearch;
-    final suggested = isSearch
-        ? networkProvider.searchResults
-        : networkProvider.suggestedUsers;
-    final trending = isSearch
-        ? networkProvider.searchResults
-        : networkProvider.trendingReviewers;
+    final suggested = (isSearch
+            ? networkProvider.searchResults
+            : networkProvider.suggestedUsers)
+        .where((u) => currentUserId == null || u.id != currentUserId)
+        .toList();
+    final trending = (isSearch
+            ? networkProvider.searchResults
+            : networkProvider.trendingReviewers)
+        .where((u) => currentUserId == null || u.id != currentUserId)
+        .toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () => _showComingSoon(context),
+        leading: const AppMenuButton(
+          color: AppColors.textPrimary,
+          size: 24,
         ),
         title: const Text('Network'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none_outlined),
-            onPressed: () => _showComingSoon(context),
-          ),
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: Builder(builder: (context) {
@@ -77,7 +69,7 @@ class _NetworkScreenState extends State<NetworkScreen> {
                   context.watch<AuthProvider>().currentUser?.profileImageUrl ??
                       '';
               return GestureDetector(
-                onTap: () => _showComingSoon(context),
+                onTap: () {},
                 child: CircleAvatar(
                   radius: 18,
                   backgroundColor: AppColors.imagePlaceholder,
@@ -93,9 +85,9 @@ class _NetworkScreenState extends State<NetworkScreen> {
                             width: 36,
                             height: 36,
                             fit: BoxFit.cover,
-                            placeholder: (_, __) =>
+                            placeholder: (_, url) =>
                                 Container(color: AppColors.surfaceVariant),
-                            errorWidget: (_, __, ___) => const Icon(
+                            errorWidget: (_, url, err) => const Icon(
                               Icons.person_rounded,
                               color: AppColors.textSecondary,
                               size: 18,

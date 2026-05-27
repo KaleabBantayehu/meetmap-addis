@@ -1,16 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/routes/app_routes.dart';
-
-void _showComingSoon(BuildContext context) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Coming soon!'),
-      behavior: SnackBarBehavior.floating,
-      duration: Duration(seconds: 2),
-    ),
-  );
-}
+import 'package:meetmap_addis/shared/widgets/app_menu_button.dart';
 
 class HomeAppBar extends StatelessWidget {
   const HomeAppBar({super.key});
@@ -23,13 +14,9 @@ class HomeAppBar extends StatelessWidget {
       color: AppColors.surface,
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => _showComingSoon(context),
-            icon: const Icon(
-              Icons.menu_rounded,
-              size: 32,
-              color: AppColors.primary,
-            ),
+          const AppMenuButton(
+            size: 32,
+            color: AppColors.primary,
           ),
 
           const SizedBox(width: 12),

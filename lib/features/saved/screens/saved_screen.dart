@@ -90,6 +90,35 @@ class _SavedScreenState extends State<SavedScreen> {
                       padding: EdgeInsets.symmetric(vertical: 60),
                       child: Center(child: CircularProgressIndicator()),
                     )
+                  else if (savedProvider.errorMessage != null && places.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 48),
+                          const SizedBox(height: 16),
+                          Text(
+                            savedProvider.errorMessage!,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton.icon(
+                            onPressed: () => savedProvider.fetchSavedPlaces(),
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('Retry'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
                   else if (places.isEmpty)
                     ConstrainedBox(
                       constraints: BoxConstraints(

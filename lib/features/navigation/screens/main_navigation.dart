@@ -10,6 +10,12 @@ import 'package:meetmap_addis/core/constants/colors.dart';
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
+  static final ValueNotifier<int> selectedIndexNotifier = ValueNotifier<int>(0);
+
+  static void setIndex(int index) {
+    selectedIndexNotifier.value = index;
+  }
+
   @override
   State<MainNavigation> createState() => _MainNavigationState();
 }
@@ -25,6 +31,28 @@ class _MainNavigationState extends State<MainNavigation> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    MainNavigation.selectedIndexNotifier.value = 0;
+    _currentIndex = 0;
+    MainNavigation.selectedIndexNotifier.addListener(_onIndexChanged);
+  }
+
+  @override
+  void dispose() {
+    MainNavigation.selectedIndexNotifier.removeListener(_onIndexChanged);
+    super.dispose();
+  }
+
+  void _onIndexChanged() {
+    if (mounted) {
+      setState(() {
+        _currentIndex = MainNavigation.selectedIndexNotifier.value;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
@@ -32,9 +60,7 @@ class _MainNavigationState extends State<MainNavigation> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          MainNavigation.selectedIndexNotifier.value = index;
         },
 
         type: BottomNavigationBarType.fixed,

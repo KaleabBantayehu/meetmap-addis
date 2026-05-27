@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../shared/models/place_model.dart';
 import '../saved_repository.dart';
 import '../repository_error_mapper.dart';
@@ -56,6 +57,11 @@ class FirebaseSavedRepository implements SavedRepository {
 
   @override
   Future<void> toggleSaved(String userId, String placeId, bool isSaving) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null || currentUser.uid != userId) {
+      throw Exception('User not authenticated or unauthorized');
+    }
+
     try {
       final docRef = _firestore
           .collection('users')

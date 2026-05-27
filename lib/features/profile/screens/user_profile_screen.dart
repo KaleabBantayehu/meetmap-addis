@@ -145,9 +145,9 @@ class _ProfileHeroHeader extends StatelessWidget {
                   : CachedNetworkImage(
                       imageUrl: imageUrl,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) =>
+                      placeholder: (_, url) =>
                           Container(color: AppColors.surfaceVariant),
-                      errorWidget: (_, __, ___) => Container(
+                      errorWidget: (_, url, err) => Container(
                         color: AppColors.surfaceVariant,
                         child: const Icon(
                           Icons.person_rounded,
@@ -338,9 +338,9 @@ class _ProfileBody extends StatelessWidget {
                 child: CachedNetworkImage(
                   imageUrl: user.recentImageUrls[index],
                   fit: BoxFit.cover,
-                  placeholder: (_, __) =>
+                  placeholder: (_, url) =>
                       Container(color: AppColors.surfaceVariant),
-                  errorWidget: (_, __, ___) =>
+                  errorWidget: (_, url, err) =>
                       Container(color: AppColors.surfaceVariant),
                 ),
               );

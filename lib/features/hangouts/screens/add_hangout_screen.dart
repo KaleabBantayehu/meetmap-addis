@@ -2,8 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:gebeta_gl/gebeta_gl.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/core/services/cloudinary_service.dart';
+import 'package:meetmap_addis/core/services/gebeta_map_service.dart';
+import 'package:meetmap_addis/core/services/gebeta_geocoding_service.dart';
+import 'package:meetmap_addis/features/home/widgets/map_pin.dart';
 import 'package:meetmap_addis/core/storage/connectivity_service.dart';
 import 'package:meetmap_addis/shared/models/hangout_model.dart';
 import 'package:meetmap_addis/providers/hangouts_provider.dart';
@@ -29,6 +33,9 @@ class _AddHangoutScreenState extends State<AddHangoutScreen> {
   TimeOfDay? _selectedTime;
   File? _selectedImage;
 
+  double? _selectedLatitude;
+  double? _selectedLongitude;
+
   final CloudinaryService _cloudinaryService = CloudinaryService();
   bool _isUploading = false;
   bool _isSubmitting = false;
@@ -42,6 +49,24 @@ class _AddHangoutScreenState extends State<AddHangoutScreen> {
     _descriptionController.dispose();
     _participantLimitController.dispose();
     super.dispose();
+  }
+
+  Future<void> _openMapPicker() async {
+    final picked = await Navigator.of(context).push<GeocodingResult>(
+      MaterialPageRoute(
+        builder: (_) => _MapLocationPickerScreen(
+          initialLat: _selectedLatitude,
+          initialLng: _selectedLongitude,
+          initialLocationText: _locationController.text.trim(),
+        ),
+      ),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _selectedLatitude = picked.latitude;
+      _selectedLongitude = picked.longitude;
+      _locationController.text = picked.formattedAddress;
+    });
   }
 
   Future<void> _pickImage() async {
@@ -102,6 +127,10 @@ class _AddHangoutScreenState extends State<AddHangoutScreen> {
       _showError('Please select a time');
       return;
     }
+    if (_selectedLatitude == null || _selectedLongitude == null) {
+      _showError('Please pick location from map');
+      return;
+    }
     if (!ConnectivityService.instance.isConnected) {
       _showError('Internet connection required');
       return;
@@ -127,6 +156,8 @@ class _AddHangoutScreenState extends State<AddHangoutScreen> {
         imageUrl: imageUrl,
         attendeeCount: 1,
         description: _descriptionController.text.trim(),
+        latitude: _selectedLatitude,
+        longitude: _selectedLongitude,
       );
 
       setState(() => _isSubmitting = true);
@@ -184,10 +215,27 @@ class _AddHangoutScreenState extends State<AddHangoutScreen> {
                 validator: (v) => v?.isEmpty ?? true ? 'Title required' : null,
               ),
               const SizedBox(height: 16),
-              CustomTextField(
-                controller: _locationController,
-                hintText: 'Location',
-                validator: (v) => v?.isEmpty ?? true ? 'Location required' : null,
+              Row(
+                children: [
+                  Expanded(
+                    child: CustomTextField(
+                      controller: _locationController,
+                      hintText: 'Location',
+                      validator: (v) => v?.isEmpty ?? true ? 'Location required' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filledTonal(
+                    onPressed: _isUploading ? null : _openMapPicker,
+                    icon: const Icon(Icons.map_rounded),
+                    style: IconButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               _buildCategoryDropdown(),
@@ -328,5 +376,187 @@ class _AddHangoutScreenState extends State<AddHangoutScreen> {
         ),
       ],
     );
+  }
+}
+
+class _MapLocationPickerScreen extends StatefulWidget {
+  final double? initialLat;
+  final double? initialLng;
+  final String? initialLocationText;
+
+  const _MapLocationPickerScreen({
+    this.initialLat,
+    this.initialLng,
+    this.initialLocationText,
+  });
+
+  @override
+  State<_MapLocationPickerScreen> createState() => _MapLocationPickerScreenState();
+}
+
+class _MapLocationPickerScreenState extends State<_MapLocationPickerScreen> {
+  final GebetaMapService _mapService = const GebetaMapService();
+  final GebetaGeocodingService _geocodingService = GebetaGeocodingService();
+  GebetaMapController? _controller;
+  LatLng? _selectedLatLng;
+  String _resolvedAddress = '';
+  bool _isResolvingAddress = false;
+  bool _isStyleReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialLat != null && widget.initialLng != null) {
+      _selectedLatLng = LatLng(widget.initialLat!, widget.initialLng!);
+    }
+    _resolvedAddress = widget.initialLocationText?.trim() ?? '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Pick Location'),
+      ),
+      body: Stack(
+        children: [
+          GebetaMap(
+            initialCameraPosition: CameraPosition(
+              target: _selectedLatLng ??
+                  const LatLng(
+                    GebetaMapService.addisLatitude,
+                    GebetaMapService.addisLongitude,
+                  ),
+              zoom: _selectedLatLng == null ? GebetaMapService.defaultZoom : 14,
+            ),
+            apiKey: _mapService.apiKey,
+            onMapCreated: (controller) {
+              _controller = controller;
+            },
+            onStyleLoadedCallback: () async {
+              _isStyleReady = true;
+              if (_selectedLatLng != null) {
+                setState(() {});
+              }
+            },
+            onMapClick: (point, latLng) async {
+              await _showPinAt(latLng);
+            },
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: IgnorePointer(
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 120),
+                opacity: _selectedLatLng == null ? 0 : 1,
+                child: const Center(
+                  child: MapPin(icon: Icons.place_rounded),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _selectedLatLng == null
+                        ? 'Tap map to drop a pin.'
+                        : (_isResolvingAddress
+                            ? 'Resolving address...'
+                            : (_resolvedAddress.isEmpty
+                                ? 'Address unavailable'
+                                : _resolvedAddress)),
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  if (_selectedLatLng != null)
+                    Text(
+                      'Lat: ${_selectedLatLng!.latitude.toStringAsFixed(6)}, Lng: ${_selectedLatLng!.longitude.toStringAsFixed(6)}',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _selectedLatLng == null
+                          ? null
+                          : () {
+                              Navigator.of(context).pop(
+                                GeocodingResult(
+                                  latitude: _selectedLatLng!.latitude,
+                                  longitude: _selectedLatLng!.longitude,
+                                  formattedAddress: _resolvedAddress.isEmpty
+                                      ? '${_selectedLatLng!.latitude.toStringAsFixed(6)}, ${_selectedLatLng!.longitude.toStringAsFixed(6)}'
+                                      : _resolvedAddress,
+                                ),
+                              );
+                            },
+                      child: const Text('Use This Location'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showPinAt(LatLng latLng) async {
+    _selectedLatLng = latLng;
+    final controller = _controller;
+    if (controller == null || !_isStyleReady) return;
+    await controller.moveCamera(CameraUpdate.newLatLng(latLng));
+    setState(() {
+      _isResolvingAddress = true;
+    });
+    try {
+      final reversed = await _geocodingService.reverseGeocode(
+        latLng.latitude,
+        latLng.longitude,
+      );
+      if (!mounted) return;
+      setState(() {
+        _resolvedAddress = reversed.formattedAddress;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _resolvedAddress = '';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isResolvingAddress = false;
+        });
+      }
+    }
   }
 }

@@ -32,20 +32,29 @@ class ProfileAvatarSection extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: ClipOval(
-                child: CachedNetworkImage(
-                  imageUrl: imageUrl,
-                  fit: BoxFit.cover,
-                  placeholder: (_, _) =>
-                      Container(color: AppColors.surfaceVariant),
-                  errorWidget: (_, _, _) => Container(
-                    color: AppColors.surfaceVariant,
-                    child: const Icon(
-                      Icons.person_rounded,
-                      color: AppColors.textSecondary,
-                      size: 44,
-                    ),
-                  ),
-                ),
+                child: imageUrl.trim().isEmpty
+                    ? Container(
+                        color: AppColors.surfaceVariant,
+                        child: const Icon(
+                          Icons.person_rounded,
+                          color: AppColors.textSecondary,
+                          size: 44,
+                        ),
+                      )
+                    : CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (_, _) =>
+                            Container(color: AppColors.surfaceVariant),
+                        errorWidget: (_, _, _) => Container(
+                          color: AppColors.surfaceVariant,
+                          child: const Icon(
+                            Icons.person_rounded,
+                            color: AppColors.textSecondary,
+                            size: 44,
+                          ),
+                        ),
+                      ),
               ),
             ),
             Positioned(

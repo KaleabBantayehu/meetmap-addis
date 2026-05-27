@@ -25,6 +25,7 @@ class PlaceModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final String? createdBy;
+  final String? phone;
 
   const PlaceModel({
     required this.id,
@@ -46,6 +47,7 @@ class PlaceModel {
     this.createdAt,
     this.updatedAt,
     this.createdBy,
+    this.phone,
   }) : assert(rating >= 0 && rating <= 5);
 
   int get normalizedPriceLevel => normalizePriceLevel(priceLevel, priceRange);
@@ -110,6 +112,7 @@ class PlaceModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     String? createdBy,
+    String? phone,
   }) {
     return PlaceModel(
       id: id ?? this.id,
@@ -131,6 +134,7 @@ class PlaceModel {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       createdBy: createdBy ?? this.createdBy,
+      phone: phone ?? this.phone,
     );
   }
 
@@ -205,6 +209,7 @@ class PlaceModel {
       createdAt: _parseDate(map['createdAt']),
       updatedAt: _parseDate(map['updatedAt']),
       createdBy: map['createdBy'] as String?,
+      phone: map['phone'] as String?,
     );
   }
 
@@ -229,6 +234,7 @@ class PlaceModel {
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'createdBy': createdBy,
+      'phone': phone,
     };
   }
 
@@ -260,7 +266,8 @@ class PlaceModel {
         listEquals(other.amenities, amenities) &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt &&
-        other.createdBy == createdBy;
+        other.createdBy == createdBy &&
+        other.phone == phone;
   }
 
   @override
@@ -283,6 +290,7 @@ class PlaceModel {
         amenities.hashCode ^
         createdAt.hashCode ^
         updatedAt.hashCode ^
-        createdBy.hashCode;
+        createdBy.hashCode ^
+        phone.hashCode;
   }
 }

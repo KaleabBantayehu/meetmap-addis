@@ -119,7 +119,6 @@ class GebetaGeocodingService {
             )
             .timeout(const Duration(seconds: 10));
         if (response.statusCode < 200 || response.statusCode >= 300) {
-          final body = response.body.toLowerCase();
           if (response.statusCode == 401) {
             lastError = Exception('Map access is unauthorized.');
           } else if (response.statusCode == 403) {
@@ -148,7 +147,7 @@ class GebetaGeocodingService {
     final message = cleaned ?? 'Unable to find that location.';
     if (message.contains('internal state issue') ||
         message.contains('ServerError') ||
-        message.contains('status\":500') ||
+        message.contains('status":500') ||
         message.contains('HE00002')) {
       throw Exception('Location service is temporarily unavailable.');
     }

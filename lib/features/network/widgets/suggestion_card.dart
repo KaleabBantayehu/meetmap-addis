@@ -65,9 +65,9 @@ class SuggestionCard extends StatelessWidget {
                         width: 68,
                         height: 68,
                         fit: BoxFit.cover,
-                        placeholder: (_, __) =>
+                        placeholder: (_, url) =>
                             Container(color: AppColors.surfaceVariant),
-                        errorWidget: (_, __, ___) => const Icon(
+                        errorWidget: (_, url, err) => const Icon(
                           Icons.person_rounded,
                           color: AppColors.textSecondary,
                           size: 34,

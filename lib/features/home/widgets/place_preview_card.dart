@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
+import 'package:meetmap_addis/features/places/screens/place_map_screen.dart';
 import 'package:meetmap_addis/providers/saved_provider.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
 import 'package:provider/provider.dart';
@@ -192,7 +194,13 @@ class PlacePreviewCard extends StatelessWidget {
                   child: SizedBox(
                     height: 52,
                     child: ElevatedButton.icon(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => PlaceMapScreen(place: place),
+                          ),
+                        );
+                      },
                       icon: const Icon(Icons.directions_rounded, size: 24),
                       label: const Text(
                         'Directions',
@@ -212,7 +220,16 @@ class PlacePreviewCard extends StatelessWidget {
                 _ActionButton(
                   icon: Icons.share_rounded,
                   onTap: () {
-                    debugPrint('Share tapped');
+                    final shareText =
+                        'Check out ${place.name} on MeetMap Addis!\n📍 Location: ${place.location}\n⭐ Rating: ${place.rating} (${place.reviewCount} reviews)';
+                    Clipboard.setData(ClipboardData(text: shareText));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Details for "${place.name}" copied to clipboard!'),
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
                   },
                 ),
               ],
