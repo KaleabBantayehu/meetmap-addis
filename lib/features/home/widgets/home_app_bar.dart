@@ -18,7 +18,7 @@ class HomeAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 60,
+      height: 70,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       color: AppColors.surface,
       child: Row(

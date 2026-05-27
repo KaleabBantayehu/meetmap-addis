@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>MeetMap Addis needs your location to show nearby places and improve discovery.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>MeetMap Addis needs your location to show nearby places and improve discovery.</string>
 </dict>
 </plist>

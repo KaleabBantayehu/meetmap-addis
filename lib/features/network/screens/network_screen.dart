@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -69,12 +70,41 @@ class _NetworkScreenState extends State<NetworkScreen> {
             icon: const Icon(Icons.notifications_none_outlined),
             onPressed: () => _showComingSoon(context),
           ),
-          const Padding(
-            padding: EdgeInsets.only(right: 16.0),
-            child: CircleAvatar(
-              radius: 18,
-              backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=me'),
-            ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Builder(builder: (context) {
+              final avatarUrl =
+                  context.watch<AuthProvider>().currentUser?.profileImageUrl ??
+                      '';
+              return GestureDetector(
+                onTap: () => _showComingSoon(context),
+                child: CircleAvatar(
+                  radius: 18,
+                  backgroundColor: AppColors.imagePlaceholder,
+                  child: ClipOval(
+                    child: avatarUrl.isEmpty
+                        ? const Icon(
+                            Icons.person_rounded,
+                            color: AppColors.textSecondary,
+                            size: 18,
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: avatarUrl,
+                            width: 36,
+                            height: 36,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) =>
+                                Container(color: AppColors.surfaceVariant),
+                            errorWidget: (_, __, ___) => const Icon(
+                              Icons.person_rounded,
+                              color: AppColors.textSecondary,
+                              size: 18,
+                            ),
+                          ),
+                  ),
+                ),
+              );
+            }),
           ),
         ],
       ),

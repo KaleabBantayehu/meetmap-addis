@@ -46,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: TextStyle(color: AppColors.textSecondary),
                       ),
                     )
-                  : HomeMapSection(place: places.first),
+                  : HomeMapSection(places: places),
             ),
           ],
         ),

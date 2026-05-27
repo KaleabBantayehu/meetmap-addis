@@ -8,6 +8,7 @@ import '../features/places/screens/add_place_screen.dart';
 import '../features/profile/screens/edit_profile_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/profile/screens/settings_screen.dart';
+import '../features/profile/screens/user_profile_screen.dart';
 import '../features/saved/screens/saved_screen.dart';
 import '../features/search/screens/search_screen.dart';
 import '../features/network/screens/network_screen.dart';
@@ -17,6 +18,7 @@ class AppRoutes {
   static const home = '/home';
   static const explore = '/explore';
   static const profile = '/profile';
+  static const userProfile = '/user-profile';
   static const saved = '/saved';
   static const search = '/search';
   static const filters = '/filters';
@@ -33,6 +35,8 @@ class AppRoutes {
     home: (context) => const MainNavigation(),
     explore: (context) => const ExploreScreen(),
     profile: (context) => const ProfileScreen(),
+    // userProfile requires a userId argument — use MaterialPageRoute directly
+    // e.g. Navigator.push(context, MaterialPageRoute(builder: (_) => UserProfileScreen(userId: id)))
     saved: (context) => const SavedScreen(),
     search: (context) => const SearchScreen(),
     filters: (context) => const FilterScreen(),

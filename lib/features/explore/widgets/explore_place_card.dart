@@ -8,8 +8,15 @@ import 'package:provider/provider.dart';
 class ExplorePlaceCard extends StatelessWidget {
   final PlaceModel place;
   final VoidCallback onTap;
+  /// Distance in km from user's current location. Null = location unknown.
+  final double? distanceKm;
 
-  const ExplorePlaceCard({super.key, required this.place, required this.onTap});
+  const ExplorePlaceCard({
+    super.key,
+    required this.place,
+    required this.onTap,
+    this.distanceKm,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -112,6 +119,9 @@ class ExplorePlaceCard extends StatelessWidget {
   }
 
   Widget _buildTitleRow(BuildContext context) {
+    final distLabel = distanceKm != null
+        ? '${distanceKm!.toStringAsFixed(1)} km away'
+        : null;
     return Row(
       children: [
         Expanded(
@@ -119,21 +129,20 @@ class ExplorePlaceCard extends StatelessWidget {
             place.name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-
             style: Theme.of(
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
-
-        const SizedBox(width: 12),
-
-        Text(
-          '0.4 km away',
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-        ),
+        if (distLabel != null) ...[          
+          const SizedBox(width: 12),
+          Text(
+            distLabel,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+          ),
+        ],
       ],
     );
   }

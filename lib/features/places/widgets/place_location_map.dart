@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
+import 'package:meetmap_addis/features/places/screens/place_map_screen.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
 
 class PlaceLocationMap extends StatelessWidget {
@@ -25,7 +26,47 @@ class PlaceLocationMap extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _StaticMapPreview(place: place),
+          // Tappable map preview — opens in-app Gebeta map
+          GestureDetector(
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => PlaceMapScreen(place: place),
+              ),
+            ),
+            child: Stack(
+              children: [
+                _StaticMapPreview(place: place),
+                // Tap hint overlay
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.open_in_full_rounded,
+                            color: Colors.white, size: 13),
+                        SizedBox(width: 4),
+                        Text(
+                          'Open Map',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
             child: Row(
@@ -39,11 +80,11 @@ class PlaceLocationMap extends StatelessWidget {
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
-                    '${place.location}, Addis Ababa, Ethiopia\n${place.latitude.toStringAsFixed(2)}, ${place.longitude.toStringAsFixed(2)}',
+                    '${place.location}, Addis Ababa, Ethiopia\n${place.latitude.toStringAsFixed(4)}, ${place.longitude.toStringAsFixed(4)}',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textPrimary,
-                      height: 1.5,
-                    ),
+                          color: AppColors.textPrimary,
+                          height: 1.5,
+                        ),
                   ),
                 ),
               ],

@@ -14,13 +14,16 @@ import 'core/repositories/firebase/firebase_review_repository.dart';
 import 'core/repositories/firebase/firebase_event_repository.dart';
 import 'core/repositories/firebase/firebase_network_repository.dart';
 import 'core/repositories/firebase/firebase_hangout_repository.dart';
+import 'core/repositories/firebase/firebase_user_repository.dart';
 import 'providers/places_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/location_provider.dart';
 import 'providers/saved_provider.dart';
 import 'providers/reviews_provider.dart';
 import 'providers/events_provider.dart';
 import 'providers/network_provider.dart';
 import 'providers/hangouts_provider.dart';
+import 'providers/user_provider.dart';
 import 'firebase_options.dart';
 
 import 'core/storage/local_storage_service.dart';
@@ -67,12 +70,16 @@ void main() async {
   final hangoutRepository = FirebaseHangoutRepository();
   final savedRepository = FirebaseSavedRepository();
   final reviewRepository = FirebaseReviewRepository();
+  final userRepository = FirebaseUserRepository();
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
           create: (_) => PlacesProvider(placeRepository: placeRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => LocationProvider(),
         ),
         ChangeNotifierProvider(
           create: (_) =>
@@ -110,6 +117,9 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => HangoutsProvider(hangoutRepository: hangoutRepository),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => UserProvider(userRepository: userRepository),
         ),
       ],
       child: const MeetMapApp(),

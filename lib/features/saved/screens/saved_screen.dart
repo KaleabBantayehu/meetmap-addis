@@ -8,6 +8,8 @@ import 'package:meetmap_addis/features/saved/widgets/saved_screen_header.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
 import 'package:provider/provider.dart';
 import 'package:meetmap_addis/providers/saved_provider.dart';
+import 'package:meetmap_addis/providers/location_provider.dart';
+import 'package:meetmap_addis/providers/places_provider.dart';
 
 class SavedScreen extends StatefulWidget {
   const SavedScreen({super.key});
@@ -60,6 +62,8 @@ class _SavedScreenState extends State<SavedScreen> {
   @override
   Widget build(BuildContext context) {
     final savedProvider = Provider.of<SavedProvider>(context);
+    final locationProvider = Provider.of<LocationProvider>(context);
+    final placesProvider = Provider.of<PlacesProvider>(context);
     final places = getVisiblePlaces(savedProvider.savedPlaces);
     final isLoading = savedProvider.isLoading;
 
@@ -95,18 +99,34 @@ class _SavedScreenState extends State<SavedScreen> {
                     )
                   else
                     ...places.map(
-                      (place) => Padding(
-                        padding: const EdgeInsets.only(bottom: 24),
-                        child: SavedPlaceCard(
-                          place: place,
-                          distanceLabel: distanceLabelFor(place.id),
-                          statusLabel: statusLabelFor(place),
-                          isSaved: savedProvider.isSaved(place.id),
-                          onTap: () => openPlaceDetails(place),
-                          onSaveToggle: () => savedProvider.toggleSaved(place),
-                          onRemove: () => savedProvider.removeSaved(place.id),
-                        ),
-                      ),
+                      (place) {
+                        // Dynamic distance
+                        final String distLabel;
+                        if (locationProvider.hasLocation) {
+                          final km = placesProvider.getDistanceToPlace(
+                            userLat: locationProvider.currentLatitude!,
+                            userLng: locationProvider.currentLongitude!,
+                            place: place,
+                          );
+                          distLabel = '${km.toStringAsFixed(1)} km';
+                        } else {
+                          distLabel = 'Nearby';
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 24),
+                          child: SavedPlaceCard(
+                            place: place,
+                            distanceLabel: distLabel,
+                            statusLabel: statusLabelFor(place),
+                            isSaved: savedProvider.isSaved(place.id),
+                            onTap: () => openPlaceDetails(place),
+                            onSaveToggle: () =>
+                                savedProvider.toggleSaved(place),
+                            onRemove: () =>
+                                savedProvider.removeSaved(place.id),
+                          ),
+                        );
+                      },
                     ),
                 ],
               ),
@@ -118,29 +138,12 @@ class _SavedScreenState extends State<SavedScreen> {
   }
 
   void openPlaceDetails(PlaceModel place) {
-    // TODO: Replace direct mock navigation with backend-backed place lookup.
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => PlaceDetailScreen(place: place)));
-  }
-
-  String distanceLabelFor(String placeId) {
-    switch (placeId) {
-      case '1':
-        return '1.2 km';
-      case '2':
-        return '0.5 km';
-      case '3':
-        return '3.8 km';
-      default:
-        return 'Nearby';
-    }
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => PlaceDetailScreen(place: place)),
+    );
   }
 
   String statusLabelFor(PlaceModel place) {
-    if (place.id == '3') {
-      return 'Closing Soon';
-    }
     return place.isOpen ? 'Open Now' : 'Closed';
   }
 }

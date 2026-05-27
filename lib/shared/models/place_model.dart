@@ -148,6 +148,25 @@ class PlaceModel {
     return null;
   }
 
+  static double _parseCoordinate(dynamic value, {required bool isLatitude}) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    final type = value.runtimeType.toString();
+    if (type == 'GeoPoint') {
+      try {
+        return isLatitude
+            ? (value as dynamic).latitude.toDouble()
+            : (value as dynamic).longitude.toDouble();
+      } catch (_) {
+        return 0;
+      }
+    }
+    if (value is String) {
+      return double.tryParse(value.trim()) ?? 0;
+    }
+    return 0;
+  }
+
   factory PlaceModel.fromMap(Map<String, dynamic> map) {
     return PlaceModel(
       id: map['id'] ?? '',
@@ -158,8 +177,20 @@ class PlaceModel {
       rating: (map['rating'] ?? 0).toDouble(),
       priceRange: map['priceRange'] ?? '',
       isOpen: map['isOpen'] ?? false,
-      latitude: (map['latitude'] ?? 0).toDouble(),
-      longitude: (map['longitude'] ?? 0).toDouble(),
+      latitude: _parseCoordinate(
+        map['latitude'] ??
+            (map['coordinates'] is Map<String, dynamic>
+                ? (map['coordinates'] as Map<String, dynamic>)['lat']
+                : null),
+        isLatitude: true,
+      ),
+      longitude: _parseCoordinate(
+        map['longitude'] ??
+            (map['coordinates'] is Map<String, dynamic>
+                ? (map['coordinates'] as Map<String, dynamic>)['lng']
+                : null),
+        isLatitude: false,
+      ),
       tags: List<String>.from(map['tags'] ?? []),
       reviewCount: map['reviewCount'] ?? 0,
       description: map['description'] ?? '',

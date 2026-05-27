@@ -1,4 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:meetmap_addis/features/profile/screens/user_profile_screen.dart';
 
 import '../../../core/constants/colors.dart';
 import '../../../shared/models/user_model.dart';
@@ -19,6 +21,15 @@ class TrendingReviewerCard extends StatelessWidget {
     this.followerCount = 0,
   });
 
+  void _openProfile(BuildContext context) {
+    if (user.id.isEmpty) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => UserProfileScreen(userId: user.id),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -38,73 +49,107 @@ class TrendingReviewerCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Top row: avatar | info | follow button ──────────────────────
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundImage: NetworkImage(user.profileImageUrl),
-                backgroundColor: AppColors.imagePlaceholder,
+              // Tappable avatar
+              GestureDetector(
+                onTap: () => _openProfile(context),
+                child: _UserAvatar(
+                  imageUrl: user.profileImageUrl,
+                  radius: 30,
+                ),
               ),
               const SizedBox(width: 12),
+
+              // Name + username — Expanded prevents overflow
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          user.name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: AppColors.textPrimary,
+                child: GestureDetector(
+                  onTap: () => _openProfile(context),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Name row with optional verified badge
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              user.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
                           ),
-                        ),
-                        if (user.isVerified) ...[
-                          const SizedBox(width: 4),
-                          const Icon(
-                            Icons.verified,
-                            size: 16,
-                            color: Colors.blue,
-                          ),
+                          if (user.isVerified) ...[
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.verified,
+                              size: 15,
+                              color: Colors.blue,
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
-                    Text(
-                      '@${user.username ?? ''} • ${_followersLabel(followerCount)} followers',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        '@${user.username ?? ''} · ${_followersLabel(followerCount)} followers',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              ElevatedButton(
-                onPressed: isLoading ? null : onFollow,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isFollowing
-                      ? AppColors.surfaceVariant
-                      : AppColors.primary,
-                  foregroundColor: isFollowing ? AppColors.textPrimary : Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 8,
+
+              const SizedBox(width: 10),
+
+              // Follow button — fixed width so it never causes overflow
+              SizedBox(
+                width: 96,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : onFollow,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isFollowing
+                        ? AppColors.surfaceVariant
+                        : AppColors.primary,
+                    foregroundColor: isFollowing
+                        ? AppColors.textPrimary
+                        : Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 8),
+                    minimumSize: const Size(0, 36),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 0,
                   ),
-                  minimumSize: const Size(0, 36),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                  child: Text(
+                    isLoading
+                        ? '...'
+                        : (isFollowing ? 'Following' : 'Follow'),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                child: Text(
-                  isLoading ? '...' : (isFollowing ? 'Following' : 'Follow'),
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          if (user.bio != null)
+
+          // ── Bio ──────────────────────────────────────────────────────────
+          if (user.bio != null && user.bio!.isNotEmpty) ...[
+            const SizedBox(height: 14),
             Text(
               user.bio!,
               style: const TextStyle(
@@ -113,27 +158,41 @@ class TrendingReviewerCard extends StatelessWidget {
                 height: 1.5,
               ),
             ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: user.tags.map((tag) => _buildTag(tag)).toList(),
-          ),
-          const SizedBox(height: 16),
-          if (user.recentImageUrls.isNotEmpty)
+          ],
+
+          // ── Tags ─────────────────────────────────────────────────────────
+          if (user.tags.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: user.tags.map((tag) => _buildTag(tag)).toList(),
+            ),
+          ],
+
+          // ── Recent images ─────────────────────────────────────────────────
+          if (user.recentImageUrls.isNotEmpty) ...[
+            const SizedBox(height: 14),
             Row(
               children: [
-                Expanded(child: _buildImage(user.recentImageUrls[0])),
-                const SizedBox(width: 8),
-                Expanded(child: _buildImage(user.recentImageUrls[1])),
-                const SizedBox(width: 8),
                 Expanded(
-                  child: user.recentImageUrls.length > 2
-                      ? _buildLastImage(user.recentImageUrls[2])
-                      : const SizedBox.shrink(),
+                  child: _buildImage(user.recentImageUrls[0]),
                 ),
+                if (user.recentImageUrls.length > 1) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildImage(user.recentImageUrls[1]),
+                  ),
+                ],
+                if (user.recentImageUrls.length > 2) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildLastImage(user.recentImageUrls[2]),
+                  ),
+                ],
               ],
             ),
+          ],
         ],
       ),
     );
@@ -163,7 +222,14 @@ class TrendingReviewerCard extends StatelessWidget {
       aspectRatio: 1,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.network(url, fit: BoxFit.cover),
+        child: CachedNetworkImage(
+          imageUrl: url,
+          fit: BoxFit.cover,
+          placeholder: (_, __) =>
+              Container(color: AppColors.surfaceVariant),
+          errorWidget: (_, __, ___) =>
+              Container(color: AppColors.surfaceVariant),
+        ),
       ),
     );
   }
@@ -176,7 +242,14 @@ class TrendingReviewerCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(url, fit: BoxFit.cover),
+            child: CachedNetworkImage(
+              imageUrl: url,
+              fit: BoxFit.cover,
+              placeholder: (_, __) =>
+                  Container(color: AppColors.surfaceVariant),
+              errorWidget: (_, __, ___) =>
+                  Container(color: AppColors.surfaceVariant),
+            ),
           ),
           Container(
             decoration: BoxDecoration(
@@ -185,11 +258,11 @@ class TrendingReviewerCard extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: const Text(
-              '+12',
+              '+more',
               style: TextStyle(
-                color: AppColors.textSecondary,
+                color: Colors.white,
                 fontWeight: FontWeight.bold,
-                fontSize: 16,
+                fontSize: 13,
               ),
             ),
           ),
@@ -203,5 +276,43 @@ class TrendingReviewerCard extends StatelessWidget {
       return '${(count / 1000).toStringAsFixed(1)}k';
     }
     return '$count';
+  }
+}
+
+// ── Shared reusable avatar widget ─────────────────────────────────────────────
+
+class _UserAvatar extends StatelessWidget {
+  const _UserAvatar({required this.imageUrl, this.radius = 26});
+
+  final String imageUrl;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: AppColors.imagePlaceholder,
+      child: ClipOval(
+        child: imageUrl.isEmpty
+            ? Icon(
+                Icons.person_rounded,
+                color: AppColors.textSecondary,
+                size: radius,
+              )
+            : CachedNetworkImage(
+                imageUrl: imageUrl,
+                width: radius * 2,
+                height: radius * 2,
+                fit: BoxFit.cover,
+                placeholder: (_, __) =>
+                    Container(color: AppColors.surfaceVariant),
+                errorWidget: (_, __, ___) => Icon(
+                  Icons.person_rounded,
+                  color: AppColors.textSecondary,
+                  size: radius,
+                ),
+              ),
+      ),
+    );
   }
 }
