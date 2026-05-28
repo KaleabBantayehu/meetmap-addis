@@ -6,7 +6,7 @@ import 'package:meetmap_addis/core/services/gebeta_map_service.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
 import 'package:meetmap_addis/providers/location_provider.dart';
 import 'package:meetmap_addis/providers/places_provider.dart';
-import 'package:meetmap_addis/core/services/gebeta_directions_service.dart' show DirectionsResult;
+import 'package:meetmap_addis/core/services/gebeta_directions_service.dart' show DirectionsResult, GebetaDirectionsService;
 import 'package:meetmap_addis/core/storage/connectivity_service.dart';
 import 'package:provider/provider.dart';
 
@@ -30,6 +30,7 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
 
   DirectionsResult? _directionsResult;
   bool _isLoadingDirections = false;
+  String? _directionsError;
 
   @override
   void initState() {
@@ -40,10 +41,16 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
   Future<void> _fetchDirections() async {
     final locationProvider = Provider.of<LocationProvider>(context, listen: false);
     final placesProvider = Provider.of<PlacesProvider>(context, listen: false);
-    if (!locationProvider.hasLocation) return;
+    if (!locationProvider.hasLocation) {
+      setState(() {
+        _directionsError = 'Location not available';
+      });
+      return;
+    }
 
     setState(() {
       _isLoadingDirections = true;
+      _directionsError = null;
     });
 
     try {
@@ -52,18 +59,56 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
         userLng: locationProvider.currentLongitude!,
         place: widget.place,
       );
+
       if (mounted) {
         setState(() {
           _directionsResult = result;
+          if (result != null) {
+            _directionsError = null;
+          } else {
+            _directionsError = 'Unable to load route';
+          }
+        });
+
+        // Fetch raw direction data for polyline (for future visualization)
+        if (result != null) {
+          await _fetchRoutePolyline();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _directionsError = 'Failed to load directions';
+          debugPrint('Direction error: $e');
         });
       }
-    } catch (_) {
     } finally {
       if (mounted) {
         setState(() {
           _isLoadingDirections = false;
         });
       }
+    }
+  }
+
+  Future<void> _fetchRoutePolyline() async {
+    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+    if (!locationProvider.hasLocation) return;
+
+    try {
+      final directionsService = GebetaDirectionsService();
+      final rawResponse = await directionsService.getDirectionsRaw(
+        originLat: locationProvider.currentLatitude!,
+        originLng: locationProvider.currentLongitude!,
+        destLat: widget.place.latitude,
+        destLng: widget.place.longitude,
+      );
+
+      if (rawResponse != null) {
+        debugPrint('Route polyline data loaded: ${rawResponse.length} points');
+      }
+    } catch (e) {
+      debugPrint('Polyline fetch error: $e');
     }
   }
 
@@ -256,6 +301,8 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
                   onCenterTap: _centerOnPlace,
                   directions: _directionsResult,
                   isLoading: _isLoadingDirections,
+                  error: _directionsError,
+                  onStartNavigation: _startNavigation,
                 ),
               ),
             ),
@@ -293,6 +340,34 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
         ),
       );
     } catch (_) {}
+  }
+
+  void _startNavigation() {
+    if (_directionsResult == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Route information not available'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    final message = '${widget.place.name} - ${_directionsResult!.distanceDisplay}, ${_directionsResult!.durationDisplay}';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Navigate to: $message'),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'Open',
+          onPressed: () {
+            // Fallback: show place details with directions
+            debugPrint('Navigation initiated to ${widget.place.name}');
+          },
+        ),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   /// Optionally animate to user position then to destination if available.
@@ -405,12 +480,16 @@ class _PlaceInfoCard extends StatelessWidget {
     required this.onCenterTap,
     this.directions,
     this.isLoading = false,
+    this.error,
+    this.onStartNavigation,
   });
 
   final PlaceModel place;
   final VoidCallback onCenterTap;
   final DirectionsResult? directions;
   final bool isLoading;
+  final String? error;
+  final VoidCallback? onStartNavigation;
 
   @override
   Widget build(BuildContext context) {
@@ -495,7 +574,7 @@ class _PlaceInfoCard extends StatelessWidget {
               ),
             ],
           ),
-          if (isLoading || directions != null) ...[
+          if (isLoading || directions != null || error != null) ...[
             const SizedBox(height: 12),
             const Divider(height: 1, color: AppColors.outline),
             const SizedBox(height: 12),
@@ -510,7 +589,17 @@ class _PlaceInfoCard extends StatelessWidget {
                   ),
                 ),
               )
-            else if (directions != null)
+            else if (error != null)
+              Center(
+                child: Text(
+                  error!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              )
+            else if (directions != null) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -531,6 +620,24 @@ class _PlaceInfoCard extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: ElevatedButton.icon(
+                  onPressed: onStartNavigation,
+                  icon: const Icon(Icons.navigation_rounded),
+                  label: const Text('Start Navigation'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ],
       ),

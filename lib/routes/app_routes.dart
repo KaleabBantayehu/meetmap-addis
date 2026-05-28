@@ -8,7 +8,6 @@ import '../features/places/screens/add_place_screen.dart';
 import '../features/profile/screens/edit_profile_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/profile/screens/settings_screen.dart';
-import '../features/profile/screens/help_support_screen.dart';
 import '../features/saved/screens/saved_screen.dart';
 import '../features/search/screens/search_screen.dart';
 import '../features/network/screens/network_screen.dart';
@@ -42,7 +41,7 @@ class AppRoutes {
     filters: (context) => const FilterScreen(),
     settings: (context) => const SettingsScreen(),
     editProfile: (context) => const EditProfileScreen(),
-    helpSupport: (context) => const HelpSupportScreen(),
+    // helpSupport: (context) => const HelpSupportScreen(),
     // reviewHistory: (context) => const ReviewHistoryScreen(),
     // notifications: (context) => const NotificationsScreen(),
     addPlace: (context) => const AddPlaceScreen(),
