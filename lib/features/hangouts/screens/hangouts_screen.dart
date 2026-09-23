@@ -59,9 +59,10 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const AddHangoutScreen()),
-        ),
+        heroTag: 'hangouts_add_hangout',
+        onPressed: () => Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const AddHangoutScreen())),
         backgroundColor: AppColors.primaryDark,
         elevation: 6,
         shape: const CircleBorder(),
@@ -99,9 +100,7 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                         const SizedBox(height: 32),
 
                         // Active Now Section
-                        const SectionHeader(
-                          title: 'Active Now',
-                        ),
+                        const SectionHeader(title: 'Active Now'),
 
                         const SizedBox(height: 16),
 
@@ -110,25 +109,36 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                             padding: EdgeInsets.symmetric(vertical: 40),
                             child: Center(child: CircularProgressIndicator()),
                           )
-                        else if (hangoutsProvider.errorMessage != null && activeHangout == null && quickHangouts.isEmpty)
+                        else if (hangoutsProvider.errorMessage != null &&
+                            activeHangout == null &&
+                            quickHangouts.isEmpty)
                           Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 40,
+                              horizontal: 20,
+                            ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 48),
+                                const Icon(
+                                  Icons.error_outline_rounded,
+                                  color: AppColors.error,
+                                  size: 48,
+                                ),
                                 const SizedBox(height: 16),
                                 Text(
                                   hangoutsProvider.errorMessage!,
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: AppColors.textPrimary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(
+                                        color: AppColors.textPrimary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                   textAlign: TextAlign.center,
                                 ),
                                 const SizedBox(height: 12),
                                 ElevatedButton.icon(
-                                  onPressed: () => hangoutsProvider.fetchHangouts(),
+                                  onPressed: () =>
+                                      hangoutsProvider.fetchHangouts(),
                                   icon: const Icon(Icons.refresh_rounded),
                                   label: const Text('Retry'),
                                   style: ElevatedButton.styleFrom(
@@ -140,13 +150,21 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                             ),
                           )
                         else ...[
-                          if (activeHangout == null && quickHangouts.isEmpty) ...[
+                          if (activeHangout == null &&
+                              quickHangouts.isEmpty) ...[
                             Container(
-                              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 32,
+                                horizontal: 20,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.surface,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: AppColors.outline.withValues(alpha: 0.15)),
+                                border: Border.all(
+                                  color: AppColors.outline.withValues(
+                                    alpha: 0.15,
+                                  ),
+                                ),
                               ),
                               child: Column(
                                 children: [
@@ -154,7 +172,9 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                                     width: 64,
                                     height: 64,
                                     decoration: BoxDecoration(
-                                      color: AppColors.primary.withValues(alpha: 0.08),
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.08,
+                                      ),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
@@ -166,17 +186,23 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                                   const SizedBox(height: 16),
                                   Text(
                                     'No active hangouts',
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.textPrimary,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.textPrimary,
+                                        ),
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
                                     'Be the first to start a hangout by tapping the add button!',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: AppColors.textSecondary,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: AppColors.textSecondary,
+                                        ),
                                     textAlign: TextAlign.center,
                                   ),
                                 ],
@@ -190,7 +216,8 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                                 onTap: () => Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) => HangoutDetailScreen(
-                                        hangout: activeHangout),
+                                      hangout: activeHangout,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -231,13 +258,16 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                               decoration: BoxDecoration(
                                 color: AppColors.surface,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: AppColors.outline.withValues(alpha: 0.15)),
+                                border: Border.all(
+                                  color: AppColors.outline.withValues(
+                                    alpha: 0.15,
+                                  ),
+                                ),
                               ),
                               child: Text(
                                 'No top venues available right now.',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: AppColors.textSecondary),
                               ),
                             ),
                           ] else
@@ -292,10 +322,7 @@ class _TopAppBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
-          const AppMenuButton(
-            color: AppColors.textPrimary,
-            size: 26,
-          ),
+          const AppMenuButton(color: AppColors.textPrimary, size: 26),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

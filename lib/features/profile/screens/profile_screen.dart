@@ -15,6 +15,12 @@ import 'package:meetmap_addis/features/profile/widgets/profile_top_bar.dart';
 import 'package:meetmap_addis/routes/app_routes.dart';
 import 'package:meetmap_addis/features/hangouts/screens/hangouts_screen.dart';
 
+void _showUnavailable(BuildContext context, String feature) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('$feature is not available in this build.')),
+  );
+}
+
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -22,7 +28,10 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().currentUser;
     final savedCount = context.watch<SavedProvider>().savedPlaces.length;
-    final hangoutsCount = context.watch<HangoutsProvider>().quickHangouts.length;
+    final hangoutsCount = context
+        .watch<HangoutsProvider>()
+        .quickHangouts
+        .length;
     final eventsCount = context.watch<EventsProvider>().events.length;
 
     return Scaffold(
@@ -33,10 +42,8 @@ class ProfileScreen extends StatelessWidget {
             ProfileTopBar(
               onBackPressed: () async {
                 final navigator = Navigator.of(context, rootNavigator: true);
-                if (await navigator.maybePop()) {
-                  Navigator.of(context).pop();
-                } else {
-                  Navigator.of(context).pushNamed(AppRoutes.explore);
+                if (!await navigator.maybePop()) {
+                  navigator.pushNamed(AppRoutes.explore);
                 }
               },
               onSettingsPressed: () {
@@ -73,13 +80,19 @@ class ProfileScreen extends StatelessWidget {
                       const SizedBox(height: 34),
                       ProfileStatsSection(
                         stats: [
-                          ProfileStatData(label: 'Events', value: '$eventsCount'),
+                          ProfileStatData(
+                            label: 'Events',
+                            value: '$eventsCount',
+                          ),
                           ProfileStatData(label: 'Saved', value: '$savedCount'),
-                          ProfileStatData(label: 'Hangouts', value: '$hangoutsCount'),
+                          ProfileStatData(
+                            label: 'Hangouts',
+                            value: '$hangoutsCount',
+                          ),
                         ],
                         onStatSelected: (label) {
                           if (label == 'Events') {
-                            // Focus navigation on appropriate screens
+                            _showUnavailable(context, 'Event history');
                           } else if (label == 'Saved') {
                             Navigator.of(context).pushNamed(AppRoutes.saved);
                           } else if (label == 'Hangouts') {
@@ -93,11 +106,8 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 38),
                       ProfileReviewsSection(
-                        onViewAll: () {
-                          Navigator.of(
-                            context,
-                          ).pushNamed(AppRoutes.reviewHistory);
-                        },
+                        onViewAll: () =>
+                            _showUnavailable(context, 'Review history'),
                       ),
                       const SizedBox(height: 42),
                       ProfileSavedCollections(
@@ -114,9 +124,7 @@ class ProfileScreen extends StatelessWidget {
                           Navigator.of(context).pushNamed(AppRoutes.settings);
                         },
                         onHelpTap: () {
-                          Navigator.of(
-                            context,
-                          ).pushNamed(AppRoutes.helpSupport);
+                          _showUnavailable(context, 'Help Center');
                         },
                       ),
                       const SizedBox(height: 34),

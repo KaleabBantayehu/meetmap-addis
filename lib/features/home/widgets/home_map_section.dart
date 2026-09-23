@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gebeta_gl/gebeta_gl.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
@@ -24,6 +25,9 @@ class _HomeMapSectionState extends State<HomeMapSection> {
   GebetaMapController? _mapController;
   bool _isStyleReady = false;
   List<_ProjectedPlacePin> _visiblePins = [];
+  Size _mapViewportSize = Size.zero;
+  int _projectionGeneration = 0;
+  bool _hasFittedInitialPlaces = false;
   int _selectedCategoryIndex = 0;
   int _selectedPlaceIndex = 0;
 
@@ -36,118 +40,137 @@ class _HomeMapSectionState extends State<HomeMapSection> {
   }
 
   @override
-  void dispose() => super.dispose();
-
-  @override
   Widget build(BuildContext context) {
     final filteredPlaces = _filteredPlaces();
-    if (filteredPlaces.isEmpty) {
-      return const Center(
-        child: Text(
-          'No mapped places available yet.',
-          style: TextStyle(color: AppColors.textSecondary),
-        ),
-      );
-    }
+    final previewPlace = filteredPlaces.isEmpty
+        ? null
+        : filteredPlaces[_selectedPlaceIndex.clamp(
+            0,
+            filteredPlaces.length - 1,
+          )];
 
-    final previewPlace = filteredPlaces[
-      _selectedPlaceIndex.clamp(0, filteredPlaces.length - 1)
-    ];
-
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: _mapService.isConfigured
-              ? GebetaMap(
-                  compassViewPosition: CompassViewPosition.topRight,
-                  initialCameraPosition: const CameraPosition(
-                    target: LatLng(
-                      GebetaMapService.addisLatitude,
-                      GebetaMapService.addisLongitude,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final viewportSize = constraints.biggest;
+        if (viewportSize != _mapViewportSize) {
+          _mapViewportSize = viewportSize;
+          WidgetsBinding.instance.addPostFrameCallback((_) => _reprojectPins());
+        }
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: _mapService.isConfigured
+                  ? GebetaMap(
+                      compassViewPosition: CompassViewPosition.topRight,
+                      initialCameraPosition: const CameraPosition(
+                        target: LatLng(
+                          GebetaMapService.addisLatitude,
+                          GebetaMapService.addisLongitude,
+                        ),
+                        zoom: GebetaMapService.defaultZoom,
+                      ),
+                      styleString: GebetaMapService.styleAsset,
+                      onMapCreated: _onMapCreated,
+                      onStyleLoadedCallback: () async {
+                        _isStyleReady = true;
+                        await _fitInitialPlaces();
+                        _reprojectPins();
+                      },
+                      onCameraIdle: _reprojectPins,
+                      apiKey: _mapService.apiKey,
+                    )
+                  : const Center(
+                      child: Text(
+                        'Map API key is missing.',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
                     ),
-                    zoom: GebetaMapService.defaultZoom,
-                  ),
-                  onMapCreated: _onMapCreated,
-                  onStyleLoadedCallback: () {
-                    _isStyleReady = true;
-                    _reprojectPins();
-                  },
-                  onCameraIdle: _reprojectPins,
-                  apiKey: _mapService.apiKey,
-                )
-              : const Center(
-                  child: Text(
-                    'Map API key is missing.',
-                    style: TextStyle(color: AppColors.textSecondary),
-                  ),
-                ),
-        ),
-        Positioned.fill(
-          child: IgnorePointer(
-            child: Container(
-              color: AppColors.primary.withValues(alpha: 0.10),
             ),
-          ),
-        ),
-        ..._visiblePins.map((pin) {
-          return Positioned(
-            left: pin.point.x - 20,
-            top: pin.point.y - 50,
-            child: GestureDetector(
-              onTap: () {
-                final filteredPlaces = _filteredPlaces();
-                final index = filteredPlaces.indexWhere((p) => p.id == pin.place.id);
-                if (index >= 0) {
-                  setState(() => _selectedPlaceIndex = index);
-                }
-                _animateCameraToPlace(pin.place);
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => PlaceDetailScreen(place: pin.place),
-                  ),
-                );
-              },
-              child: MapPin(
-                icon: pin.place.category.toLowerCase().contains('cafe')
-                    ? Icons.coffee_rounded
-                    : Icons.place_rounded,
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(
+                  color: AppColors.primary.withValues(alpha: 0.10),
+                ),
               ),
             ),
-          );
-        }),
-        Positioned(
-          top: 16,
-          left: 20,
-          right: 0,
-          child: _CategoryRow(
-            selectedIndex: _selectedCategoryIndex,
-            onCategorySelected: (index) {
-              setState(() {
-                _selectedCategoryIndex = index;
-                _selectedPlaceIndex = 0;
-              });
-              if (_isStyleReady) {
-                _reprojectPins();
-              }
-            },
-          ),
-        ),
-        Positioned(
-          left: 16,
-          right: 16,
-          bottom: 0,
-          child: GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => PlaceDetailScreen(place: previewPlace),
+            if (filteredPlaces.isEmpty)
+              const Positioned(
+                top: 76,
+                left: 20,
+                right: 20,
+                child: IgnorePointer(
+                  child: Center(
+                    child: Text(
+                      'No mapped places in this category.',
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
+                  ),
+                ),
+              ),
+            ..._visiblePins.map((pin) {
+              return Positioned(
+                left: pin.point.x - 20,
+                top: pin.point.y - 50,
+                child: GestureDetector(
+                  onTap: () {
+                    final filteredPlaces = _filteredPlaces();
+                    final index = filteredPlaces.indexWhere(
+                      (p) => p.id == pin.place.id,
+                    );
+                    if (index >= 0) {
+                      setState(() => _selectedPlaceIndex = index);
+                    }
+                    _animateCameraToPlace(pin.place);
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => PlaceDetailScreen(place: pin.place),
+                      ),
+                    );
+                  },
+                  child: MapPin(
+                    icon: pin.place.category.toLowerCase().contains('cafe')
+                        ? Icons.coffee_rounded
+                        : Icons.place_rounded,
+                  ),
                 ),
               );
-            },
-            child: PlacePreviewCard(place: previewPlace),
-          ),
-        ),
-      ],
+            }),
+            Positioned(
+              top: 16,
+              left: 20,
+              right: 0,
+              child: _CategoryRow(
+                selectedIndex: _selectedCategoryIndex,
+                onCategorySelected: (index) {
+                  setState(() {
+                    _selectedCategoryIndex = index;
+                    _selectedPlaceIndex = 0;
+                  });
+                  if (_isStyleReady) {
+                    _reprojectPins();
+                  }
+                },
+              ),
+            ),
+            if (previewPlace != null)
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 0,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => PlaceDetailScreen(place: previewPlace),
+                      ),
+                    );
+                  },
+                  child: PlacePreviewCard(place: previewPlace),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -155,15 +178,22 @@ class _HomeMapSectionState extends State<HomeMapSection> {
     final categories = ['All', 'Cafe', 'Restaurant', 'Coworking', 'Park'];
     final selected = categories[_selectedCategoryIndex];
     final withCoordinates = widget.places
-        .where((p) => p.latitude != 0 && p.longitude != 0)
+        .where(
+          (p) =>
+              p.latitude.isFinite &&
+              p.longitude.isFinite &&
+              p.latitude >= -90 &&
+              p.latitude <= 90 &&
+              p.longitude >= -180 &&
+              p.longitude <= 180 &&
+              (p.latitude != 0 || p.longitude != 0),
+        )
         .toList();
     if (selected == 'All') {
       return withCoordinates;
     }
     return withCoordinates
-        .where(
-          (p) => p.category.toLowerCase().contains(selected.toLowerCase()),
-        )
+        .where((p) => p.category.toLowerCase().contains(selected.toLowerCase()))
         .toList();
   }
 
@@ -182,8 +212,8 @@ class _HomeMapSectionState extends State<HomeMapSection> {
           16.0,
         ),
       );
-    } catch (_) {
-      // Fallback if animateCamera is not available
+    } catch (error) {
+      debugPrint('Unable to move the Home map camera: $error');
     }
   }
 
@@ -191,7 +221,12 @@ class _HomeMapSectionState extends State<HomeMapSection> {
     final controller = _mapController;
     if (!_isStyleReady || controller == null || !mounted) return;
     final places = _filteredPlaces();
-    final screenSize = MediaQuery.of(context).size;
+    final viewportSize = _mapViewportSize;
+    if (viewportSize.isEmpty) return;
+    final coordinateScale = defaultTargetPlatform == TargetPlatform.android
+        ? MediaQuery.devicePixelRatioOf(context)
+        : 1.0;
+    final generation = ++_projectionGeneration;
     final nextPins = <_ProjectedPlacePin>[];
 
     try {
@@ -199,26 +234,66 @@ class _HomeMapSectionState extends State<HomeMapSection> {
         final point = await controller.toScreenLocation(
           LatLng(place.latitude, place.longitude),
         );
-        final x = point.x.toDouble();
-        final y = point.y.toDouble();
-        if (x < -60 || y < -60 || x > screenSize.width + 60 || y > screenSize.height + 60) {
+        final x = point.x.toDouble() / coordinateScale;
+        final y = point.y.toDouble() / coordinateScale;
+        if (x < -60 ||
+            y < -60 ||
+            x > viewportSize.width + 60 ||
+            y > viewportSize.height + 60) {
           continue;
         }
-        nextPins.add(_ProjectedPlacePin(place: place, point: point));
+        nextPins.add(
+          _ProjectedPlacePin(place: place, point: Point<double>(x, y)),
+        );
       }
-      if (!mounted) return;
+      if (!mounted || generation != _projectionGeneration) return;
       setState(() {
         _visiblePins = nextPins;
       });
-    } catch (_) {}
+    } catch (error) {
+      debugPrint('Unable to project Home map pins: $error');
+    }
+  }
+
+  Future<void> _fitInitialPlaces() async {
+    final controller = _mapController;
+    final places = _filteredPlaces();
+    if (_hasFittedInitialPlaces || controller == null || places.isEmpty) return;
+    _hasFittedInitialPlaces = true;
+
+    try {
+      if (places.length == 1) {
+        await controller.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            LatLng(places.first.latitude, places.first.longitude),
+            GebetaMapService.defaultZoom,
+          ),
+        );
+        return;
+      }
+
+      final latitudes = places.map((place) => place.latitude);
+      final longitudes = places.map((place) => place.longitude);
+      await controller.animateCamera(
+        CameraUpdate.newLatLngBounds(
+          LatLngBounds(
+            southwest: LatLng(latitudes.reduce(min), longitudes.reduce(min)),
+            northeast: LatLng(latitudes.reduce(max), longitudes.reduce(max)),
+          ),
+          left: 48,
+          top: 96,
+          right: 48,
+          bottom: 280,
+        ),
+      );
+    } catch (error) {
+      debugPrint('Unable to fit Home map places: $error');
+    }
   }
 }
 
 class _ProjectedPlacePin {
-  const _ProjectedPlacePin({
-    required this.place,
-    required this.point,
-  });
+  const _ProjectedPlacePin({required this.place, required this.point});
 
   final PlaceModel place;
   final Point point;
@@ -254,7 +329,9 @@ class _CategoryRow extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSelected ? AppColors.primary : AppColors.surface,
                 borderRadius: BorderRadius.circular(14),
-                border: isSelected ? null : Border.all(color: AppColors.outline),
+                border: isSelected
+                    ? null
+                    : Border.all(color: AppColors.outline),
               ),
               child: Center(
                 child: Text(

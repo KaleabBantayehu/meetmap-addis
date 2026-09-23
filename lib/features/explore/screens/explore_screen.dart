@@ -34,10 +34,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final placesProvider =
-          Provider.of<PlacesProvider>(context, listen: false);
-      final locationProvider =
-          Provider.of<LocationProvider>(context, listen: false);
+      final placesProvider = Provider.of<PlacesProvider>(
+        context,
+        listen: false,
+      );
+      final locationProvider = Provider.of<LocationProvider>(
+        context,
+        listen: false,
+      );
 
       if (placesProvider.places.isEmpty) {
         placesProvider.fetchPlaces();
@@ -49,7 +53,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   void _fetchNearbyPlaces(
-      PlacesProvider placesProvider, LocationProvider locationProvider) {
+    PlacesProvider placesProvider,
+    LocationProvider locationProvider,
+  ) {
     placesProvider.fetchNearbyPlaces(
       userLat: locationProvider.currentLatitude!,
       userLng: locationProvider.currentLongitude!,
@@ -72,14 +78,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
     // Parse radius  e.g. '10km' → 10.0
     final radiusStr = (result['radius'] as String?) ?? '5km';
-    final radiusKm =
-        double.tryParse(radiusStr.replaceAll('km', '')) ?? 5.0;
+    final radiusKm = double.tryParse(radiusStr.replaceAll('km', '')) ?? 5.0;
 
     setState(() {
       _filterMinRating = minRating;
       _filterRadiusKm = radiusKm;
       _filterPriceLevel = result['priceLevel'] as int?;
-      _filterAmenities = (result['amenities'] as List<dynamic>?)?.cast<String>() ?? [];
+      _filterAmenities =
+          (result['amenities'] as List<dynamic>?)?.cast<String>() ?? [];
     });
   }
 
@@ -98,8 +104,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
             place.name.toLowerCase().contains('coffee');
       }
       return place.category.toLowerCase().contains(
-            selectedCategory.substring(0, selectedCategory.length - 1),
-          );
+        selectedCategory.substring(0, selectedCategory.length - 1),
+      );
     }).toList();
 
     // Rating filter
@@ -109,7 +115,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
     // Price level filter
     if (_filterPriceLevel != null) {
-      places = places.where((p) => p.normalizedPriceLevel == _filterPriceLevel).toList();
+      places = places
+          .where((p) => p.normalizedPriceLevel == _filterPriceLevel)
+          .toList();
     }
 
     // Amenities filter (all selected amenities must match)
@@ -177,7 +185,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           : null;
                       return Padding(
                         padding: const EdgeInsets.only(
-                            left: 20, right: 20, bottom: 24),
+                          left: 20,
+                          right: 20,
+                          bottom: 24,
+                        ),
                         child: ExplorePlaceCard(
                           place: place,
                           distanceKm: distKm,
@@ -196,6 +207,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'explore_add_place',
         backgroundColor: AppColors.primary,
         onPressed: () => Navigator.of(context).pushNamed(AppRoutes.addPlace),
         child: const Icon(Icons.add_rounded, size: 32, color: Colors.white),
@@ -218,9 +230,9 @@ class _ExploreHeader extends StatelessWidget {
           child: Text(
             'Explore Addis',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
         GestureDetector(
@@ -231,11 +243,11 @@ class _ExploreHeader extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(14),
-              border:
-                  Border.all(color: AppColors.outline.withValues(alpha: 0.4)),
+              border: Border.all(
+                color: AppColors.outline.withValues(alpha: 0.4),
+              ),
             ),
-            child:
-                const Icon(Icons.tune_rounded, color: AppColors.primary),
+            child: const Icon(Icons.tune_rounded, color: AppColors.primary),
           ),
         ),
       ],
@@ -269,17 +281,20 @@ class _ExploreAppBar extends StatelessWidget {
         children: [
           IconButton(
             onPressed: () {},
-            icon: const Icon(Icons.menu_rounded,
-                size: 30, color: AppColors.primary),
+            icon: const Icon(
+              Icons.menu_rounded,
+              size: 30,
+              color: AppColors.primary,
+            ),
           ),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
               'MeetMap Addis',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                  ),
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
             ),
           ),
           // Real user avatar → navigates to own profile
@@ -291,24 +306,31 @@ class _ExploreAppBar extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                    color: AppColors.outline.withValues(alpha: 0.4)),
+                  color: AppColors.outline.withValues(alpha: 0.4),
+                ),
               ),
               child: ClipOval(
                 child: avatarUrl.isEmpty
                     ? Container(
                         color: AppColors.surfaceVariant,
-                        child: const Icon(Icons.person_rounded,
-                            color: AppColors.textSecondary, size: 22),
+                        child: const Icon(
+                          Icons.person_rounded,
+                          color: AppColors.textSecondary,
+                          size: 22,
+                        ),
                       )
                     : CachedNetworkImage(
                         imageUrl: avatarUrl,
                         fit: BoxFit.cover,
-                        placeholder: (_, __) =>
+                        placeholder: (_, _) =>
                             Container(color: AppColors.surfaceVariant),
-                        errorWidget: (_, __, ___) => Container(
+                        errorWidget: (_, _, _) => Container(
                           color: AppColors.surfaceVariant,
-                          child: const Icon(Icons.person_rounded,
-                              color: AppColors.textSecondary, size: 22),
+                          child: const Icon(
+                            Icons.person_rounded,
+                            color: AppColors.textSecondary,
+                            size: 22,
+                          ),
                         ),
                       ),
               ),
@@ -339,18 +361,16 @@ class _CategoryRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20),
         scrollDirection: Axis.horizontal,
         itemCount: categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
           final isSelected = selectedIndex == index;
           return GestureDetector(
             onTap: () => onCategorySelected(index),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
-                color:
-                    isSelected ? AppColors.primary : AppColors.surface,
+                color: isSelected ? AppColors.primary : AppColors.surface,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: isSelected
@@ -362,9 +382,7 @@ class _CategoryRow extends StatelessWidget {
                 child: Text(
                   categories[index],
                   style: TextStyle(
-                    color: isSelected
-                        ? Colors.white
-                        : AppColors.textPrimary,
+                    color: isSelected ? Colors.white : AppColors.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

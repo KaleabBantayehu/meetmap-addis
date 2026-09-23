@@ -11,6 +11,7 @@ class EventFilterButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton.extended(
+      heroTag: 'events_filter',
       onPressed: onTap,
       backgroundColor: AppColors.primary,
       elevation: 6,

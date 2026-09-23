@@ -64,9 +64,10 @@ class _EventsScreenState extends State<EventsScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const AddEventScreen()),
-        ),
+        heroTag: 'events_add_event',
+        onPressed: () => Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const AddEventScreen())),
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -100,7 +101,8 @@ class _EventsScreenState extends State<EventsScreen> {
                               onTap: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (_) => EventDetailScreen(event: featuredEvent),
+                                    builder: (_) =>
+                                        EventDetailScreen(event: featuredEvent),
                                   ),
                                 );
                               },
@@ -153,7 +155,8 @@ class _EventsScreenState extends State<EventsScreen> {
                       hasScrollBody: false,
                       child: Center(child: CircularProgressIndicator()),
                     )
-                  else if (eventsProvider.errorMessage != null && filtered.isEmpty)
+                  else if (eventsProvider.errorMessage != null &&
+                      filtered.isEmpty)
                     SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(
@@ -162,14 +165,19 @@ class _EventsScreenState extends State<EventsScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 48),
+                              const Icon(
+                                Icons.error_outline_rounded,
+                                color: AppColors.error,
+                                size: 48,
+                              ),
                               const SizedBox(height: 16),
                               Text(
                                 eventsProvider.errorMessage!,
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: AppColors.textPrimary,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                 textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 12),
@@ -206,7 +214,8 @@ class _EventsScreenState extends State<EventsScreen> {
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (_) => EventDetailScreen(event: event),
+                                  builder: (_) =>
+                                      EventDetailScreen(event: event),
                                 ),
                               );
                             },

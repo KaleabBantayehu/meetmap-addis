@@ -43,7 +43,12 @@ class PlaceDetailScreen extends StatelessWidget {
         slivers: [
           PlaceHeader(place: resolvedPlace),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
+            padding: EdgeInsets.fromLTRB(
+              20,
+              18,
+              20,
+              32 + MediaQuery.viewPaddingOf(context).bottom,
+            ),
             sliver: SliverList(
               delegate: SliverChildListDelegate.fixed([
                 PlaceInfoSection(place: resolvedPlace),

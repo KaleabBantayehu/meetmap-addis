@@ -25,7 +25,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showComingSoon(String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$feature will be available in the next update!'),
+        content: Text('$feature is not available in this build.'),
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.primary,
         duration: const Duration(seconds: 2),
@@ -162,13 +162,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     size: 18,
                     color: AppColors.outline,
                   ),
-                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.helpSupport),
+                  onTap: () => _showComingSoon('Help Center'),
                 ),
                 const Divider(height: 1, indent: 56),
                 SettingsTile(
                   icon: Icons.contact_support_outlined,
                   title: 'Contact Us',
-                  onTap: () => Navigator.of(context).pushNamed(AppRoutes.helpSupport),
+                  onTap: () => _showComingSoon('Contact support'),
                 ),
                 const Divider(height: 1, indent: 56),
                 SettingsTile(
