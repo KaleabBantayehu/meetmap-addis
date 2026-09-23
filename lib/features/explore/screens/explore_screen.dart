@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
+import 'package:meetmap_addis/shared/widgets/app_menu_button.dart';
 import 'package:meetmap_addis/features/explore/screens/filter_screen.dart';
 import 'package:meetmap_addis/features/explore/widgets/explore_place_card.dart';
 import 'package:meetmap_addis/features/explore/widgets/near_me_section.dart';
@@ -279,13 +280,10 @@ class _ExploreAppBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              Icons.menu_rounded,
-              size: 30,
-              color: AppColors.primary,
-            ),
+          const AppMenuButton(
+            size: 30,
+            color: AppColors.primary,
+            activeDestination: 'Explore',
           ),
           const SizedBox(width: 6),
           Expanded(

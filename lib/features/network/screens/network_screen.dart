@@ -11,7 +11,6 @@ import '../widgets/network_search_bar.dart';
 import '../widgets/suggestion_card.dart';
 import '../widgets/trending_reviewer_card.dart';
 
-
 class NetworkScreen extends StatefulWidget {
   const NetworkScreen({super.key});
 
@@ -26,9 +25,12 @@ class _NetworkScreenState extends State<NetworkScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<NetworkProvider>();
       final currentUserId = context.read<AuthProvider>().currentUser?.id;
-      if (provider.suggestedUsers.isEmpty && provider.trendingReviewers.isEmpty) {
+      if (provider.suggestedUsers.isEmpty &&
+          provider.trendingReviewers.isEmpty) {
         provider.fetchNetworkData().then((_) {
-          if (!mounted || currentUserId == null || currentUserId.isEmpty) return;
+          if (!mounted || currentUserId == null || currentUserId.isEmpty) {
+            return;
+          }
           provider.loadFollowState(currentUserId);
         });
       } else if (currentUserId != null && currentUserId.isNotEmpty) {
@@ -42,16 +44,18 @@ class _NetworkScreenState extends State<NetworkScreen> {
     final networkProvider = context.watch<NetworkProvider>();
     final currentUserId = context.watch<AuthProvider>().currentUser?.id;
     final isSearch = networkProvider.hasActiveSearch;
-    final suggested = (isSearch
-            ? networkProvider.searchResults
-            : networkProvider.suggestedUsers)
-        .where((u) => currentUserId == null || u.id != currentUserId)
-        .toList();
-    final trending = (isSearch
-            ? networkProvider.searchResults
-            : networkProvider.trendingReviewers)
-        .where((u) => currentUserId == null || u.id != currentUserId)
-        .toList();
+    final suggested =
+        (isSearch
+                ? networkProvider.searchResults
+                : networkProvider.suggestedUsers)
+            .where((u) => currentUserId == null || u.id != currentUserId)
+            .toList();
+    final trending =
+        (isSearch
+                ? networkProvider.searchResults
+                : networkProvider.trendingReviewers)
+            .where((u) => currentUserId == null || u.id != currentUserId)
+            .toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -59,44 +63,50 @@ class _NetworkScreenState extends State<NetworkScreen> {
         leading: const AppMenuButton(
           color: AppColors.textPrimary,
           size: 24,
+          activeDestination: 'Networking',
         ),
         title: const Text('Network'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
-            child: Builder(builder: (context) {
-              final avatarUrl =
-                  context.watch<AuthProvider>().currentUser?.profileImageUrl ??
-                      '';
-              return GestureDetector(
-                onTap: () {},
-                child: CircleAvatar(
-                  radius: 18,
-                  backgroundColor: AppColors.imagePlaceholder,
-                  child: ClipOval(
-                    child: avatarUrl.isEmpty
-                        ? const Icon(
-                            Icons.person_rounded,
-                            color: AppColors.textSecondary,
-                            size: 18,
-                          )
-                        : CachedNetworkImage(
-                            imageUrl: avatarUrl,
-                            width: 36,
-                            height: 36,
-                            fit: BoxFit.cover,
-                            placeholder: (_, url) =>
-                                Container(color: AppColors.surfaceVariant),
-                            errorWidget: (_, url, err) => const Icon(
+            child: Builder(
+              builder: (context) {
+                final avatarUrl =
+                    context
+                        .watch<AuthProvider>()
+                        .currentUser
+                        ?.profileImageUrl ??
+                    '';
+                return GestureDetector(
+                  onTap: () {},
+                  child: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: AppColors.imagePlaceholder,
+                    child: ClipOval(
+                      child: avatarUrl.isEmpty
+                          ? const Icon(
                               Icons.person_rounded,
                               color: AppColors.textSecondary,
                               size: 18,
+                            )
+                          : CachedNetworkImage(
+                              imageUrl: avatarUrl,
+                              width: 36,
+                              height: 36,
+                              fit: BoxFit.cover,
+                              placeholder: (_, url) =>
+                                  Container(color: AppColors.surfaceVariant),
+                              errorWidget: (_, url, err) => const Icon(
+                                Icons.person_rounded,
+                                color: AppColors.textSecondary,
+                                size: 18,
+                              ),
                             ),
-                          ),
+                    ),
                   ),
-                ),
-              );
-            }),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -112,7 +122,8 @@ class _NetworkScreenState extends State<NetworkScreen> {
               },
             ),
             const SizedBox(height: 24),
-            if (!isSearch) _buildSectionHeader('Suggested for you', onSeeAll: () {}),
+            if (!isSearch)
+              _buildSectionHeader('Suggested for you', onSeeAll: () {}),
             const SizedBox(height: 16),
             _buildSuggestedList(
               networkProvider: networkProvider,

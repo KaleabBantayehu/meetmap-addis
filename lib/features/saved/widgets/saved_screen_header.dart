@@ -23,7 +23,7 @@ class SavedScreenHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const AppMenuButton(size: 30),
+          const AppMenuButton(size: 30, activeDestination: 'Saved'),
           const SizedBox(width: 18),
           Expanded(
             child: Text(

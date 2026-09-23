@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gebeta_gl/gebeta_gl.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
@@ -6,7 +7,8 @@ import 'package:meetmap_addis/core/services/gebeta_map_service.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
 import 'package:meetmap_addis/providers/location_provider.dart';
 import 'package:meetmap_addis/providers/places_provider.dart';
-import 'package:meetmap_addis/core/services/gebeta_directions_service.dart' show DirectionsResult, GebetaDirectionsService;
+import 'package:meetmap_addis/core/services/gebeta_directions_service.dart'
+    show DirectionsException, DirectionsFailureType, DirectionsResult;
 import 'package:meetmap_addis/core/storage/connectivity_service.dart';
 import 'package:provider/provider.dart';
 
@@ -27,6 +29,9 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
   // Screen-projected pin offset
   Point<double> _pinPoint = const Point(0, 0);
   bool _pinVisible = false;
+  Point<double> _originPoint = const Point(0, 0);
+  bool _originVisible = false;
+  bool _routeDrawn = false;
 
   DirectionsResult? _directionsResult;
   bool _isLoadingDirections = false;
@@ -35,16 +40,15 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchDirections();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchDirections());
   }
 
   Future<void> _fetchDirections() async {
-    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
-    final placesProvider = Provider.of<PlacesProvider>(context, listen: false);
-    if (!locationProvider.hasLocation) {
-      setState(() {
-        _directionsError = 'Location not available';
-      });
+    if (_isLoadingDirections) return;
+    if (!_hasValidCoordinates(widget.place.latitude, widget.place.longitude)) {
+      setState(
+        () => _directionsError = 'The route destination is not available.',
+      );
       return;
     }
 
@@ -54,32 +58,47 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
     });
 
     try {
+      if (!ConnectivityService.instance.isConnected) {
+        throw const DirectionsException(DirectionsFailureType.network);
+      }
+      final locationProvider = context.read<LocationProvider>();
+      if (!locationProvider.hasLocation) {
+        final located = await locationProvider.getCurrentLocation();
+        if (!mounted) return;
+        if (!located) {
+          setState(() {
+            _directionsError = locationProvider.permissionDenied
+                ? 'Location permission is required for directions.'
+                : 'Your current location could not be obtained.';
+          });
+          return;
+        }
+      }
+
+      final placesProvider = context.read<PlacesProvider>();
       final result = await placesProvider.getDirectionsToPlace(
         userLat: locationProvider.currentLatitude!,
         userLng: locationProvider.currentLongitude!,
         place: widget.place,
       );
 
+      if (!mounted) return;
+      setState(() {
+        _directionsResult = result;
+        _directionsError = null;
+        _routeDrawn = false;
+      });
+      await _drawRouteIfReady();
+    } on DirectionsException catch (error) {
       if (mounted) {
-        setState(() {
-          _directionsResult = result;
-          if (result != null) {
-            _directionsError = null;
-          } else {
-            _directionsError = 'Unable to load route';
-          }
-        });
-
-        // Fetch raw direction data for polyline (for future visualization)
-        if (result != null) {
-          await _fetchRoutePolyline();
-        }
+        setState(() => _directionsError = error.userMessage);
       }
-    } catch (e) {
+    } catch (error) {
+      debugPrint('Unexpected Directions error: $error');
       if (mounted) {
         setState(() {
-          _directionsError = 'Failed to load directions';
-          debugPrint('Direction error: $e');
+          _directionsError =
+              'The route could not be loaded. Check your connection and retry.';
         });
       }
     } finally {
@@ -91,31 +110,12 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
     }
   }
 
-  Future<void> _fetchRoutePolyline() async {
-    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
-    if (!locationProvider.hasLocation) return;
-
-    try {
-      final directionsService = GebetaDirectionsService();
-      final rawResponse = await directionsService.getDirectionsRaw(
-        originLat: locationProvider.currentLatitude!,
-        originLng: locationProvider.currentLongitude!,
-        destLat: widget.place.latitude,
-        destLng: widget.place.longitude,
-      );
-
-      if (rawResponse != null) {
-        debugPrint('Route polyline data loaded: ${rawResponse.length} points');
-      }
-    } catch (e) {
-      debugPrint('Polyline fetch error: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final hasCoords =
-        widget.place.latitude != 0 && widget.place.longitude != 0;
+    final hasCoords = _hasValidCoordinates(
+      widget.place.latitude,
+      widget.place.longitude,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -138,10 +138,11 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
                       const SizedBox(height: 12),
                       Text(
                         'You are offline',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                       const SizedBox(height: 6),
                       const Text(
@@ -158,19 +159,20 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
               child: GebetaMap(
                 compassViewPosition: CompassViewPosition.topRight,
                 initialCameraPosition: CameraPosition(
-                  target: LatLng(
-                    widget.place.latitude,
-                    widget.place.longitude,
-                  ),
+                  target: LatLng(widget.place.latitude, widget.place.longitude),
                   zoom: 15.0,
                 ),
+                styleString: GebetaMapService.styleAsset,
+                myLocationEnabled: context
+                    .watch<LocationProvider>()
+                    .hasLocation,
                 onMapCreated: (controller) {
                   _mapController = controller;
-                  _scheduleRouteIfAvailable();
                 },
-                onStyleLoadedCallback: () {
+                onStyleLoadedCallback: () async {
                   _isStyleReady = true;
                   _reprojectPin();
+                  await _drawRouteIfReady();
                 },
                 onCameraIdle: _reprojectPin,
                 apiKey: _mapService.apiKey,
@@ -208,6 +210,12 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
               left: _pinPoint.x - 20,
               top: _pinPoint.y - 50,
               child: _DestinationPin(label: widget.place.name),
+            ),
+          if (_originVisible)
+            Positioned(
+              left: _originPoint.x - 10,
+              top: _originPoint.y - 10,
+              child: const _OriginPin(),
             ),
 
           // ── Top bar ──────────────────────────────────────────────────────
@@ -302,7 +310,7 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
                   directions: _directionsResult,
                   isLoading: _isLoadingDirections,
                   error: _directionsError,
-                  onStartNavigation: _startNavigation,
+                  onRetry: _fetchDirections,
                 ),
               ),
             ),
@@ -315,18 +323,44 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
   Future<void> _reprojectPin() async {
     final controller = _mapController;
     if (!_isStyleReady || controller == null || !mounted) return;
-    if (widget.place.latitude == 0 && widget.place.longitude == 0) return;
+    if (!_hasValidCoordinates(widget.place.latitude, widget.place.longitude)) {
+      return;
+    }
 
     try {
-      final point = await controller.toScreenLocation(
+      final locationProvider = context.read<LocationProvider>();
+      final scale = defaultTargetPlatform == TargetPlatform.android
+          ? MediaQuery.devicePixelRatioOf(context)
+          : 1.0;
+      final destinationPoint = await controller.toScreenLocation(
         LatLng(widget.place.latitude, widget.place.longitude),
       );
+      final originPoint = locationProvider.hasLocation
+          ? await controller.toScreenLocation(
+              LatLng(
+                locationProvider.currentLatitude!,
+                locationProvider.currentLongitude!,
+              ),
+            )
+          : null;
       if (!mounted) return;
       setState(() {
-        _pinPoint = Point(point.x.toDouble(), point.y.toDouble());
+        _pinPoint = Point(
+          destinationPoint.x.toDouble() / scale,
+          destinationPoint.y.toDouble() / scale,
+        );
         _pinVisible = true;
+        if (originPoint != null) {
+          _originPoint = Point(
+            originPoint.x.toDouble() / scale,
+            originPoint.y.toDouble() / scale,
+          );
+          _originVisible = true;
+        }
       });
-    } catch (_) {}
+    } catch (error) {
+      debugPrint('Unable to project Directions markers: $error');
+    }
   }
 
   Future<void> _centerOnPlace() async {
@@ -339,79 +373,84 @@ class _PlaceMapScreenState extends State<PlaceMapScreen> {
           16.0,
         ),
       );
-    } catch (_) {}
+    } catch (error) {
+      debugPrint('Unable to center Directions map: $error');
+    }
   }
 
-  void _startNavigation() {
-    if (_directionsResult == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Route information not available'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+  Future<void> _drawRouteIfReady() async {
+    final controller = _mapController;
+    final result = _directionsResult;
+    if (!_isStyleReady || controller == null || result == null || _routeDrawn) {
       return;
     }
 
-    final message = '${widget.place.name} - ${_directionsResult!.distanceDisplay}, ${_directionsResult!.durationDisplay}';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Navigate to: $message'),
-        behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(
-          label: 'Open',
-          onPressed: () {
-            // Fallback: show place details with directions
-            debugPrint('Navigation initiated to ${widget.place.name}');
-          },
+    try {
+      await controller.clearLines();
+      await controller.addLine(
+        LineOptions(
+          geometry: result.route
+              .map((point) => LatLng(point.latitude, point.longitude))
+              .toList(growable: false),
+          lineColor: '#006B57',
+          lineWidth: 5,
+          lineOpacity: 0.9,
         ),
-        duration: const Duration(seconds: 4),
-      ),
-    );
+      );
+      _routeDrawn = true;
+
+      final latitudes = result.route.map((point) => point.latitude);
+      final longitudes = result.route.map((point) => point.longitude);
+      await controller.animateCamera(
+        CameraUpdate.newLatLngBounds(
+          LatLngBounds(
+            southwest: LatLng(latitudes.reduce(min), longitudes.reduce(min)),
+            northeast: LatLng(latitudes.reduce(max), longitudes.reduce(max)),
+          ),
+          left: 48,
+          top: 100,
+          right: 48,
+          bottom: 250,
+        ),
+      );
+      await _reprojectPin();
+    } catch (error) {
+      _routeDrawn = false;
+      debugPrint('Unable to draw Directions route: $error');
+      if (mounted) {
+        setState(() {
+          _directionsError = 'The route could not be displayed. Please retry.';
+        });
+      }
+    }
   }
 
-  /// Optionally animate to user position then to destination if available.
-  void _scheduleRouteIfAvailable() {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      final locationProvider =
-          Provider.of<LocationProvider>(context, listen: false);
-      final controller = _mapController;
-      if (controller == null) return;
-      try {
-        if (locationProvider.hasLocation &&
-            widget.place.latitude != 0 &&
-            widget.place.longitude != 0) {
-          // Fit bounds between user and destination
-          final userLat = locationProvider.currentLatitude!;
-          final userLng = locationProvider.currentLongitude!;
-          final placeLat = widget.place.latitude;
-          final placeLng = widget.place.longitude;
+  bool _hasValidCoordinates(double latitude, double longitude) {
+    return latitude.isFinite &&
+        longitude.isFinite &&
+        latitude >= -90 &&
+        latitude <= 90 &&
+        longitude >= -180 &&
+        longitude <= 180 &&
+        (latitude != 0 || longitude != 0);
+  }
+}
 
-          final minLat = min(userLat, placeLat);
-          final maxLat = max(userLat, placeLat);
-          final minLng = min(userLng, placeLng);
-          final maxLng = max(userLng, placeLng);
+class _OriginPin extends StatelessWidget {
+  const _OriginPin();
 
-          await controller.animateCamera(
-            CameraUpdate.newLatLngBounds(
-              LatLngBounds(
-                southwest: LatLng(minLat, minLng),
-                northeast: LatLng(maxLat, maxLng),
-              ),
-              left: 60,
-              top: 100,
-              right: 60,
-              bottom: 160,
-            ),
-          );
-        } else {
-          await _centerOnPlace();
-        }
-      } catch (_) {
-        await _centerOnPlace();
-      }
-    });
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 20,
+      height: 20,
+      decoration: BoxDecoration(
+        color: Colors.blue,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 3),
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 5)],
+      ),
+    );
   }
 }
 
@@ -463,11 +502,7 @@ class _DestinationPin extends StatelessWidget {
               ),
             ],
           ),
-          child: const Icon(
-            Icons.place_rounded,
-            color: Colors.white,
-            size: 24,
-          ),
+          child: const Icon(Icons.place_rounded, color: Colors.white, size: 24),
         ),
       ],
     );
@@ -481,7 +516,7 @@ class _PlaceInfoCard extends StatelessWidget {
     this.directions,
     this.isLoading = false,
     this.error,
-    this.onStartNavigation,
+    required this.onRetry,
   });
 
   final PlaceModel place;
@@ -489,7 +524,7 @@ class _PlaceInfoCard extends StatelessWidget {
   final DirectionsResult? directions;
   final bool isLoading;
   final String? error;
-  final VoidCallback? onStartNavigation;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -582,21 +617,42 @@ class _PlaceInfoCard extends StatelessWidget {
               const Center(
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      SizedBox(width: 10),
+                      Text('Finding route...'),
+                    ],
                   ),
                 ),
               )
             else if (error != null)
               Center(
-                child: Text(
-                  error!,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
+                child: Column(
+                  children: [
+                    Text(
+                      error!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: onRetry,
+                      icon: const Icon(Icons.refresh_rounded, size: 18),
+                      label: const Text('Retry'),
+                    ),
+                  ],
                 ),
               )
             else if (directions != null) ...[
@@ -608,34 +664,13 @@ class _PlaceInfoCard extends StatelessWidget {
                     label: 'Distance',
                     value: directions!.distanceDisplay,
                   ),
-                  Container(
-                    width: 1,
-                    height: 28,
-                    color: AppColors.outline,
-                  ),
+                  Container(width: 1, height: 28, color: AppColors.outline),
                   _InfoItem(
                     icon: Icons.access_time_rounded,
                     label: 'Duration',
                     value: directions!.durationDisplay,
                   ),
                 ],
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: ElevatedButton.icon(
-                  onPressed: onStartNavigation,
-                  icon: const Icon(Icons.navigation_rounded),
-                  label: const Text('Start Navigation'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
               ),
             ],
           ],
@@ -668,11 +703,18 @@ class _InfoItem extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+              style: const TextStyle(
+                fontSize: 10,
+                color: AppColors.textSecondary,
+              ),
             ),
             Text(
               value,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
           ],
         ),

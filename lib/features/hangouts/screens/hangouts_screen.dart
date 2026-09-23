@@ -322,7 +322,11 @@ class _TopAppBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
-          const AppMenuButton(color: AppColors.textPrimary, size: 26),
+          const AppMenuButton(
+            color: AppColors.textPrimary,
+            size: 26,
+            activeDestination: 'Hangouts',
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

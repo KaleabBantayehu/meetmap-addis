@@ -373,9 +373,7 @@ class PlacesProvider with ChangeNotifier {
       destLng: destLng,
     );
 
-    if (result != null) {
-      _directionsCache[cacheKey] = result;
-    }
+    _directionsCache[cacheKey] = result;
 
     return result;
   }
