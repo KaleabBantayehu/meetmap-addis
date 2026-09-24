@@ -5,7 +5,8 @@ import 'package:meetmap_addis/shared/models/place_model.dart';
 import 'package:meetmap_addis/features/places/screens/place_map_screen.dart';
 import 'package:meetmap_addis/providers/location_provider.dart';
 import 'package:meetmap_addis/providers/places_provider.dart';
-import 'package:meetmap_addis/core/services/gebeta_directions_service.dart' show DirectionsResult;
+import 'package:meetmap_addis/core/services/gebeta_directions_service.dart'
+    show DirectionsResult;
 import 'package:provider/provider.dart';
 
 class EventDetailScreen extends StatefulWidget {
@@ -18,20 +19,35 @@ class EventDetailScreen extends StatefulWidget {
 }
 
 class _EventDetailScreenState extends State<EventDetailScreen> {
-  bool _isJoined = false;
-  int _attendeeCount = 0;
   DirectionsResult? _directionsResult;
   bool _isLoadingDirections = false;
 
   @override
   void initState() {
     super.initState();
-    _attendeeCount = widget.event.attendeeCount;
     _fetchDirections();
   }
 
+  bool get _hasValidCoordinates {
+    final latitude = widget.event.latitude;
+    final longitude = widget.event.longitude;
+    return latitude != null &&
+        longitude != null &&
+        latitude.isFinite &&
+        longitude.isFinite &&
+        latitude >= -90 &&
+        latitude <= 90 &&
+        longitude >= -180 &&
+        longitude <= 180 &&
+        (latitude != 0 || longitude != 0);
+  }
+
   Future<void> _fetchDirections() async {
-    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+    if (!_hasValidCoordinates) return;
+    final locationProvider = Provider.of<LocationProvider>(
+      context,
+      listen: false,
+    );
     final placesProvider = Provider.of<PlacesProvider>(context, listen: false);
     if (!locationProvider.hasLocation) return;
 
@@ -71,29 +87,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       rating: 5.0,
       priceRange: 'Free',
       isOpen: true,
-      latitude: widget.event.latitude,
-      longitude: widget.event.longitude,
+      latitude: widget.event.latitude!,
+      longitude: widget.event.longitude!,
       tags: [widget.event.category],
       reviewCount: 0,
       description: widget.event.description,
-    );
-  }
-
-  void _toggleJoin() {
-    setState(() {
-      _isJoined = !_isJoined;
-      _attendeeCount += _isJoined ? 1 : -1;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          _isJoined 
-              ? 'Successfully joined "${widget.event.title}"!' 
-              : 'Left "${widget.event.title}".',
-        ),
-        backgroundColor: _isJoined ? AppColors.primary : AppColors.textSecondary,
-        duration: const Duration(seconds: 2),
-      ),
     );
   }
 
@@ -128,11 +126,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                 widget.event.imageUrl,
                                 fit: BoxFit.cover,
                                 errorBuilder: (ctx, err, st) => const Center(
-                                  child: Icon(Icons.broken_image_rounded, size: 64, color: AppColors.textSecondary),
+                                  child: Icon(
+                                    Icons.broken_image_rounded,
+                                    size: 64,
+                                    color: AppColors.textSecondary,
+                                  ),
                                 ),
                               )
                             : const Center(
-                                child: Icon(Icons.image_rounded, size: 64, color: AppColors.textSecondary),
+                                child: Icon(
+                                  Icons.image_rounded,
+                                  size: 64,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                       ),
                     ),
@@ -156,7 +162,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
                 // Event info card / content
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 24,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -164,7 +173,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20),
@@ -172,20 +184,24 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             child: Text(
                               widget.event.category.toUpperCase(),
                               style: theme.textTheme.labelMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primary,
-                                  ),
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
                             ),
                           ),
                           const Spacer(),
-                          const Icon(Icons.people_alt_rounded, color: AppColors.textSecondary, size: 18),
+                          const Icon(
+                            Icons.people_alt_rounded,
+                            color: AppColors.textSecondary,
+                            size: 18,
+                          ),
                           const SizedBox(width: 6),
                           Text(
-                            '$_attendeeCount attending',
+                            '${widget.event.attendeeCount} attending',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                       ),
@@ -195,9 +211,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       Text(
                         widget.event.title,
                         style: theme.textTheme.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                       const SizedBox(height: 16),
 
@@ -205,9 +221,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       Row(
                         children: [
                           CircleAvatar(
-                            backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                            backgroundColor: AppColors.primary.withValues(
+                              alpha: 0.15,
+                            ),
                             radius: 18,
-                            child: const Icon(Icons.person_rounded, color: AppColors.primary, size: 20),
+                            child: const Icon(
+                              Icons.person_rounded,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
                           ),
                           const SizedBox(width: 10),
                           Column(
@@ -215,14 +237,16 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             children: [
                               Text(
                                 'Hosted by',
-                                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                               Text(
                                 widget.event.host,
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textPrimary,
-                                    ),
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
                             ],
                           ),
@@ -236,11 +260,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         decoration: BoxDecoration(
                           color: AppColors.surface,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.outline.withValues(alpha: 0.3)),
+                          border: Border.all(
+                            color: AppColors.outline.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.calendar_month_rounded, color: AppColors.primary, size: 28),
+                            const Icon(
+                              Icons.calendar_month_rounded,
+                              color: AppColors.primary,
+                              size: 28,
+                            ),
                             const SizedBox(width: 16),
                             Expanded(
                               child: Column(
@@ -249,16 +279,16 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                   Text(
                                     widget.event.date,
                                     style: theme.textTheme.bodyLarge?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.textPrimary,
-                                        ),
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     widget.event.time,
                                     style: theme.textTheme.bodyMedium?.copyWith(
-                                          color: AppColors.textSecondary,
-                                        ),
+                                      color: AppColors.textSecondary,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -274,11 +304,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         decoration: BoxDecoration(
                           color: AppColors.surface,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.outline.withValues(alpha: 0.3)),
+                          border: Border.all(
+                            color: AppColors.outline.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.place_rounded, color: AppColors.primary, size: 28),
+                            const Icon(
+                              Icons.place_rounded,
+                              color: AppColors.primary,
+                              size: 28,
+                            ),
                             const SizedBox(width: 16),
                             Expanded(
                               child: Column(
@@ -286,15 +322,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                 children: [
                                   Text(
                                     'Venue / Address',
-                                    style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     widget.event.location,
                                     style: theme.textTheme.bodyMedium?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.textPrimary,
-                                        ),
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -304,32 +342,43 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       ),
 
                       // Live routing block if location is enabled
-                      if (_isLoadingDirections || _directionsResult != null) ...[
+                      if (_isLoadingDirections ||
+                          _directionsResult != null) ...[
                         const SizedBox(height: 16),
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: AppColors.surface,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.outline.withValues(alpha: 0.3)),
+                            border: Border.all(
+                              color: AppColors.outline.withValues(alpha: 0.3),
+                            ),
                           ),
                           child: _isLoadingDirections
                               ? const Center(
                                   child: SizedBox(
                                     width: 20,
                                     height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.primary,
+                                    ),
                                   ),
                                 )
                               : Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
                                   children: [
                                     _RouteIndicator(
                                       icon: Icons.navigation_rounded,
                                       label: 'Distance',
                                       value: _directionsResult!.distanceDisplay,
                                     ),
-                                    Container(width: 1, height: 28, color: AppColors.outline),
+                                    Container(
+                                      width: 1,
+                                      height: 28,
+                                      color: AppColors.outline,
+                                    ),
                                     _RouteIndicator(
                                       icon: Icons.access_time_rounded,
                                       label: 'Duration',
@@ -346,17 +395,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       Text(
                         'About Event',
                         style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                       const SizedBox(height: 10),
                       Text(
                         widget.event.description,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
-                              height: 1.6,
-                            ),
+                          color: AppColors.textSecondary,
+                          height: 1.6,
+                        ),
                       ),
                       const SizedBox(height: 120), // Bottom spacer for buttons
                     ],
@@ -410,50 +459,22 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   ),
                 ],
               ),
-              child: Row(
-                children: [
-                  // Primary Action: Join/Leave
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _toggleJoin,
-                      icon: Icon(
-                        _isJoined ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
-                        color: Colors.white,
-                      ),
-                      label: Text(
-                        _isJoined ? 'Joined' : 'Join Event',
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _isJoined ? AppColors.textSecondary : AppColors.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        elevation: 0,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Secondary Action: Directions Map
-                  IconButton.filled(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => PlaceMapScreen(place: _mapToPlaceModel()),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.directions_rounded, color: Colors.white),
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      padding: const EdgeInsets.all(16),
-                    ),
-                  ),
-                ],
+              child: ElevatedButton.icon(
+                onPressed: !_hasValidCoordinates
+                    ? null
+                    : () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                PlaceMapScreen(place: _mapToPlaceModel()),
+                          ),
+                        );
+                      },
+                icon: const Icon(Icons.directions_rounded),
+                label: Text(
+                  _hasValidCoordinates ? 'Directions' : 'Location unavailable',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ),
@@ -486,11 +507,18 @@ class _RouteIndicator extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+              style: const TextStyle(
+                fontSize: 10,
+                color: AppColors.textSecondary,
+              ),
             ),
             Text(
               value,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
           ],
         ),

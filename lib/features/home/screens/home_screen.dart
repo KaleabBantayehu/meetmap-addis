@@ -29,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final placesProvider = Provider.of<PlacesProvider>(context);
     final places = placesProvider.places;
     final isLoading = placesProvider.isLoading;
+    final errorMessage = placesProvider.errorMessage;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -39,6 +40,24 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
+                  : errorMessage != null && places.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Unable to load places.',
+                            style: TextStyle(color: AppColors.textSecondary),
+                          ),
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: placesProvider.fetchPlaces,
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    )
                   : places.isEmpty
                   ? const Center(
                       child: Text(

@@ -13,8 +13,8 @@ class EventModel {
   final String description;
   final bool isFeatured;
   final String? createdBy;
-  final double latitude;
-  final double longitude;
+  final double? latitude;
+  final double? longitude;
 
   const EventModel({
     required this.id,
@@ -29,8 +29,8 @@ class EventModel {
     required this.description,
     this.isFeatured = false,
     this.createdBy,
-    this.latitude = 9.0300,
-    this.longitude = 38.7400,
+    this.latitude,
+    this.longitude,
   });
 
   EventModel copyWith({
@@ -81,8 +81,8 @@ class EventModel {
       description: map['description'] ?? '',
       isFeatured: map['isFeatured'] ?? false,
       createdBy: map['createdBy'] as String?,
-      latitude: (map['latitude'] as num?)?.toDouble() ?? 9.0300,
-      longitude: (map['longitude'] as num?)?.toDouble() ?? 38.7400,
+      latitude: (map['latitude'] as num?)?.toDouble(),
+      longitude: (map['longitude'] as num?)?.toDouble(),
     );
   }
 

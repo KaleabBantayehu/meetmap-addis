@@ -15,34 +15,6 @@ class HangoutDetailScreen extends StatefulWidget {
 }
 
 class _HangoutDetailScreenState extends State<HangoutDetailScreen> {
-  bool _isJoined = false;
-  late int _attendeeCount;
-
-  @override
-  void initState() {
-    super.initState();
-    _attendeeCount = widget.hangout.attendeeCount;
-  }
-
-  void _toggleJoin() {
-    setState(() {
-      _isJoined = !_isJoined;
-      _attendeeCount += _isJoined ? 1 : -1;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          _isJoined
-              ? 'Joined "${widget.hangout.title}"!'
-              : 'Left "${widget.hangout.title}".',
-        ),
-        backgroundColor:
-            _isJoined ? AppColors.primary : AppColors.textSecondary,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
   /// Returns a PlaceModel only when coordinates are available (for map & directions).
   PlaceModel? _toPlaceModel() {
     final lat = widget.hangout.latitude;
@@ -94,13 +66,14 @@ class _HangoutDetailScreenState extends State<HangoutDetailScreen> {
                               fit: BoxFit.cover,
                               placeholder: (context, url) =>
                                   Container(color: AppColors.surfaceVariant),
-                              errorWidget: (context, url, error) => const Center(
-                                child: Icon(
-                                  Icons.broken_image_rounded,
-                                  size: 64,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
+                              errorWidget: (context, url, error) =>
+                                  const Center(
+                                    child: Icon(
+                                      Icons.broken_image_rounded,
+                                      size: 64,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
                             )
                           : const Center(
                               child: Icon(
@@ -201,7 +174,7 @@ class _HangoutDetailScreenState extends State<HangoutDetailScreen> {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            '$_attendeeCount attending',
+                            '${widget.hangout.attendeeCount} attending',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: AppColors.textSecondary,
                               fontWeight: FontWeight.w600,
@@ -227,8 +200,9 @@ class _HangoutDetailScreenState extends State<HangoutDetailScreen> {
                         Row(
                           children: [
                             CircleAvatar(
-                              backgroundColor:
-                                  AppColors.primary.withValues(alpha: 0.15),
+                              backgroundColor: AppColors.primary.withValues(
+                                alpha: 0.15,
+                              ),
                               radius: 18,
                               child: const Icon(
                                 Icons.person_rounded,
@@ -369,58 +343,19 @@ class _HangoutDetailScreenState extends State<HangoutDetailScreen> {
                   ),
                 ],
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _toggleJoin,
-                      icon: Icon(
-                        _isJoined
-                            ? Icons.check_circle_rounded
-                            : Icons.add_circle_outline_rounded,
-                        color: Colors.white,
-                      ),
-                      label: Text(
-                        _isJoined ? 'Joined' : 'Join Hangout',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _isJoined
-                            ? AppColors.textSecondary
-                            : AppColors.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        elevation: 0,
-                      ),
-                    ),
-                  ),
-                  if (placeModel != null) ...[
-                    const SizedBox(width: 12),
-                    IconButton.filled(
-                      onPressed: () => Navigator.of(context).push(
+              child: ElevatedButton.icon(
+                onPressed: placeModel == null
+                    ? null
+                    : () => Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => PlaceMapScreen(place: placeModel),
                         ),
                       ),
-                      icon: const Icon(
-                        Icons.directions_rounded,
-                        color: Colors.white,
-                      ),
-                      style: IconButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        padding: const EdgeInsets.all(16),
-                      ),
-                    ),
-                  ],
-                ],
+                icon: const Icon(Icons.directions_rounded),
+                label: Text(
+                  placeModel == null ? 'Location unavailable' : 'Directions',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ),
@@ -530,7 +465,10 @@ class _HangoutMapPreview extends StatelessWidget {
               top: 10,
               right: 10,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.45),
                   borderRadius: BorderRadius.circular(8),
@@ -538,7 +476,11 @@ class _HangoutMapPreview extends StatelessWidget {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.open_in_full_rounded, color: Colors.white, size: 13),
+                    Icon(
+                      Icons.open_in_full_rounded,
+                      color: Colors.white,
+                      size: 13,
+                    ),
                     SizedBox(width: 4),
                     Text(
                       'Open Map',

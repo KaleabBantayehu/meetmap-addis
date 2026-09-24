@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/features/reviews/models/review_ui_models.dart';
 import 'package:meetmap_addis/features/reviews/widgets/experience_input_field.dart';
-import 'package:meetmap_addis/features/reviews/widgets/photo_upload_strip.dart';
 import 'package:meetmap_addis/features/reviews/widgets/quick_tag_grid.dart';
 import 'package:meetmap_addis/features/reviews/widgets/rating_selector.dart';
 import 'package:meetmap_addis/features/reviews/widgets/review_top_bar.dart';
@@ -23,23 +22,9 @@ class AddReviewScreen extends StatefulWidget {
 
 class AddReviewScreenState extends State<AddReviewScreen> {
   int _rating = 4;
+  bool _isSubmitting = false;
   final Set<String> _selectedTags = {};
   final TextEditingController _experienceController = TextEditingController();
-
-  static const List<ReviewPhoto> reviewPhotos = [
-    ReviewPhoto(
-      url:
-          'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=400&q=80',
-    ),
-    ReviewPhoto(
-      url:
-          'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=400&q=80',
-    ),
-    ReviewPhoto(
-      url:
-          'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=400&q=80',
-    ),
-  ];
 
   static const List<ReviewTag> reviewTags = [
     ReviewTag(label: 'Great Wi-Fi', icon: Icons.wifi_rounded),
@@ -62,7 +47,9 @@ class AddReviewScreenState extends State<AddReviewScreen> {
         child: Column(
           children: [
             ReviewTopBar(
-              onClose: () => Navigator.of(context).pop(),
+              onClose: _isSubmitting
+                  ? () {}
+                  : () => Navigator.of(context).pop(),
               onPost: submitReview,
             ),
             Expanded(
@@ -78,8 +65,6 @@ class AddReviewScreenState extends State<AddReviewScreen> {
                     ),
                     const SizedBox(height: 56),
                     ExperienceInputField(controller: _experienceController),
-                    const SizedBox(height: 40),
-                    const PhotoUploadStrip(photos: reviewPhotos),
                     const SizedBox(height: 42),
                     QuickTagGrid(
                       tags: reviewTags,
@@ -102,15 +87,24 @@ class AddReviewScreenState extends State<AddReviewScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        onPressed: submitReview,
-                        child: Text(
-                          'Submit Review',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
+                        onPressed: _isSubmitting ? null : submitReview,
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                'Submit Review',
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                               ),
-                        ),
                       ),
                     ),
                   ],
@@ -138,9 +132,10 @@ class AddReviewScreenState extends State<AddReviewScreen> {
   }
 
   Future<void> submitReview() async {
+    if (_isSubmitting) return;
     final authProvider = context.read<AuthProvider>();
     final userId = authProvider.currentUser?.id;
-    
+
     if (userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please log in to submit a review')),
@@ -157,12 +152,13 @@ class AddReviewScreenState extends State<AddReviewScreen> {
     }
 
     // Combine text and tags for the reviewText (simple approach for now)
-    final combinedText = reviewText.isNotEmpty 
+    final combinedText = reviewText.isNotEmpty
         ? '$reviewText\n\nTags: ${_selectedTags.join(", ")}'
         : 'Tags: ${_selectedTags.join(", ")}';
 
     final review = ReviewModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(), // Temporary ID for optimistic insert
+      id: DateTime.now().millisecondsSinceEpoch
+          .toString(), // Temporary ID for optimistic insert
       placeId: widget.place.id,
       userId: userId,
       rating: _rating.toDouble(),
@@ -171,10 +167,28 @@ class AddReviewScreenState extends State<AddReviewScreen> {
       likedUserIds: [],
     );
 
-    // Close screen immediately for optimistic feel
-    Navigator.of(context).pop();
+    setState(() => _isSubmitting = true);
+    final reviewsProvider = context.read<ReviewsProvider>();
+    final success = await reviewsProvider.createReview(widget.place.id, review);
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
 
-    // Trigger submission
-    context.read<ReviewsProvider>().createReview(widget.place.id, review);
+    if (!success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            reviewsProvider.errorMessage ??
+                'Unable to submit review. Please try again.',
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Review submitted successfully.')),
+    );
+    Navigator.of(context).pop();
   }
 }
