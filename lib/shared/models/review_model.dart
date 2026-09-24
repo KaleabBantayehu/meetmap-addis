@@ -70,6 +70,7 @@ class ReviewModel {
       'userId': userId,
       'rating': rating,
       'reviewText': reviewText,
+      'comment': reviewText,
       'imageUrls': imageUrls,
       'createdAt': createdAt.toIso8601String(),
       'isEdited': isEdited,
@@ -84,7 +85,7 @@ class ReviewModel {
       placeId: map['placeId'] ?? '',
       userId: map['userId'] ?? '',
       rating: (map['rating'] ?? 0).toDouble(),
-      reviewText: map['reviewText'] ?? '',
+      reviewText: map['reviewText'] ?? map['comment'] ?? '',
       imageUrls: List<String>.from(map['imageUrls'] ?? []),
       createdAt: _parseDate(map['createdAt']),
       isEdited: map['isEdited'] ?? false,
@@ -95,12 +96,14 @@ class ReviewModel {
 
   static DateTime _parseDate(dynamic value) {
     if (value is DateTime) return value;
-    if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
+    if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.fromMillisecondsSinceEpoch(0);
+    }
     try {
       final parsed = (value as dynamic)?.toDate();
       if (parsed is DateTime) return parsed;
     } catch (_) {}
-    return DateTime.now();
+    return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   String toJson() => json.encode(toMap());

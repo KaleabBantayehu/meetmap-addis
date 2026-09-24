@@ -45,6 +45,16 @@ void main() {
     expect(parse(expected).createdAt, expected);
     expect(parse(expected.toIso8601String()).createdAt, expected);
     expect(parse(null).createdAt, isA<DateTime>());
+
+    final legacyComment = ReviewModel.fromMap({
+      'id': 'review-2',
+      'placeId': 'place-1',
+      'userId': 'user-1',
+      'rating': 5,
+      'comment': 'Legacy comment field',
+    });
+    expect(legacyComment.reviewText, 'Legacy comment field');
+    expect(legacyComment.toMap()['comment'], 'Legacy comment field');
   });
 
   test('event documents without coordinates remain locationless', () {

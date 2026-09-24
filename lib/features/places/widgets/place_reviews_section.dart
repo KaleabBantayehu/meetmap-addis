@@ -7,39 +7,27 @@ import 'package:meetmap_addis/shared/models/review_model.dart';
 import 'package:meetmap_addis/providers/reviews_provider.dart';
 import 'package:meetmap_addis/providers/auth_provider.dart';
 
-class PlaceReviewsSection extends StatefulWidget {
+class PlaceReviewsSection extends StatelessWidget {
   const PlaceReviewsSection({super.key, required this.place});
 
   final PlaceModel place;
 
   @override
-  State<PlaceReviewsSection> createState() => _PlaceReviewsSectionState();
-}
-
-class _PlaceReviewsSectionState extends State<PlaceReviewsSection> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ReviewsProvider>().fetchReviews(widget.place.id);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Consumer<ReviewsProvider>(
       builder: (context, reviewsProvider, child) {
-        final reviews = reviewsProvider.getReviews(widget.place.id);
-        final isLoading = reviewsProvider.isLoading(widget.place.id);
+        final reviews = reviewsProvider.getReviews(place.id);
+        final isLoading = reviewsProvider.isLoading(place.id);
         final visibleReviews = reviews.take(2).toList();
-        
+
         // Calculate dynamic average if we have local reviews
-        final averageRating = reviews.isEmpty 
-            ? widget.place.rating 
-            : reviews.map((r) => r.rating).reduce((a, b) => a + b) / reviews.length;
-        
-        final reviewCount = reviews.isEmpty 
-            ? widget.place.reviewCount 
+        final averageRating = reviews.isEmpty
+            ? place.rating
+            : reviews.map((r) => r.rating).reduce((a, b) => a + b) /
+                  reviews.length;
+
+        final reviewCount = reviews.isEmpty
+            ? place.reviewCount
             : reviews.length;
 
         return Container(
@@ -92,9 +80,11 @@ class _PlaceReviewsSectionState extends State<PlaceReviewsSection> {
               else
                 ...visibleReviews.map(
                   (review) => Padding(
-                    key: ValueKey(review.id), // Added unique key for list integrity
+                    key: ValueKey(
+                      review.id,
+                    ), // Added unique key for list integrity
                     padding: const EdgeInsets.only(bottom: 14),
-                    child: _ReviewTile(review: review, placeId: widget.place.id),
+                    child: _ReviewTile(review: review, placeId: place.id),
                   ),
                 ),
               const SizedBox(height: 8),
@@ -115,13 +105,15 @@ class _PlaceReviewsSectionState extends State<PlaceReviewsSection> {
                     final authProvider = context.read<AuthProvider>();
                     if (!authProvider.isAuthenticated) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please log in to write a review')),
+                        const SnackBar(
+                          content: Text('Please log in to write a review'),
+                        ),
                       );
                       return;
                     }
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => AddReviewScreen(place: widget.place),
+                        builder: (_) => AddReviewScreen(place: place),
                       ),
                     );
                   },
@@ -144,7 +136,8 @@ class _PlaceReviewsSectionState extends State<PlaceReviewsSection> {
       ),
       builder: (context) {
         return SafeArea(
-          child: ListView.builder( // Changed to builder pattern to protect memory and explicit index boundaries
+          child: ListView.builder(
+            // Changed to builder pattern to protect memory and explicit index boundaries
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
             shrinkWrap: true,
             itemCount: allReviews.length + 1,
@@ -164,7 +157,7 @@ class _PlaceReviewsSectionState extends State<PlaceReviewsSection> {
               final review = allReviews[index - 1];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: _ReviewTile(review: review, placeId: widget.place.id),
+                child: _ReviewTile(review: review, placeId: place.id),
               );
             },
           ),
@@ -196,7 +189,8 @@ class _ReviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentUserId = context.watch<AuthProvider>().currentUser?.id;
-    final isLiked = currentUserId != null && review.likedUserIds.contains(currentUserId);
+    final isLiked =
+        currentUserId != null && review.likedUserIds.contains(currentUserId);
     final isOwnReview = currentUserId == review.userId;
 
     // Defensively clamp rating count between 0 and 5 to protect list loop generation bounds
@@ -217,7 +211,11 @@ class _ReviewTile extends StatelessWidget {
               CircleAvatar(
                 radius: 18,
                 backgroundColor: AppColors.primaryLight,
-                child: const Icon(Icons.person, color: AppColors.primaryDark, size: 20),
+                child: const Icon(
+                  Icons.person,
+                  color: AppColors.primaryDark,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -225,7 +223,11 @@ class _ReviewTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isOwnReview ? 'You' : (review.userId.length > 4 ? 'User ${review.userId.substring(0, 4)}' : 'User'),
+                      isOwnReview
+                          ? 'You'
+                          : (review.userId.length > 4
+                                ? 'User ${review.userId.substring(0, 4)}'
+                                : 'User'),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.w700,
@@ -267,7 +269,10 @@ class _ReviewTile extends StatelessWidget {
             children: [
               InkWell(
                 onTap: () {
-                  context.read<ReviewsProvider>().toggleLike(review.id, placeId);
+                  context.read<ReviewsProvider>().toggleLike(
+                    review.id,
+                    placeId,
+                  );
                 },
                 borderRadius: BorderRadius.circular(4),
                 child: Padding(
@@ -275,15 +280,21 @@ class _ReviewTile extends StatelessWidget {
                   child: Row(
                     children: [
                       Icon(
-                        isLiked ? Icons.thumb_up_alt_rounded : Icons.thumb_up_alt_outlined,
+                        isLiked
+                            ? Icons.thumb_up_alt_rounded
+                            : Icons.thumb_up_alt_outlined,
                         size: 16,
-                        color: isLiked ? AppColors.primary : AppColors.textSecondary,
+                        color: isLiked
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         '${review.likedUserIds.length}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: isLiked ? AppColors.primary : AppColors.textSecondary,
+                          color: isLiked
+                              ? AppColors.primary
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -293,7 +304,10 @@ class _ReviewTile extends StatelessWidget {
               if (isOwnReview)
                 InkWell(
                   onTap: () {
-                    context.read<ReviewsProvider>().deleteReview(review.id, placeId);
+                    context.read<ReviewsProvider>().deleteReview(
+                      review.id,
+                      placeId,
+                    );
                   },
                   borderRadius: BorderRadius.circular(4),
                   child: Padding(

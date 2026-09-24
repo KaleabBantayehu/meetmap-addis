@@ -19,10 +19,11 @@ class FirebaseReviewRepository implements ReviewRepository {
           .collection('places')
           .doc(placeId)
           .collection('reviews')
-          .orderBy('createdAt', descending: true)
-          .get()
+          .get(const GetOptions(source: Source.server))
           .timeout(const Duration(seconds: 4));
-      return snapshot.docs.map(_mapDocToReview).toList();
+      final reviews = snapshot.docs.map(_mapDocToReview).toList();
+      reviews.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return reviews;
     } catch (e) {
       throw Exception(mapRepositoryError(e, 'Failed to load reviews'));
     }
@@ -31,18 +32,28 @@ class FirebaseReviewRepository implements ReviewRepository {
   @override
   Future<ReviewModel> createReview(String placeId, ReviewModel review) async {
     try {
+      final persistedReview = review.copyWith(placeId: placeId);
       final docRef = _firestore
           .collection('places')
           .doc(placeId)
           .collection('reviews')
-          .doc(review.id);
+          .doc(persistedReview.id);
 
-      final data = review.toMap();
+      final data = persistedReview.toMap();
       data['createdAt'] =
           FieldValue.serverTimestamp(); // Ensure accurate backend timestamp
 
-      await docRef.set(data).timeout(const Duration(seconds: 4));
-      return review;
+      // Firestore writes cannot be cancelled by Future.timeout. Timing out here
+      // can report failure even though the write later commits successfully.
+      await docRef.set(data);
+      await _firestore.waitForPendingWrites();
+      final savedSnapshot = await docRef.get(
+        const GetOptions(source: Source.server),
+      );
+      if (!savedSnapshot.exists || savedSnapshot.metadata.hasPendingWrites) {
+        throw Exception('Review was not saved');
+      }
+      return _mapDocToReview(savedSnapshot);
     } catch (e) {
       throw Exception(mapRepositoryError(e, 'Failed to create review'));
     }

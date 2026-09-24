@@ -41,10 +41,10 @@ class ReviewsProvider with ChangeNotifier {
     }
   }
 
-  void _saveToCache(String placeId) {
+  Future<void> _saveToCache(String placeId) async {
     try {
       final reviews = _reviewsByPlace[placeId] ?? [];
-      LocalStorageService.instance.saveCachedReviews(placeId, reviews);
+      await LocalStorageService.instance.saveCachedReviews(placeId, reviews);
     } catch (e) {
       debugPrint('Error saving reviews to cache for $placeId: $e');
     }
@@ -62,7 +62,7 @@ class ReviewsProvider with ChangeNotifier {
       if (ConnectivityService.instance.isConnected) {
         final reviews = await _reviewRepository.fetchReviews(placeId);
         _reviewsByPlace[placeId] = reviews;
-        _saveToCache(placeId);
+        await _saveToCache(placeId);
       }
     } catch (e) {
       _errorMessage = cleanExceptionMessage(e, 'Failed to load reviews');
@@ -86,7 +86,7 @@ class ReviewsProvider with ChangeNotifier {
     // Optimistic Insert
     final currentList = _reviewsByPlace[placeId] ?? [];
     _reviewsByPlace[placeId] = [review, ...currentList];
-    _saveToCache(placeId);
+    await _saveToCache(placeId);
     notifyListeners();
 
     try {
@@ -97,7 +97,7 @@ class ReviewsProvider with ChangeNotifier {
       );
       if (index != -1) {
         _reviewsByPlace[placeId]![index] = savedReview;
-        _saveToCache(placeId);
+        await _saveToCache(placeId);
         notifyListeners();
       }
       return true;
@@ -105,8 +105,8 @@ class ReviewsProvider with ChangeNotifier {
       // Rollback
       debugPrint('Review creation failed. Rolling back. $e');
       _reviewsByPlace[placeId]!.removeWhere((r) => r.id == review.id);
-      _saveToCache(placeId);
-      _errorMessage = 'Failed to submit review. Please check your connection.';
+      await _saveToCache(placeId);
+      _errorMessage = cleanExceptionMessage(e, 'Failed to submit review.');
       notifyListeners();
       return false;
     }
@@ -134,7 +134,7 @@ class ReviewsProvider with ChangeNotifier {
     // Optimistic Delete
     currentList.removeAt(reviewIndex);
     _reviewsByPlace[placeId] = currentList;
-    _saveToCache(placeId);
+    await _saveToCache(placeId);
     notifyListeners();
 
     try {
@@ -144,7 +144,7 @@ class ReviewsProvider with ChangeNotifier {
       debugPrint('Review deletion failed. Rolling back. $e');
       currentList.insert(reviewIndex, reviewToRestore);
       _reviewsByPlace[placeId] = currentList;
-      _saveToCache(placeId);
+      await _saveToCache(placeId);
       _errorMessage = 'Failed to delete review.';
       notifyListeners();
     }
@@ -175,7 +175,7 @@ class ReviewsProvider with ChangeNotifier {
 
     currentList[reviewIndex] = review.copyWith(likedUserIds: likes);
     _reviewsByPlace[placeId] = currentList;
-    _saveToCache(placeId);
+    await _saveToCache(placeId);
     notifyListeners();
 
     try {
@@ -190,7 +190,7 @@ class ReviewsProvider with ChangeNotifier {
       }
       currentList[reviewIndex] = review.copyWith(likedUserIds: likes);
       _reviewsByPlace[placeId] = currentList;
-      _saveToCache(placeId);
+      await _saveToCache(placeId);
       notifyListeners();
     }
   }
