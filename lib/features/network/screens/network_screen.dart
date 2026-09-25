@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/colors.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/network_provider.dart';
+import '../../../routes/app_routes.dart';
 import '../../../shared/models/user_model.dart';
 import '../../../shared/widgets/app_menu_button.dart';
 import '../widgets/network_search_bar.dart';
@@ -78,7 +79,8 @@ class _NetworkScreenState extends State<NetworkScreen> {
                         ?.profileImageUrl ??
                     '';
                 return GestureDetector(
-                  onTap: () {},
+                  onTap: () =>
+                      Navigator.of(context).pushNamed(AppRoutes.profile),
                   child: CircleAvatar(
                     radius: 18,
                     backgroundColor: AppColors.imagePlaceholder,

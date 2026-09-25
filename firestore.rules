@@ -1,0 +1,97 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isUser(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isCreator() {
+      return signedIn() && request.auth.uid == resource.data.createdBy;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isUser(userId);
+
+      match /saved_places/{placeId} {
+        allow read, create, update, delete: if isUser(userId);
+      }
+
+      match /following/{targetUserId} {
+        allow read: if isUser(userId);
+        allow create, update: if isUser(userId)
+          && userId != targetUserId
+          && request.resource.data.userId == targetUserId;
+        allow delete: if isUser(userId) && userId != targetUserId;
+      }
+
+      match /followers/{followerUserId} {
+        allow read: if signedIn();
+        allow create, update: if signedIn()
+          && request.auth.uid == followerUserId
+          && userId != followerUserId
+          && request.resource.data.userId == followerUserId;
+        allow delete: if signedIn()
+          && request.auth.uid == followerUserId
+          && userId != followerUserId;
+      }
+    }
+
+    match /places/{placeId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.rating == 0
+        && request.resource.data.reviewCount == 0;
+      allow update: if isCreator()
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.rating == resource.data.rating
+        && request.resource.data.reviewCount == resource.data.reviewCount;
+      allow delete: if isCreator();
+
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if signedIn()
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.placeId == placeId;
+        allow update: if signedIn()
+          && request.auth.uid == resource.data.userId
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.placeId == resource.data.placeId;
+        allow delete: if signedIn()
+          && request.auth.uid == resource.data.userId;
+      }
+    }
+
+    match /events/{eventId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isCreator()
+        && request.resource.data.createdBy == resource.data.createdBy;
+      allow delete: if isCreator();
+    }
+
+    match /hangouts/{hangoutId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isCreator()
+        && request.resource.data.createdBy == resource.data.createdBy;
+      allow delete: if isCreator();
+    }
+
+    match /venues/{venueId} {
+      allow read: if true;
+    }
+
+    match /activities/{activityId} {
+      allow read: if true;
+    }
+  }
+}

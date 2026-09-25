@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import '../widgets/settings_header.dart';
 import '../widgets/settings_group_card.dart';
 import '../widgets/settings_tile.dart';
-import '../widgets/settings_toggle_tile.dart';
 import '../widgets/settings_logout_button.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -17,21 +16,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool pushNotifications = true;
-  bool emailAlerts = false;
-  bool smsUpdates = false;
   bool _isResetLoading = false;
-
-  void _showComingSoon(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature is not available in this build.'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.primary,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,61 +67,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: 'Change Password',
                   onTap: _isResetLoading ? null : _sendResetEmail,
                 ),
-                const Divider(height: 1, indent: 56),
-                SettingsTile(
-                  icon: Icons.link_rounded,
-                  title: 'Linked Accounts',
-                  onTap: () => _showComingSoon('Linked Accounts'),
-                ),
-              ],
-            ),
-
-            SettingsGroupCard(
-              title: 'PRIVACY & SECURITY',
-              children: [
-                SettingsTile(
-                  icon: Icons.visibility_outlined,
-                  title: 'Profile Visibility',
-                  onTap: () => _showComingSoon('Profile Visibility'),
-                ),
-                const Divider(height: 1, indent: 56),
-                SettingsTile(
-                  icon: Icons.block_flipped,
-                  title: 'Blocked Users',
-                  onTap: () => _showComingSoon('Blocked Users list'),
-                ),
-                const Divider(height: 1, indent: 56),
-                SettingsTile(
-                  icon: Icons.share_outlined,
-                  title: 'Data Sharing',
-                  onTap: () => _showComingSoon('Data Sharing settings'),
-                ),
-              ],
-            ),
-
-            SettingsGroupCard(
-              title: 'NOTIFICATIONS',
-              children: [
-                SettingsToggleTile(
-                  icon: Icons.notifications_none_rounded,
-                  title: 'Push Notifications',
-                  value: pushNotifications,
-                  onChanged: (val) => setState(() => pushNotifications = val),
-                ),
-                const Divider(height: 1, indent: 56),
-                SettingsToggleTile(
-                  icon: Icons.mail_outline_rounded,
-                  title: 'Email Alerts',
-                  value: emailAlerts,
-                  onChanged: (val) => setState(() => emailAlerts = val),
-                ),
-                const Divider(height: 1, indent: 56),
-                SettingsToggleTile(
-                  icon: Icons.chat_bubble_outline_rounded,
-                  title: 'SMS Updates',
-                  value: smsUpdates,
-                  onChanged: (val) => setState(() => smsUpdates = val),
-                ),
               ],
             ),
 
@@ -154,23 +84,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SettingsGroupCard(
               title: 'SUPPORT',
               children: [
-                SettingsTile(
-                  icon: Icons.help_outline_rounded,
-                  title: 'Help Center',
-                  trailing: const Icon(
-                    Icons.open_in_new,
-                    size: 18,
-                    color: AppColors.outline,
-                  ),
-                  onTap: () => _showComingSoon('Help Center'),
-                ),
-                const Divider(height: 1, indent: 56),
-                SettingsTile(
-                  icon: Icons.contact_support_outlined,
-                  title: 'Contact Us',
-                  onTap: () => _showComingSoon('Contact support'),
-                ),
-                const Divider(height: 1, indent: 56),
                 SettingsTile(
                   icon: Icons.policy_outlined,
                   title: 'Privacy Policy',
@@ -204,14 +117,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SettingsTile(
                   icon: Icons.info_outline_rounded,
                   title: 'Version',
-                  subtitle: '2.4.0',
+                  subtitle: '1.0.0',
                   trailing: SizedBox.shrink(),
-                ),
-                const Divider(height: 1, indent: 56),
-                SettingsTile(
-                  icon: Icons.star_outline_rounded,
-                  title: 'Rate App',
-                  onTap: () => _showComingSoon('Rating the app'),
                 ),
               ],
             ),

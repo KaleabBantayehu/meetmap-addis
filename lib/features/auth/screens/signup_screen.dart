@@ -10,7 +10,6 @@ import '../widgets/auth_footer_link.dart';
 import '../widgets/auth_method_selector.dart';
 import '../widgets/google_signin_button.dart';
 import '../widgets/signup_header.dart';
-import '../widgets/terms_checkbox.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -30,7 +29,6 @@ class _SignupScreenState extends State<SignupScreen> {
   AuthMethod _authMethod = AuthMethod.email;
   bool _isObscure = true;
   bool _isLoading = false;
-  bool _agreedToTerms = false;
 
   @override
   void dispose() {
@@ -44,13 +42,6 @@ class _SignupScreenState extends State<SignupScreen> {
   void _signup() async {
     if (_isLoading) return;
     if (!_formKey.currentState!.validate()) return;
-
-    if (!_agreedToTerms) {
-      _showAuthError(
-        'Please agree to the Terms of Service and Privacy Policy.',
-      );
-      return;
-    }
 
     setState(() => _isLoading = true);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -268,23 +259,14 @@ class _SignupScreenState extends State<SignupScreen> {
                           },
                         ),
 
-                        const SizedBox(height: 24),
-
-                        TermsCheckbox(
-                          value: _agreedToTerms,
-                          onChanged: (val) {
-                            setState(() {
-                              _agreedToTerms = val ?? false;
-                            });
-                          },
-                        ),
-
                         const SizedBox(height: 32),
 
                         CustomButton(
                           text: 'Create Account',
                           isLoading: _isLoading,
-                          onPressed: () { _signup(); },
+                          onPressed: () {
+                            _signup();
+                          },
                         ),
 
                         const SizedBox(height: 24),
@@ -294,7 +276,11 @@ class _SignupScreenState extends State<SignupScreen> {
                         const SizedBox(height: 24),
 
                         GoogleSignInButton(
-                          onPressed: _isLoading ? () {} : () { _loginWithGoogle(); },
+                          onPressed: _isLoading
+                              ? () {}
+                              : () {
+                                  _loginWithGoogle();
+                                },
                         ),
 
                         const SizedBox(height: 8),

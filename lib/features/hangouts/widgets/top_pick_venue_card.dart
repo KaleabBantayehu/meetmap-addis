@@ -5,9 +5,7 @@ import 'package:meetmap_addis/shared/models/hangout_model.dart';
 
 class TopPickVenueCard extends StatelessWidget {
   final VenueModel venue;
-  final VoidCallback onTap;
-
-  const TopPickVenueCard({super.key, required this.venue, required this.onTap});
+  const TopPickVenueCard({super.key, required this.venue});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +13,6 @@ class TopPickVenueCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
         child: Container(
           width: 220,
           decoration: BoxDecoration(
@@ -40,28 +37,28 @@ class TopPickVenueCard extends StatelessWidget {
                 child: AspectRatio(
                   aspectRatio: 16 / 10,
                   child: venue.imageUrl.trim().isEmpty
-                    ? Container(
-                        color: AppColors.surfaceVariant,
-                        child: const Center(
-                          child: Icon(
-                            Icons.image_not_supported_outlined,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      )
-                    : CachedNetworkImage(
-                        imageUrl: venue.imageUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) =>
-                            Container(color: AppColors.surfaceVariant),
-                        errorWidget: (context, url, error) => Container(
+                      ? Container(
                           color: AppColors.surfaceVariant,
-                          child: const Icon(
-                            Icons.image_not_supported_outlined,
-                            color: AppColors.textSecondary,
+                          child: const Center(
+                            child: Icon(
+                              Icons.image_not_supported_outlined,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        )
+                      : CachedNetworkImage(
+                          imageUrl: venue.imageUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) =>
+                              Container(color: AppColors.surfaceVariant),
+                          errorWidget: (context, url, error) => Container(
+                            color: AppColors.surfaceVariant,
+                            child: const Icon(
+                              Icons.image_not_supported_outlined,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ),
-                      ),
                 ),
               ),
 

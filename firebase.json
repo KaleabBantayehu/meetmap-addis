@@ -1,0 +1,33 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "emulators": {
+    "firestore": {
+      "port": 8181
+    }
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "meetmap-addis",
+          "appId": "1:760029370555:android:0e400b9e755f1199cd319e",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "meetmap-addis",
+          "configurations": {
+            "android": "1:760029370555:android:0e400b9e755f1199cd319e",
+            "ios": "1:760029370555:ios:3517cd37000371f3cd319e",
+            "macos": "1:760029370555:ios:3517cd37000371f3cd319e",
+            "web": "1:760029370555:web:a2701a17891a0475cd319e",
+            "windows": "1:760029370555:web:fa789eeb28a02bdbcd319e"
+          }
+        }
+      }
+    }
+  }
+}

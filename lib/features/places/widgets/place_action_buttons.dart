@@ -51,20 +51,9 @@ class PlaceActionButtons extends StatelessWidget {
             isPrimary: true,
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => PlaceMapScreen(place: place),
-                ),
+                MaterialPageRoute(builder: (_) => PlaceMapScreen(place: place)),
               );
             },
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _PlaceActionButton(
-            icon: Icons.language_rounded,
-            label: 'Website',
-            semanticLabel: 'Open ${place.name} website',
-            onTap: () {},
           ),
         ),
         const SizedBox(width: 12),

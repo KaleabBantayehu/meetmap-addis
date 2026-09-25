@@ -14,16 +14,6 @@ import '../widgets/quick_hangout_card.dart';
 import '../widgets/top_pick_venue_card.dart';
 import '../widgets/recent_activity_section.dart';
 
-void _showComingSoon(BuildContext context) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Coming soon!'),
-      behavior: SnackBarBehavior.floating,
-      duration: Duration(seconds: 2),
-    ),
-  );
-}
-
 class HangoutsScreen extends StatefulWidget {
   const HangoutsScreen({super.key});
 
@@ -243,11 +233,7 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                           const SizedBox(height: 16),
 
                           // Top Pick Venues Section
-                          SectionHeader(
-                            title: 'Top Pick Venues',
-                            actionLabel: 'Explore all',
-                            onActionTap: () => _showComingSoon(context),
-                          ),
+                          SectionHeader(title: 'Top Pick Venues'),
 
                           const SizedBox(height: 16),
 
@@ -282,7 +268,6 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                                 itemBuilder: (context, index) {
                                   return TopPickVenueCard(
                                     venue: topPickVenues[index],
-                                    onTap: () => _showComingSoon(context),
                                   );
                                 },
                               ),

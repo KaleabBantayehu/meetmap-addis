@@ -118,7 +118,6 @@ app.*.symbols
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
 # --- SENSITIVE & PROJECT CONFIGS (CRITICAL) ---
-firebase.json
 .env
 *.env
 service-account*.json
@@ -136,6 +135,7 @@ Thumbs.db
 build/
 .pub/
 .pub-cache/
+node_modules/
 .flutter-plugins
 .flutter-plugins-dependencies
 

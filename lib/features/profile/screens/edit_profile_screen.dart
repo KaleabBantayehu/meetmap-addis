@@ -160,27 +160,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 60),
-            Center(
-              child: TextButton.icon(
-                onPressed: () {
-                  // TODO: Implement deactivate logic
-                },
-                icon: const Icon(
-                  Icons.delete_outline,
-                  color: AppColors.error,
-                  size: 20,
-                ),
-                label: const Text(
-                  'Deactivate Account',
-                  style: TextStyle(
-                    color: AppColors.error,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
             const SizedBox(height: 40),
           ],
         ),
@@ -237,7 +216,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           content: Text(
             success
                 ? 'Profile photo updated.'
-                : authProvider.errorMessage ?? 'Failed to update profile photo.',
+                : authProvider.errorMessage ??
+                      'Failed to update profile photo.',
           ),
           backgroundColor: success ? AppColors.primary : AppColors.error,
         ),

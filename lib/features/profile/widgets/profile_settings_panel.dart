@@ -2,14 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 
 class ProfileSettingsPanel extends StatelessWidget {
-  const ProfileSettingsPanel({
-    super.key,
-    required this.onSettingsTap,
-    required this.onHelpTap,
-  });
+  const ProfileSettingsPanel({super.key, required this.onSettingsTap});
 
   final VoidCallback onSettingsTap;
-  final VoidCallback onHelpTap;
 
   @override
   Widget build(BuildContext context) {
@@ -31,12 +26,6 @@ class ProfileSettingsPanel extends StatelessWidget {
             icon: Icons.settings_rounded,
             label: 'Settings',
             onTap: onSettingsTap,
-          ),
-          Divider(height: 1, color: AppColors.surfaceVariant),
-          ProfileMenuRow(
-            icon: Icons.help_rounded,
-            label: 'Help & Support',
-            onTap: onHelpTap,
           ),
         ],
       ),

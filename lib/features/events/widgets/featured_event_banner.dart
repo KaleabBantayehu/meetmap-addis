@@ -27,17 +27,6 @@ class FeaturedEventBanner extends StatelessWidget {
                 color: AppColors.textPrimary,
               ),
             ),
-            const Spacer(),
-            GestureDetector(
-              onTap: () {},
-              child: Text(
-                'View All',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 14),
@@ -279,7 +268,7 @@ class _JoinButton extends StatelessWidget {
           ),
           alignment: Alignment.center,
           child: const Text(
-            'Join Event',
+            'View Details',
             style: TextStyle(
               fontFamily: 'Manrope',
               fontSize: 13,

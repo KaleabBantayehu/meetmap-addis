@@ -1,0 +1,4 @@
+storeFile=C:\\path\\to\\meetmap-addis-release.jks
+storePassword=REPLACE_WITH_LOCAL_VALUE
+keyAlias=meetmap-addis
+keyPassword=REPLACE_WITH_LOCAL_VALUE
