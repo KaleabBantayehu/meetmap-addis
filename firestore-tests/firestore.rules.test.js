@@ -12,6 +12,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  Timestamp,
   updateDoc,
 } from 'firebase/firestore';
 
@@ -43,12 +44,18 @@ const placeData = (createdBy = 'alice') => ({
   reviewCount: 0,
 });
 
+const newPlaceData = (createdBy = 'alice') => ({
+  name: 'Test Place',
+  createdBy,
+});
+
 const reviewData = (userId = 'alice', placeId = 'place-1') => ({
   userId,
   placeId,
   rating: 5,
   reviewText: 'A useful review',
   likedUserIds: [],
+  createdAt: Timestamp.fromDate(new Date('2026-09-25T00:00:00Z')),
 });
 
 before(async () => {
@@ -139,29 +146,32 @@ describe('places', () => {
   test('signed-in owners can create valid places and public reads work', async () => {
     const alice = dbFor('alice');
     const ref = doc(alice, 'places/place-1');
-    await assertSucceeds(setDoc(ref, placeData()));
+    await assertSucceeds(setDoc(ref, newPlaceData()));
     await assertSucceeds(getDoc(doc(publicDb(), 'places/place-1')));
   });
 
-  test('place creation enforces ownership and zero initial aggregates', async () => {
+  test('place creation enforces ownership and backend-owned aggregates', async () => {
     const alice = dbFor('alice');
-    await assertFails(setDoc(doc(alice, 'places/wrong-owner'), placeData('bob')));
+    await assertFails(
+      setDoc(doc(alice, 'places/wrong-owner'), newPlaceData('bob')),
+    );
     await assertFails(
       setDoc(doc(alice, 'places/nonzero-rating'), {
-        ...placeData(),
+        ...newPlaceData(),
         rating: 4.5,
       }),
     );
     await assertFails(
-      setDoc(doc(alice, 'places/nonzero-count'), {
-        ...placeData(),
-        reviewCount: 1,
+      setDoc(doc(alice, 'places/client-zero-aggregates'), {
+        ...newPlaceData(),
+        rating: 0,
+        reviewCount: 0,
       }),
     );
     await assertFails(
-      setDoc(doc(alice, 'places/missing-aggregates'), {
-        name: 'Test Place',
-        createdBy: 'alice',
+      setDoc(doc(alice, 'places/client-rating-sum'), {
+        ...newPlaceData(),
+        ratingSum: 0,
       }),
     );
   });
@@ -174,7 +184,13 @@ describe('places', () => {
     await assertSucceeds(updateDoc(aliceRef, { name: 'Updated Place' }));
     await assertFails(updateDoc(aliceRef, { createdBy: 'bob' }));
     await assertFails(updateDoc(aliceRef, { rating: 5 }));
+    await assertFails(updateDoc(aliceRef, { ratingSum: 5 }));
     await assertFails(updateDoc(aliceRef, { reviewCount: 10 }));
+    await assertFails(
+      updateDoc(aliceRef, {
+        aggregateUpdatedAt: Timestamp.fromDate(new Date()),
+      }),
+    );
     await assertFails(updateDoc(bobRef, { name: 'Hijacked' }));
     await assertFails(deleteDoc(bobRef));
     await assertSucceeds(deleteDoc(aliceRef));
@@ -199,6 +215,18 @@ describe('reviews', () => {
         reviewData('alice', 'place-2'),
       ),
     );
+    await assertFails(
+      setDoc(doc(alice, 'places/place-1/reviews/invalid-rating'), {
+        ...reviewData(),
+        rating: 6,
+      }),
+    );
+    await assertFails(
+      setDoc(doc(alice, 'places/place-1/reviews/invalid-timestamp'), {
+        ...reviewData(),
+        createdAt: '2026-09-25T00:00:00Z',
+      }),
+    );
   });
 
   test('review owner can edit/delete without changing owner or place linkage', async () => {
@@ -211,6 +239,11 @@ describe('reviews', () => {
     await assertSucceeds(updateDoc(aliceRef, { reviewText: 'Edited' }));
     await assertFails(updateDoc(aliceRef, { userId: 'bob' }));
     await assertFails(updateDoc(aliceRef, { placeId: 'place-2' }));
+    await assertFails(
+      updateDoc(aliceRef, {
+        createdAt: Timestamp.fromDate(new Date('2026-09-26T00:00:00Z')),
+      }),
+    );
     await assertSucceeds(deleteDoc(aliceRef));
   });
 

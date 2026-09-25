@@ -2,9 +2,16 @@
   "firestore": {
     "rules": "firestore.rules"
   },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs22"
+  },
   "emulators": {
     "firestore": {
       "port": 8181
+    },
+    "functions": {
+      "port": 5001
     }
   },
   "flutter": {

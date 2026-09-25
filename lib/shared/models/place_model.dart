@@ -10,6 +10,7 @@ class PlaceModel {
   final String category;
   final String location;
   final double rating;
+  final double ratingSum;
 
   final String priceRange;
   final bool isOpen;
@@ -24,6 +25,7 @@ class PlaceModel {
   final List<String> amenities;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final DateTime? aggregateUpdatedAt;
   final String? createdBy;
   final String? phone;
 
@@ -34,6 +36,7 @@ class PlaceModel {
     required this.category,
     required this.location,
     required this.rating,
+    this.ratingSum = 0,
     required this.priceRange,
     required this.isOpen,
     required this.latitude,
@@ -46,6 +49,7 @@ class PlaceModel {
     this.amenities = const [],
     this.createdAt,
     this.updatedAt,
+    this.aggregateUpdatedAt,
     this.createdBy,
     this.phone,
   }) : assert(rating >= 0 && rating <= 5);
@@ -99,6 +103,7 @@ class PlaceModel {
     String? category,
     String? location,
     double? rating,
+    double? ratingSum,
     String? priceRange,
     bool? isOpen,
     double? latitude,
@@ -111,6 +116,7 @@ class PlaceModel {
     List<String>? amenities,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? aggregateUpdatedAt,
     String? createdBy,
     String? phone,
   }) {
@@ -121,6 +127,7 @@ class PlaceModel {
       category: category ?? this.category,
       location: location ?? this.location,
       rating: rating ?? this.rating,
+      ratingSum: ratingSum ?? this.ratingSum,
       priceRange: priceRange ?? this.priceRange,
       isOpen: isOpen ?? this.isOpen,
       latitude: latitude ?? this.latitude,
@@ -133,6 +140,7 @@ class PlaceModel {
       amenities: amenities ?? this.amenities,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      aggregateUpdatedAt: aggregateUpdatedAt ?? this.aggregateUpdatedAt,
       createdBy: createdBy ?? this.createdBy,
       phone: phone ?? this.phone,
     );
@@ -179,6 +187,7 @@ class PlaceModel {
       category: map['category'] ?? '',
       location: map['location'] ?? '',
       rating: (map['rating'] ?? 0).toDouble(),
+      ratingSum: (map['ratingSum'] ?? 0).toDouble(),
       priceRange: map['priceRange'] ?? '',
       isOpen: map['isOpen'] ?? false,
       latitude: _parseCoordinate(
@@ -208,6 +217,7 @@ class PlaceModel {
       amenities: List<String>.from(map['amenities'] ?? []),
       createdAt: _parseDate(map['createdAt']),
       updatedAt: _parseDate(map['updatedAt']),
+      aggregateUpdatedAt: _parseDate(map['aggregateUpdatedAt']),
       createdBy: map['createdBy'] as String?,
       phone: map['phone'] as String?,
     );
@@ -221,6 +231,7 @@ class PlaceModel {
       'category': category,
       'location': location,
       'rating': rating,
+      'ratingSum': ratingSum,
       'priceRange': priceRange,
       'isOpen': isOpen,
       'latitude': latitude,
@@ -233,6 +244,7 @@ class PlaceModel {
       'amenities': amenities,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'aggregateUpdatedAt': aggregateUpdatedAt?.toIso8601String(),
       'createdBy': createdBy,
       'phone': phone,
     };
@@ -254,6 +266,7 @@ class PlaceModel {
         other.category == category &&
         other.location == location &&
         other.rating == rating &&
+        other.ratingSum == ratingSum &&
         other.priceRange == priceRange &&
         other.isOpen == isOpen &&
         other.latitude == latitude &&
@@ -266,6 +279,7 @@ class PlaceModel {
         listEquals(other.amenities, amenities) &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt &&
+        other.aggregateUpdatedAt == aggregateUpdatedAt &&
         other.createdBy == createdBy &&
         other.phone == phone;
   }
@@ -278,6 +292,7 @@ class PlaceModel {
         category.hashCode ^
         location.hashCode ^
         rating.hashCode ^
+        ratingSum.hashCode ^
         priceRange.hashCode ^
         isOpen.hashCode ^
         latitude.hashCode ^
@@ -290,6 +305,7 @@ class PlaceModel {
         amenities.hashCode ^
         createdAt.hashCode ^
         updatedAt.hashCode ^
+        aggregateUpdatedAt.hashCode ^
         createdBy.hashCode ^
         phone.hashCode;
   }

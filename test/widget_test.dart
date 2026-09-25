@@ -24,6 +24,33 @@ void main() {
     expect(place.normalizedPriceLevel, 3);
     expect(place.priceLabel, 'Premium');
     expect(place.priceDisplay, '600–1500 ETB');
+    expect(place.ratingSum, 0);
+    expect(place.aggregateUpdatedAt, isNull);
+  });
+
+  test('place aggregate fields deserialize without breaking legacy data', () {
+    final updatedAt = Timestamp.fromDate(DateTime.utc(2026, 9, 25));
+    final place = PlaceModel.fromMap({
+      'id': 'place-1',
+      'name': 'Rated Place',
+      'imageUrl': '',
+      'category': 'Cafe',
+      'location': 'Addis Ababa',
+      'rating': 4,
+      'ratingSum': 8,
+      'reviewCount': 2,
+      'priceRange': r'$$',
+      'isOpen': true,
+      'latitude': 9.03,
+      'longitude': 38.74,
+      'tags': <String>[],
+      'aggregateUpdatedAt': updatedAt,
+    });
+
+    expect(place.ratingSum, 8);
+    expect(place.reviewCount, 2);
+    expect(place.rating, 4);
+    expect(place.aggregateUpdatedAt?.toUtc(), DateTime.utc(2026, 9, 25));
   });
 
   test('review timestamps support Firestore, DateTime, string, and null', () {

@@ -157,6 +157,11 @@ class FirebasePlaceRepository implements PlaceRepository {
 
       final placeWithOwnership = place.copyWith(createdBy: currentUserId);
       final data = placeWithOwnership.toMap();
+      // Trusted aggregate fields are initialized and maintained by the backend.
+      data.remove('rating');
+      data.remove('reviewCount');
+      data.remove('ratingSum');
+      data.remove('aggregateUpdatedAt');
       data['id'] = docRef.id;
       data['createdAt'] = FieldValue.serverTimestamp();
       data['updatedAt'] = FieldValue.serverTimestamp();
