@@ -18,7 +18,6 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  bool isPrivateProfile = true;
   bool _isUploadingImage = false;
   final CloudinaryService _cloudinaryService = CloudinaryService();
 
@@ -114,6 +113,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               hintText: 'Enter your email',
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
+              enabled: false,
             ),
             LabeledTextField(
               label: 'Phone Number',
@@ -127,39 +127,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               controller: _bioController,
               maxLines: 4,
             ),
-            const Divider(height: 40),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Private Profile',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Only your connections can see your details.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Switch.adaptive(
-                  value: isPrivateProfile,
-                  onChanged: (val) => setState(() => isPrivateProfile = val),
-                  activeTrackColor: AppColors.primary,
-                ),
-              ],
-            ),
             const SizedBox(height: 40),
           ],
         ),
@@ -170,7 +137,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _saveProfile(BuildContext context, UserModel user) async {
     final updatedUser = user.copyWith(
       name: _nameController.text.trim(),
-      email: _emailController.text.trim(),
       phoneNumber: _phoneController.text.trim(),
       bio: _bioController.text.trim(),
     );

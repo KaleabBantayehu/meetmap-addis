@@ -30,11 +30,106 @@ class FirebaseAuthRepository implements AuthRepository {
     );
   }
 
-  Map<String, dynamic> _buildUserFirestoreMap(UserModel model) {
-    final map = model.toMap();
-    map['uid'] = model.id;
-    map['photoUrl'] = model.profileImageUrl;
-    return map;
+  Map<String, dynamic> _buildPublicUserFirestoreMap(UserModel model) {
+    return {
+      'id': model.id,
+      'uid': model.id,
+      'name': model.name,
+      'username': model.username,
+      'profileImageUrl': model.profileImageUrl,
+      'photoUrl': model.profileImageUrl,
+      'title': model.title,
+      'bio': model.bio,
+      'tags': model.tags,
+      'recentImageUrls': model.recentImageUrls,
+    };
+  }
+
+  Map<String, dynamic> _buildPrivateAccountFirestoreMap(UserModel model) {
+    return {
+      'email': model.email,
+      'phoneNumber': model.phoneNumber,
+      'notificationsEnabled': model.notificationsEnabled,
+    };
+  }
+
+  DocumentReference<Map<String, dynamic>> _privateAccountRef(String userId) {
+    return _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('private')
+        .doc('account');
+  }
+
+  Future<UserModel?> _readCachedUser(String userId) async {
+    final cachedJson = await SecureStorageService.instance.read(
+      CacheKeys.privateUserSession(userId),
+    );
+    if (cachedJson == null) return null;
+    final cachedUser = UserModel.fromJson(cachedJson);
+    return cachedUser.id == userId ? cachedUser : null;
+  }
+
+  Future<void> _cacheUser(UserModel user) async {
+    final previousUid = await SecureStorageService.instance.read(
+      CacheKeys.activeUserSessionUid,
+    );
+    if (previousUid != null && previousUid != user.id) {
+      await SecureStorageService.instance.delete(
+        CacheKeys.privateUserSession(previousUid),
+      );
+    }
+    await SecureStorageService.instance.delete(CacheKeys.legacyUserSession);
+    await SecureStorageService.instance.write(
+      CacheKeys.privateUserSession(user.id),
+      user.toJson(),
+    );
+    await SecureStorageService.instance.write(
+      CacheKeys.activeUserSessionUid,
+      user.id,
+    );
+  }
+
+  Future<void> _clearCachedUser([String? userId]) async {
+    final cachedUid =
+        userId ??
+        await SecureStorageService.instance.read(
+          CacheKeys.activeUserSessionUid,
+        );
+    if (cachedUid != null && cachedUid.isNotEmpty) {
+      await SecureStorageService.instance.delete(
+        CacheKeys.privateUserSession(cachedUid),
+      );
+    }
+    await SecureStorageService.instance.delete(CacheKeys.legacyUserSession);
+    await SecureStorageService.instance.delete(CacheKeys.activeUserSessionUid);
+  }
+
+  Future<UserModel?> _loadCurrentUserProfile(fb.User firebaseUser) async {
+    final publicSnapshot = await _firestore
+        .collection('users')
+        .doc(firebaseUser.uid)
+        .get()
+        .timeout(const Duration(seconds: 4));
+    if (!publicSnapshot.exists || publicSnapshot.data() == null) return null;
+
+    final publicData = Map<String, dynamic>.from(publicSnapshot.data()!);
+    final privateSnapshot = await _privateAccountRef(
+      firebaseUser.uid,
+    ).get().timeout(const Duration(seconds: 4));
+    final privateData = privateSnapshot.data();
+
+    publicData['id'] = firebaseUser.uid;
+    publicData['uid'] = firebaseUser.uid;
+    publicData['email'] =
+        privateData?['email'] ?? publicData['email'] ?? firebaseUser.email;
+    publicData['phoneNumber'] =
+        privateData?['phoneNumber'] ?? publicData['phoneNumber'];
+    publicData['notificationsEnabled'] =
+        privateData?['notificationsEnabled'] ??
+        publicData['notificationsEnabled'] ??
+        true;
+    return UserModel.fromMap(publicData);
   }
 
   @override
@@ -42,53 +137,26 @@ class FirebaseAuthRepository implements AuthRepository {
     return _firebaseAuth.authStateChanges().asyncMap((fbUser) async {
       if (fbUser == null) {
         try {
-          await SecureStorageService.instance.delete(CacheKeys.userSession);
+          await _clearCachedUser();
         } catch (_) {}
         return null;
       }
 
       // 1. Try cache first to avoid Firestore lookup if same user is logged in
       try {
-        final cachedJson = await SecureStorageService.instance.read(
-          CacheKeys.userSession,
-        );
-        if (cachedJson != null) {
-          final cachedUser = UserModel.fromJson(cachedJson);
-          if (cachedUser.id == fbUser.uid) {
-            return cachedUser;
-          }
-        }
+        final cachedUser = await _readCachedUser(fbUser.uid);
+        if (cachedUser != null) return cachedUser;
       } catch (e) {
         debugPrint('Error reading user session cache in authStateChanges: $e');
       }
 
       // 2. Fetch from Firestore
       try {
-        final doc = await _firestore
-            .collection('users')
-            .doc(fbUser.uid)
-            .get()
-            .timeout(const Duration(seconds: 4));
-        if (doc.exists && doc.data() != null) {
-          final data = doc.data()!;
-          if (data['createdAt'] != null &&
-              (data['createdAt'].runtimeType.toString() == 'Timestamp' ||
-                  data['createdAt'].toString().contains('Timestamp'))) {
-            try {
-              data['createdAt'] = (data['createdAt'] as dynamic)
-                  .toDate()
-                  .toIso8601String();
-            } catch (_) {
-              data['createdAt'] = DateTime.now().toIso8601String();
-            }
-          }
-          final userModel = UserModel.fromMap(data);
+        final userModel = await _loadCurrentUserProfile(fbUser);
+        if (userModel != null) {
           // Cache the profile and save last sync timestamp
           try {
-            await SecureStorageService.instance.write(
-              CacheKeys.userSession,
-              userModel.toJson(),
-            );
+            await _cacheUser(userModel);
             await LocalStorageService.instance.setString(
               CacheKeys.profileLastSync,
               DateTime.now().toIso8601String(),
@@ -103,10 +171,7 @@ class FirebaseAuthRepository implements AuthRepository {
       // 3. Fallback: map from Firebase Auth
       final fallbackUser = _mapFirebaseUser(fbUser);
       try {
-        await SecureStorageService.instance.write(
-          CacheKeys.userSession,
-          fallbackUser.toJson(),
-        );
+        await _cacheUser(fallbackUser);
       } catch (_) {}
       return fallbackUser;
     });
@@ -117,52 +182,25 @@ class FirebaseAuthRepository implements AuthRepository {
     final user = _firebaseAuth.currentUser;
     if (user == null) {
       try {
-        await SecureStorageService.instance.delete(CacheKeys.userSession);
+        await _clearCachedUser();
       } catch (_) {}
       return null;
     }
 
     // 1. Try cache first
     try {
-      final cachedJson = await SecureStorageService.instance.read(
-        CacheKeys.userSession,
-      );
-      if (cachedJson != null) {
-        final cachedUser = UserModel.fromJson(cachedJson);
-        if (cachedUser.id == user.uid) {
-          return cachedUser;
-        }
-      }
+      final cachedUser = await _readCachedUser(user.uid);
+      if (cachedUser != null) return cachedUser;
     } catch (e) {
       debugPrint('Error reading user session cache in getCurrentUser: $e');
     }
 
     // 2. Fetch from Firestore
     try {
-      final doc = await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .get()
-          .timeout(const Duration(seconds: 4));
-      if (doc.exists && doc.data() != null) {
-        final data = doc.data()!;
-        if (data['createdAt'] != null &&
-            (data['createdAt'].runtimeType.toString() == 'Timestamp' ||
-                data['createdAt'].toString().contains('Timestamp'))) {
-          try {
-            data['createdAt'] = (data['createdAt'] as dynamic)
-                .toDate()
-                .toIso8601String();
-          } catch (_) {
-            data['createdAt'] = DateTime.now().toIso8601String();
-          }
-        }
-        final userModel = UserModel.fromMap(data);
+      final userModel = await _loadCurrentUserProfile(user);
+      if (userModel != null) {
         try {
-          await SecureStorageService.instance.write(
-            CacheKeys.userSession,
-            userModel.toJson(),
-          );
+          await _cacheUser(userModel);
           await LocalStorageService.instance.setString(
             CacheKeys.profileLastSync,
             DateTime.now().toIso8601String(),
@@ -177,10 +215,7 @@ class FirebaseAuthRepository implements AuthRepository {
     // 3. Fallback: map from Firebase Auth
     final fallbackUser = _mapFirebaseUser(user);
     try {
-      await SecureStorageService.instance.write(
-        CacheKeys.userSession,
-        fallbackUser.toJson(),
-      );
+      await _cacheUser(fallbackUser);
     } catch (_) {}
     return fallbackUser;
   }
@@ -198,26 +233,8 @@ class FirebaseAuthRepository implements AuthRepository {
       }
 
       try {
-        final doc = await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .get()
-            .timeout(const Duration(seconds: 4));
-        if (doc.exists && doc.data() != null) {
-          final data = doc.data()!;
-          if (data['createdAt'] != null &&
-              (data['createdAt'].runtimeType.toString() == 'Timestamp' ||
-                  data['createdAt'].toString().contains('Timestamp'))) {
-            try {
-              data['createdAt'] = (data['createdAt'] as dynamic)
-                  .toDate()
-                  .toIso8601String();
-            } catch (_) {
-              data['createdAt'] = DateTime.now().toIso8601String();
-            }
-          }
-          return UserModel.fromMap(data);
-        }
+        final userModel = await _loadCurrentUserProfile(user);
+        if (userModel != null) return userModel;
       } catch (e) {
         debugPrint(
           'Error fetching user profile from Firestore during login: $e',
@@ -253,15 +270,16 @@ class FirebaseAuthRepository implements AuthRepository {
       await user.updateDisplayName(name);
 
       final userModel = _mapFirebaseUser(user, name: name);
-      final userMap = _buildUserFirestoreMap(userModel);
-      userMap['createdAt'] = FieldValue.serverTimestamp();
+      final publicMap = _buildPublicUserFirestoreMap(userModel);
+      final privateMap = _buildPrivateAccountFirestoreMap(userModel);
+      publicMap['createdAt'] = FieldValue.serverTimestamp();
+      privateMap['createdAt'] = FieldValue.serverTimestamp();
 
       try {
-        await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .set(userMap)
-            .timeout(const Duration(seconds: 4));
+        final batch = _firestore.batch();
+        batch.set(_firestore.collection('users').doc(user.uid), publicMap);
+        batch.set(_privateAccountRef(user.uid), privateMap);
+        await batch.commit().timeout(const Duration(seconds: 4));
       } catch (firestoreError) {
         debugPrint(
           'Error saving user profile to Firestore during signup: $firestoreError',
@@ -295,10 +313,14 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> logout() async {
+    final userId = _firebaseAuth.currentUser?.uid;
     try {
       await _googleSignIn.signOut();
     } catch (_) {}
     await _firebaseAuth.signOut();
+    try {
+      await _clearCachedUser(userId);
+    } catch (_) {}
   }
 
   @override
@@ -309,22 +331,30 @@ class FirebaseAuthRepository implements AuthRepository {
         throw Exception('Please sign in to update your profile.');
       }
 
-      final userMap = _buildUserFirestoreMap(user);
-      userMap['updatedAt'] = FieldValue.serverTimestamp();
-      await _firestore
-          .collection('users')
-          .doc(user.id)
-          .set(userMap, SetOptions(merge: true))
-          .timeout(const Duration(seconds: 4));
+      final publicMap = _buildPublicUserFirestoreMap(user);
+      final privateMap = _buildPrivateAccountFirestoreMap(user);
+      publicMap['updatedAt'] = FieldValue.serverTimestamp();
+      final privateAccountRef = _privateAccountRef(user.id);
+      final privateAccountExists = (await privateAccountRef.get()).exists;
+      if (privateAccountExists) {
+        privateMap['updatedAt'] = FieldValue.serverTimestamp();
+      } else {
+        privateMap['createdAt'] = FieldValue.serverTimestamp();
+      }
+      final batch = _firestore.batch();
+      batch.set(
+        _firestore.collection('users').doc(user.id),
+        publicMap,
+        SetOptions(merge: true),
+      );
+      batch.set(privateAccountRef, privateMap, SetOptions(merge: true));
+      await batch.commit().timeout(const Duration(seconds: 4));
 
       if (currentUser.displayName != user.name) {
         await currentUser.updateDisplayName(user.name);
       }
 
-      await SecureStorageService.instance.write(
-        CacheKeys.userSession,
-        user.toJson(),
-      );
+      await _cacheUser(user);
       await LocalStorageService.instance.setString(
         CacheKeys.profileLastSync,
         DateTime.now().toIso8601String(),
@@ -375,23 +405,17 @@ class FirebaseAuthRepository implements AuthRepository {
         final doc = await docRef.get().timeout(const Duration(seconds: 4));
         if (!doc.exists) {
           userModel = _mapFirebaseUser(user, name: user.displayName);
-          final userMap = _buildUserFirestoreMap(userModel);
-          userMap['createdAt'] = FieldValue.serverTimestamp();
-          await docRef.set(userMap).timeout(const Duration(seconds: 4));
+          final publicMap = _buildPublicUserFirestoreMap(userModel);
+          final privateMap = _buildPrivateAccountFirestoreMap(userModel);
+          publicMap['createdAt'] = FieldValue.serverTimestamp();
+          privateMap['createdAt'] = FieldValue.serverTimestamp();
+          final batch = _firestore.batch();
+          batch.set(docRef, publicMap);
+          batch.set(_privateAccountRef(user.uid), privateMap);
+          await batch.commit().timeout(const Duration(seconds: 4));
         } else {
-          final data = doc.data()!;
-          if (data['createdAt'] != null &&
-              (data['createdAt'].runtimeType.toString() == 'Timestamp' ||
-                  data['createdAt'].toString().contains('Timestamp'))) {
-            try {
-              data['createdAt'] = (data['createdAt'] as dynamic)
-                  .toDate()
-                  .toIso8601String();
-            } catch (_) {
-              data['createdAt'] = DateTime.now().toIso8601String();
-            }
-          }
-          userModel = UserModel.fromMap(data);
+          userModel =
+              await _loadCurrentUserProfile(user) ?? _mapFirebaseUser(user);
         }
       } catch (firestoreError) {
         debugPrint('Firestore error during Google Sign-In: $firestoreError');

@@ -14,6 +14,80 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == resource.data.createdBy;
     }
 
+    function validOptionalString(data, field, maxLength) {
+      return !(field in data)
+        || data[field] == null
+        || (data[field] is string && data[field].size() <= maxLength);
+    }
+
+    function validUserCreate(userId) {
+      let data = request.resource.data;
+      return data.keys().hasOnly([
+          'id', 'uid', 'name', 'username', 'profileImageUrl', 'photoUrl',
+          'title', 'bio', 'tags', 'recentImageUrls', 'createdAt', 'updatedAt'
+        ])
+        && data.id == userId
+        && data.uid == userId
+        && data.name is string
+        && data.name.size() >= 1
+        && data.name.size() <= 100
+        && validOptionalString(data, 'username', 50)
+        && validOptionalString(data, 'profileImageUrl', 2048)
+        && validOptionalString(data, 'photoUrl', 2048)
+        && validOptionalString(data, 'title', 100)
+        && validOptionalString(data, 'bio', 1000)
+        && (!('tags' in data) || (data.tags is list && data.tags.size() <= 20))
+        && (!('recentImageUrls' in data)
+          || (data.recentImageUrls is list && data.recentImageUrls.size() <= 20))
+        && data.createdAt is timestamp
+        && (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function validUserUpdate() {
+      let data = request.resource.data;
+      return data.diff(resource.data).affectedKeys().hasOnly([
+          'name', 'username', 'profileImageUrl', 'photoUrl', 'title', 'bio',
+          'tags', 'recentImageUrls', 'updatedAt'
+        ])
+        && data.name is string
+        && data.name.size() >= 1
+        && data.name.size() <= 100
+        && validOptionalString(data, 'username', 50)
+        && validOptionalString(data, 'profileImageUrl', 2048)
+        && validOptionalString(data, 'photoUrl', 2048)
+        && validOptionalString(data, 'title', 100)
+        && validOptionalString(data, 'bio', 1000)
+        && (!('tags' in data) || (data.tags is list && data.tags.size() <= 20))
+        && (!('recentImageUrls' in data)
+          || (data.recentImageUrls is list && data.recentImageUrls.size() <= 20))
+        && data.updatedAt is timestamp;
+    }
+
+    function validPrivateAccountCreate() {
+      let data = request.resource.data;
+      return data.keys().hasOnly([
+          'email', 'phoneNumber', 'notificationsEnabled', 'createdAt',
+          'updatedAt'
+        ])
+        && data.email == request.auth.token.email
+        && validOptionalString(data, 'email', 320)
+        && validOptionalString(data, 'phoneNumber', 30)
+        && data.notificationsEnabled is bool
+        && data.createdAt is timestamp
+        && (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function validPrivateAccountUpdate() {
+      let data = request.resource.data;
+      return data.diff(resource.data).affectedKeys().hasOnly([
+          'phoneNumber', 'notificationsEnabled', 'updatedAt'
+        ])
+        && data.email == resource.data.email
+        && validOptionalString(data, 'phoneNumber', 30)
+        && data.notificationsEnabled is bool
+        && data.updatedAt is timestamp;
+    }
+
     function hasValidInitialPlaceAggregates() {
       return !('rating' in request.resource.data)
         && !('reviewCount' in request.resource.data)
@@ -28,6 +102,52 @@ service cloud.firestore {
         'rating',
         'aggregateUpdatedAt'
       ]);
+    }
+
+    function hasValidPlaceShape(placeId) {
+      let data = request.resource.data;
+      return data.keys().hasOnly([
+          'id', 'name', 'imageUrl', 'category', 'location', 'priceRange',
+          'isOpen', 'latitude', 'longitude', 'tags', 'description',
+          'priceLevel', 'imageUrls', 'amenities', 'createdAt', 'updatedAt',
+          'createdBy', 'phone'
+        ])
+        && data.id == placeId
+        && data.name is string && data.name.size() >= 3 && data.name.size() <= 150
+        && data.imageUrl is string && data.imageUrl.size() <= 2048
+        && data.category is string && data.category.size() >= 1 && data.category.size() <= 100
+        && data.location is string && data.location.size() >= 1 && data.location.size() <= 300
+        && data.priceRange is string && data.priceRange.size() <= 20
+        && data.isOpen is bool
+        && data.latitude is number && data.latitude >= -90 && data.latitude <= 90
+        && data.longitude is number && data.longitude >= -180 && data.longitude <= 180
+        && !(data.latitude == 0 && data.longitude == 0)
+        && data.tags is list && data.tags.size() <= 30
+        && data.description is string && data.description.size() >= 20 && data.description.size() <= 5000
+        && data.priceLevel is int && data.priceLevel >= 1 && data.priceLevel <= 4
+        && data.imageUrls is list && data.imageUrls.size() >= 1 && data.imageUrls.size() <= 10
+        && data.amenities is list && data.amenities.size() <= 50
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.createdBy is string
+        && validOptionalString(data, 'phone', 30);
+    }
+
+    function placeEditableFieldsAreValid() {
+      let data = request.resource.data;
+      return data.diff(resource.data).affectedKeys().hasOnly([
+          'name', 'imageUrl', 'category', 'location', 'priceRange', 'isOpen',
+          'latitude', 'longitude', 'tags', 'description', 'priceLevel',
+          'imageUrls', 'amenities', 'updatedAt', 'phone'
+        ])
+        && data.name is string && data.name.size() >= 3 && data.name.size() <= 150
+        && data.description is string && data.description.size() >= 20 && data.description.size() <= 5000
+        && data.latitude is number && data.latitude >= -90 && data.latitude <= 90
+        && data.longitude is number && data.longitude >= -180 && data.longitude <= 180
+        && !(data.latitude == 0 && data.longitude == 0)
+        && data.priceLevel is int && data.priceLevel >= 1 && data.priceLevel <= 4
+        && data.imageUrls is list && data.imageUrls.size() >= 1 && data.imageUrls.size() <= 10
+        && data.updatedAt is timestamp;
     }
 
     function hasValidReviewShape(placeId) {
@@ -52,11 +172,13 @@ service cloud.firestore {
         && data.rating >= 1
         && data.rating <= 5
         && data.createdAt is timestamp
-        && (!('id' in data) || data.id is string)
+        && (!('id' in data) || (data.id is string && data.id.size() > 0))
         && (!('reviewText' in data)
           || (data.reviewText is string && data.reviewText.size() <= 2000))
         && (!('comment' in data)
           || (data.comment is string && data.comment.size() <= 2000))
+        && (('reviewText' in data && data.reviewText is string)
+          || ('comment' in data && data.comment is string))
         && (!('imageUrls' in data)
           || (data.imageUrls is list && data.imageUrls.size() <= 10))
         && (!('likedUserIds' in data) || data.likedUserIds is list)
@@ -65,20 +187,115 @@ service cloud.firestore {
           || (data.reportCount is int && data.reportCount >= 0));
     }
 
+    function reviewTrustedFieldsAreUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'id', 'userId', 'placeId', 'createdAt', 'likedUserIds', 'reportCount'
+      ]);
+    }
+
+    function validEventShape(eventId) {
+      let data = request.resource.data;
+      return data.keys().hasOnly([
+          'id', 'title', 'category', 'location', 'date', 'time', 'host',
+          'imageUrl', 'description', 'createdBy', 'latitude', 'longitude',
+          'createdAt', 'updatedAt'
+        ])
+        && data.id == eventId
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 200
+        && data.category is string && data.category.size() >= 1 && data.category.size() <= 100
+        && data.location is string && data.location.size() >= 1 && data.location.size() <= 300
+        && data.date is string && data.date.size() >= 1 && data.date.size() <= 100
+        && data.time is string && data.time.size() >= 1 && data.time.size() <= 100
+        && data.host is string && data.host.size() <= 150
+        && data.imageUrl is string && data.imageUrl.size() <= 2048
+        && data.description is string && data.description.size() <= 5000
+        && data.createdBy is string
+        && data.latitude is number && data.latitude >= -90 && data.latitude <= 90
+        && data.longitude is number && data.longitude >= -180 && data.longitude <= 180
+        && !(data.latitude == 0 && data.longitude == 0)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function eventEditableFieldsAreValid() {
+      let data = request.resource.data;
+      return data.diff(resource.data).affectedKeys().hasOnly([
+          'title', 'category', 'location', 'date', 'time', 'host', 'imageUrl',
+          'description', 'latitude', 'longitude', 'updatedAt'
+        ])
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 200
+        && data.latitude is number && data.latitude >= -90 && data.latitude <= 90
+        && data.longitude is number && data.longitude >= -180 && data.longitude <= 180
+        && !(data.latitude == 0 && data.longitude == 0)
+        && data.updatedAt is timestamp;
+    }
+
+    function validHangoutShape(hangoutId) {
+      let data = request.resource.data;
+      return data.keys().hasOnly([
+          'id', 'title', 'category', 'location', 'time', 'imageUrl',
+          'description', 'createdBy', 'latitude', 'longitude', 'createdAt',
+          'updatedAt'
+        ])
+        && data.id == hangoutId
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 200
+        && data.category is string && data.category.size() >= 1 && data.category.size() <= 100
+        && data.location is string && data.location.size() >= 1 && data.location.size() <= 300
+        && data.time is string && data.time.size() >= 1 && data.time.size() <= 100
+        && data.imageUrl is string && data.imageUrl.size() <= 2048
+        && data.description is string && data.description.size() <= 5000
+        && data.createdBy is string
+        && data.latitude is number && data.latitude >= -90 && data.latitude <= 90
+        && data.longitude is number && data.longitude >= -180 && data.longitude <= 180
+        && !(data.latitude == 0 && data.longitude == 0)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function hangoutEditableFieldsAreValid() {
+      let data = request.resource.data;
+      return data.diff(resource.data).affectedKeys().hasOnly([
+          'title', 'category', 'location', 'time', 'imageUrl', 'description',
+          'latitude', 'longitude', 'updatedAt'
+        ])
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 200
+        && data.latitude is number && data.latitude >= -90 && data.latitude <= 90
+        && data.longitude is number && data.longitude >= -180 && data.longitude <= 180
+        && !(data.latitude == 0 && data.longitude == 0)
+        && data.updatedAt is timestamp;
+    }
+
     match /users/{userId} {
       allow read: if signedIn();
-      allow create, update, delete: if isUser(userId);
+      allow create: if isUser(userId) && validUserCreate(userId);
+      allow update: if isUser(userId) && validUserUpdate();
+      allow delete: if false;
+
+      match /private/account {
+        allow read: if isUser(userId);
+        allow create: if isUser(userId) && validPrivateAccountCreate();
+        allow update: if isUser(userId) && validPrivateAccountUpdate();
+        allow delete: if false;
+      }
 
       match /saved_places/{placeId} {
-        allow read, create, update, delete: if isUser(userId);
+        allow read, delete: if isUser(userId);
+        allow create, update: if isUser(userId)
+          && request.resource.data.keys().hasOnly(['savedAt'])
+          && request.resource.data.savedAt is timestamp;
       }
 
       match /following/{targetUserId} {
         allow read: if isUser(userId);
         allow create, update: if isUser(userId)
           && userId != targetUserId
-          && request.resource.data.userId == targetUserId;
-        allow delete: if isUser(userId) && userId != targetUserId;
+          && request.resource.data.keys().hasOnly(['userId', 'createdAt'])
+          && request.resource.data.userId == targetUserId
+          && request.resource.data.createdAt is timestamp
+          && existsAfter(/databases/$(database)/documents/users/$(targetUserId)/followers/$(userId));
+        allow delete: if isUser(userId)
+          && userId != targetUserId
+          && !existsAfter(/databases/$(database)/documents/users/$(targetUserId)/followers/$(userId));
       }
 
       match /followers/{followerUserId} {
@@ -86,10 +303,14 @@ service cloud.firestore {
         allow create, update: if signedIn()
           && request.auth.uid == followerUserId
           && userId != followerUserId
-          && request.resource.data.userId == followerUserId;
+          && request.resource.data.keys().hasOnly(['userId', 'createdAt'])
+          && request.resource.data.userId == followerUserId
+          && request.resource.data.createdAt is timestamp
+          && existsAfter(/databases/$(database)/documents/users/$(followerUserId)/following/$(userId));
         allow delete: if signedIn()
           && request.auth.uid == followerUserId
-          && userId != followerUserId;
+          && userId != followerUserId
+          && !existsAfter(/databases/$(database)/documents/users/$(followerUserId)/following/$(userId));
       }
     }
 
@@ -97,23 +318,26 @@ service cloud.firestore {
       allow read: if true;
       allow create: if signedIn()
         && request.resource.data.createdBy == request.auth.uid
-        && hasValidInitialPlaceAggregates();
+        && hasValidInitialPlaceAggregates()
+        && hasValidPlaceShape(placeId);
       allow update: if isCreator()
         && request.resource.data.createdBy == resource.data.createdBy
-        && placeAggregateFieldsAreUnchanged();
+        && placeAggregateFieldsAreUnchanged()
+        && placeEditableFieldsAreValid();
       allow delete: if isCreator();
 
       match /reviews/{reviewId} {
         allow read: if true;
         allow create: if signedIn()
           && request.resource.data.userId == request.auth.uid
+          && request.resource.data.id == reviewId
+          && !('likedUserIds' in request.resource.data)
+          && !('reportCount' in request.resource.data)
           && hasValidReviewShape(placeId);
         allow update: if signedIn()
           && request.auth.uid == resource.data.userId
           && hasValidReviewShape(placeId)
-          && request.resource.data.userId == resource.data.userId
-          && request.resource.data.placeId == resource.data.placeId
-          && request.resource.data.createdAt == resource.data.createdAt;
+          && reviewTrustedFieldsAreUnchanged();
         allow delete: if signedIn()
           && request.auth.uid == resource.data.userId;
       }
@@ -122,18 +346,22 @@ service cloud.firestore {
     match /events/{eventId} {
       allow read: if true;
       allow create: if signedIn()
-        && request.resource.data.createdBy == request.auth.uid;
+        && request.resource.data.createdBy == request.auth.uid
+        && validEventShape(eventId);
       allow update: if isCreator()
-        && request.resource.data.createdBy == resource.data.createdBy;
+        && request.resource.data.createdBy == resource.data.createdBy
+        && eventEditableFieldsAreValid();
       allow delete: if isCreator();
     }
 
     match /hangouts/{hangoutId} {
       allow read: if true;
       allow create: if signedIn()
-        && request.resource.data.createdBy == request.auth.uid;
+        && request.resource.data.createdBy == request.auth.uid
+        && validHangoutShape(hangoutId);
       allow update: if isCreator()
-        && request.resource.data.createdBy == resource.data.createdBy;
+        && request.resource.data.createdBy == resource.data.createdBy
+        && hangoutEditableFieldsAreValid();
       allow delete: if isCreator();
     }
 

@@ -189,8 +189,6 @@ class _ReviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentUserId = context.watch<AuthProvider>().currentUser?.id;
-    final isLiked =
-        currentUserId != null && review.likedUserIds.contains(currentUserId);
     final isOwnReview = currentUserId == review.userId;
 
     // Defensively clamp rating count between 0 and 5 to protect list loop generation bounds
@@ -264,12 +262,12 @@ class _ReviewTile extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              InkWell(
+          if (isOwnReview)
+            Align(
+              alignment: Alignment.centerRight,
+              child: InkWell(
                 onTap: () {
-                  context.read<ReviewsProvider>().toggleLike(
+                  context.read<ReviewsProvider>().deleteReview(
                     review.id,
                     placeId,
                   );
@@ -277,50 +275,14 @@ class _ReviewTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
                 child: Padding(
                   padding: const EdgeInsets.all(4.0),
-                  child: Row(
-                    children: [
-                      Icon(
-                        isLiked
-                            ? Icons.thumb_up_alt_rounded
-                            : Icons.thumb_up_alt_outlined,
-                        size: 16,
-                        color: isLiked
-                            ? AppColors.primary
-                            : AppColors.textSecondary,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${review.likedUserIds.length}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: isLiked
-                              ? AppColors.primary
-                              : AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
+                  child: Icon(
+                    Icons.delete_outline,
+                    size: 18,
+                    color: AppColors.error,
                   ),
                 ),
               ),
-              if (isOwnReview)
-                InkWell(
-                  onTap: () {
-                    context.read<ReviewsProvider>().deleteReview(
-                      review.id,
-                      placeId,
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(4),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: Icon(
-                      Icons.delete_outline,
-                      size: 18,
-                      color: AppColors.error,
-                    ),
-                  ),
-                ),
-            ],
-          ),
+            ),
         ],
       ),
     );

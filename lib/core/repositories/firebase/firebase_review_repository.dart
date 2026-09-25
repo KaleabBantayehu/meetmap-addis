@@ -40,6 +40,8 @@ class FirebaseReviewRepository implements ReviewRepository {
           .doc(persistedReview.id);
 
       final data = persistedReview.toMap();
+      data.remove('likedUserIds');
+      data.remove('reportCount');
       data['createdAt'] =
           FieldValue.serverTimestamp(); // Ensure accurate backend timestamp
 

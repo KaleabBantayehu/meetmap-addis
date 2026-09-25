@@ -1,5 +1,7 @@
 class CacheKeys {
-  static const String userSession = 'user_session_secure';
+  static const String activeUserSessionUid = 'active_user_session_uid';
+  static const String privateUserSessionPrefix = 'private_user_session_';
+  static const String legacyUserSession = 'user_session_secure';
   static const String savedPlaces = 'saved_places_cache';
   static const String savedPlaceIds = 'saved_place_ids_cache';
   static const String searchHistory = 'search_history_cache';
@@ -21,4 +23,7 @@ class CacheKeys {
   // Helpers
   static String reviewsForPlace(String placeId) =>
       '$reviewsCachePrefix$placeId';
+
+  static String privateUserSession(String userId) =>
+      '$privateUserSessionPrefix$userId';
 }

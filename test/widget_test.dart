@@ -3,8 +3,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
 import 'package:meetmap_addis/shared/models/event_model.dart';
 import 'package:meetmap_addis/shared/models/review_model.dart';
+import 'package:meetmap_addis/core/storage/cache_keys.dart';
 
 void main() {
+  test('private user session cache keys are scoped by Firebase UID', () {
+    expect(
+      CacheKeys.privateUserSession('alice'),
+      isNot(CacheKeys.privateUserSession('bob')),
+    );
+  });
+
   test('legacy place pricing remains compatible', () {
     final place = PlaceModel.fromMap({
       'id': 'legacy-place',

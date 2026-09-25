@@ -72,14 +72,22 @@ class FirebaseHangoutRepository implements HangoutRepository {
       }
 
       final docRef = _firestore.collection('hangouts').doc();
-      final hangoutWithUser = hangout.copyWith(createdBy: currentUser.uid);
+      final hangoutWithUser = hangout.copyWith(
+        createdBy: currentUser.uid,
+        attendeeCount: 0,
+        isLive: false,
+      );
 
-      await docRef.set({
+      final data = {
         ...hangoutWithUser.toMap(),
         'id': docRef.id,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-      }).timeout(const Duration(seconds: 4));
+      };
+      data.remove('attendeeCount');
+      data.remove('isLive');
+
+      await docRef.set(data).timeout(const Duration(seconds: 4));
 
       return hangoutWithUser.copyWith(id: docRef.id);
     } catch (e) {

@@ -60,14 +60,22 @@ class FirebaseEventRepository implements EventRepository {
       }
 
       final docRef = _firestore.collection('events').doc();
-      final eventWithUser = event.copyWith(createdBy: currentUser.uid);
+      final eventWithUser = event.copyWith(
+        createdBy: currentUser.uid,
+        attendeeCount: 0,
+        isFeatured: false,
+      );
 
-      await docRef.set({
+      final data = {
         ...eventWithUser.toMap(),
         'id': docRef.id,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-      }).timeout(const Duration(seconds: 4));
+      };
+      data.remove('attendeeCount');
+      data.remove('isFeatured');
+
+      await docRef.set(data).timeout(const Duration(seconds: 4));
 
       return eventWithUser.copyWith(id: docRef.id);
     } catch (e) {

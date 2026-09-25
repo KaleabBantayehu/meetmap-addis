@@ -7,6 +7,7 @@ class LabeledTextField extends StatelessWidget {
   final TextEditingController? controller;
   final int maxLines;
   final TextInputType keyboardType;
+  final bool enabled;
 
   const LabeledTextField({
     super.key,
@@ -15,6 +16,7 @@ class LabeledTextField extends StatelessWidget {
     this.controller,
     this.maxLines = 1,
     this.keyboardType = TextInputType.text,
+    this.enabled = true,
   });
 
   @override
@@ -37,6 +39,7 @@ class LabeledTextField extends StatelessWidget {
           controller: controller,
           maxLines: maxLines,
           keyboardType: keyboardType,
+          enabled: enabled,
           decoration: InputDecoration(
             hintText: hintText,
             filled: true,
