@@ -25,6 +25,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<UserProvider>().fetchUser(widget.userId);
+      final currentUserId = context.read<AuthProvider>().currentUser?.id;
+      context.read<NetworkProvider>().loadProfileCounts(
+        widget.userId,
+        includeFollowing: currentUserId == widget.userId,
+      );
     });
   }
 
@@ -167,9 +172,9 @@ class _ProfileHeroHeader extends StatelessWidget {
                 Text(
                   user!.name,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 if (user!.isVerified) ...[
                   const SizedBox(width: 6),
@@ -200,14 +205,15 @@ class _ProfileBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId =
-        context.watch<AuthProvider>().currentUser?.id;
+    final currentUserId = context.watch<AuthProvider>().currentUser?.id;
     final networkProvider = context.watch<NetworkProvider>();
     final isCurrentUser = currentUserId == user.id;
     final isFollowing = networkProvider.isFollowing(user.id);
-    final isActionInProgress =
-        networkProvider.isFollowActionInProgress(user.id);
+    final isActionInProgress = networkProvider.isFollowActionInProgress(
+      user.id,
+    );
     final followerCount = networkProvider.followerCountFor(user);
+    final followingCount = networkProvider.followingCountFor(user);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,17 +227,14 @@ class _ProfileBody extends StatelessWidget {
           ),
           child: Row(
             children: [
-              _StatItem(
-                label: 'Reviews',
-                value: '${user.reviewIds.length}',
-              ),
-              _StatDivider(),
               _StatItem(label: 'Followers', value: _formatCount(followerCount)),
-              _StatDivider(),
-              _StatItem(
-                label: 'Following',
-                value: _formatCount(user.followingCount),
-              ),
+              if (isCurrentUser) ...[
+                _StatDivider(),
+                _StatItem(
+                  label: 'Following',
+                  value: _formatCount(followingCount),
+                ),
+              ],
             ],
           ),
         ),
@@ -246,14 +249,16 @@ class _ProfileBody extends StatelessWidget {
               onPressed: isActionInProgress
                   ? null
                   : () => context.read<NetworkProvider>().toggleFollow(
-                        currentUserId: currentUserId,
-                        targetUser: user,
-                      ),
+                      currentUserId: currentUserId,
+                      targetUser: user,
+                    ),
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    isFollowing ? AppColors.surfaceVariant : AppColors.primary,
-                foregroundColor:
-                    isFollowing ? AppColors.textPrimary : Colors.white,
+                backgroundColor: isFollowing
+                    ? AppColors.surfaceVariant
+                    : AppColors.primary,
+                foregroundColor: isFollowing
+                    ? AppColors.textPrimary
+                    : Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -280,9 +285,9 @@ class _ProfileBody extends StatelessWidget {
           Text(
             'About',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -300,9 +305,9 @@ class _ProfileBody extends StatelessWidget {
           Text(
             'Interests',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 10),
           Wrap(
@@ -318,9 +323,9 @@ class _ProfileBody extends StatelessWidget {
           Text(
             'Recent Places',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 10),
           GridView.builder(

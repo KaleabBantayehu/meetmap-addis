@@ -67,16 +67,18 @@ class FirebaseNetworkRepository implements NetworkRepository {
           .collection('followers')
           .doc(currentUserId);
 
-      await _firestore.runTransaction((transaction) async {
-        transaction.set(followingRef, {
-          'userId': targetUserId,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-        transaction.set(followerRef, {
-          'userId': currentUserId,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-      }).timeout(const Duration(seconds: 5));
+      await _firestore
+          .runTransaction((transaction) async {
+            transaction.set(followingRef, {
+              'userId': targetUserId,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+            transaction.set(followerRef, {
+              'userId': currentUserId,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+          })
+          .timeout(const Duration(seconds: 5));
     } catch (e) {
       throw Exception(mapRepositoryError(e, 'Failed to follow user'));
     }
@@ -101,10 +103,12 @@ class FirebaseNetworkRepository implements NetworkRepository {
           .collection('followers')
           .doc(currentUserId);
 
-      await _firestore.runTransaction((transaction) async {
-        transaction.delete(followingRef);
-        transaction.delete(followerRef);
-      }).timeout(const Duration(seconds: 5));
+      await _firestore
+          .runTransaction((transaction) async {
+            transaction.delete(followingRef);
+            transaction.delete(followerRef);
+          })
+          .timeout(const Duration(seconds: 5));
     } catch (e) {
       throw Exception(mapRepositoryError(e, 'Failed to unfollow user'));
     }
@@ -138,6 +142,21 @@ class FirebaseNetworkRepository implements NetworkRepository {
       return snapshot.size;
     } catch (e) {
       throw Exception(mapRepositoryError(e, 'Failed to load follower count'));
+    }
+  }
+
+  @override
+  Future<int> getFollowingCount(String userId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('following')
+          .get()
+          .timeout(const Duration(seconds: 5));
+      return snapshot.size;
+    } catch (e) {
+      throw Exception(mapRepositoryError(e, 'Failed to load following count'));
     }
   }
 }

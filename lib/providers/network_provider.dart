@@ -26,6 +26,7 @@ class NetworkProvider with ChangeNotifier {
   final Set<String> _followingUserIds = <String>{};
   final Set<String> _followActionInProgress = <String>{};
   final Map<String, int> _followerCounts = <String, int>{};
+  final Map<String, int> _followingCounts = <String, int>{};
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -96,6 +97,30 @@ class NetworkProvider with ChangeNotifier {
   int followerCountFor(UserModel user) =>
       _followerCounts[user.id] ?? user.followerCount;
 
+  int followingCountFor(UserModel user) =>
+      _followingCounts[user.id] ?? user.followingCount;
+
+  Future<void> loadProfileCounts(
+    String userId, {
+    required bool includeFollowing,
+  }) async {
+    if (userId.isEmpty) return;
+    try {
+      _followerCounts[userId] = await _networkRepository.getFollowerCount(
+        userId,
+      );
+      if (includeFollowing) {
+        _followingCounts[userId] = await _networkRepository.getFollowingCount(
+          userId,
+        );
+      }
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = cleanExceptionMessage(e, 'Unable to load profile counts');
+      notifyListeners();
+    }
+  }
+
   Future<void> loadFollowState(String currentUserId) async {
     final allUsers = [..._suggestedUsers, ..._trendingReviewers];
     for (final user in allUsers) {
@@ -155,7 +180,10 @@ class NetworkProvider with ChangeNotifier {
         _followingUserIds.remove(targetId);
       }
       _followerCounts[targetId] = previousCount;
-      _errorMessage = cleanExceptionMessage(e, 'Unable to update follow status');
+      _errorMessage = cleanExceptionMessage(
+        e,
+        'Unable to update follow status',
+      );
       return false;
     } finally {
       _followActionInProgress.remove(targetId);

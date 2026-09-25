@@ -237,6 +237,12 @@ describe('users', () => {
         email: 'alice@example.com',
       }),
     );
+    await assertFails(
+      setDoc(doc(dbFor('alice'), 'users/alice'), {
+        ...userData(),
+        phoneNumber: '+251911111111',
+      }),
+    );
   });
 });
 
