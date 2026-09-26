@@ -29,6 +29,14 @@ class _NearMeSectionState extends State<NearMeSection> {
   Future<void> _initializeLocation() async {
     if (!_isInitialized) {
       await _locationProvider.getCurrentLocation();
+      if (_locationProvider.hasLocation && mounted) {
+        await Provider.of<PlacesProvider>(context, listen: false)
+            .fetchNearbyPlaces(
+              userLat: _locationProvider.currentLatitude!,
+              userLng: _locationProvider.currentLongitude!,
+            );
+      }
+      if (!mounted) return;
       setState(() {
         _isInitialized = true;
       });

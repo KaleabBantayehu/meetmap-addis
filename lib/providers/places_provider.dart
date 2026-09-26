@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 import '../core/repositories/place_repository.dart';
 import '../core/repositories/repository_error_mapper.dart';
 import '../shared/models/place_model.dart';
@@ -7,12 +6,19 @@ import '../core/storage/local_storage_service.dart';
 import '../core/storage/connectivity_service.dart';
 import '../core/services/gebeta_directions_service.dart'
     show GebetaDirectionsService, DirectionsResult;
+import '../core/search/place_search_index.dart';
+import '../core/location/geo_bounds.dart';
 
 class PlacesProvider with ChangeNotifier {
   final PlaceRepository _placeRepository;
+  final bool Function() _isConnected;
 
-  PlacesProvider({required PlaceRepository placeRepository})
-    : _placeRepository = placeRepository {
+  PlacesProvider({
+    required PlaceRepository placeRepository,
+    bool Function()? isConnected,
+  }) : _placeRepository = placeRepository,
+       _isConnected =
+           isConnected ?? (() => ConnectivityService.instance.isConnected) {
     _loadSearchHistory(null);
     _loadCachedPlaces();
   }
@@ -25,9 +31,24 @@ class PlacesProvider with ChangeNotifier {
 
   List<PlaceModel> _searchResults = [];
   List<PlaceModel> get searchResults => _searchResults;
+  bool _isSearching = false;
+  bool get isSearching => _isSearching;
+  bool _isLoadingMoreSearchResults = false;
+  bool get isLoadingMoreSearchResults => _isLoadingMoreSearchResults;
+  bool _hasMoreSearchResults = false;
+  bool get hasMoreSearchResults => _hasMoreSearchResults;
+  String? _searchCursor;
+  String _normalizedSearchQuery = '';
+  int _searchRequestGeneration = 0;
 
   List<PlaceModel> _nearbyPlaces = [];
   List<PlaceModel> get nearbyPlaces => _nearbyPlaces;
+  List<PlaceModel> _mapPlaces = [];
+  List<PlaceModel> get mapPlaces => _mapPlaces;
+  bool _hasLoadedMapBounds = false;
+  bool get hasLoadedMapBounds => _hasLoadedMapBounds;
+  int _nearbyRequestGeneration = 0;
+  int _mapRequestGeneration = 0;
 
   List<String> _recentSearches = [];
   List<String> get recentSearches => _recentSearches;
@@ -36,12 +57,20 @@ class PlacesProvider with ChangeNotifier {
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+  bool _isLoadingMore = false;
+  bool get isLoadingMore => _isLoadingMore;
+  bool _hasMore = true;
+  bool get hasMore => _hasMore;
+  String? _nextCursor;
+  int _placesRequestGeneration = 0;
 
   bool _isAdding = false;
   bool get isAdding => _isAdding;
 
   bool _isLoadingNearby = false;
   bool get isLoadingNearby => _isLoadingNearby;
+  bool _hasLoadedNearby = false;
+  bool get hasLoadedNearby => _hasLoadedNearby;
 
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
@@ -50,6 +79,19 @@ class PlacesProvider with ChangeNotifier {
     if (_sessionUserId == userId) return;
     _sessionGeneration++;
     _sessionUserId = userId;
+    _nearbyRequestGeneration++;
+    _mapRequestGeneration++;
+    _nearbyPlaces = [];
+    _mapPlaces = [];
+    _hasLoadedMapBounds = false;
+    _hasLoadedNearby = false;
+    _searchRequestGeneration++;
+    _searchResults = [];
+    _normalizedSearchQuery = '';
+    _searchCursor = null;
+    _hasMoreSearchResults = false;
+    _isSearching = false;
+    _isLoadingMoreSearchResults = false;
     _recentSearches = [];
     _loadSearchHistory(userId);
     notifyListeners();
@@ -132,6 +174,7 @@ class PlacesProvider with ChangeNotifier {
       _sessionUserId == userId && _sessionGeneration == generation;
 
   Future<void> fetchPlaces() async {
+    final requestGeneration = ++_placesRequestGeneration;
     if (_places.isEmpty) {
       _isLoading = true;
       notifyListeners();
@@ -139,9 +182,12 @@ class PlacesProvider with ChangeNotifier {
     _errorMessage = null;
 
     try {
-      if (ConnectivityService.instance.isConnected) {
-        final newPlaces = await _placeRepository.fetchPlaces();
-        _places = newPlaces;
+      if (_isConnected()) {
+        final page = await _placeRepository.fetchPlacesPage();
+        if (requestGeneration != _placesRequestGeneration) return;
+        _places = page.items;
+        _nextCursor = page.nextCursor;
+        _hasMore = page.hasMore;
         await LocalStorageService.instance.saveCachedPlaces(_places);
         debugPrint(
           'Successfully synced ${_places.length} places from Firestore.',
@@ -158,52 +204,183 @@ class PlacesProvider with ChangeNotifier {
         _loadCachedPlaces();
       }
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (requestGeneration == _placesRequestGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> loadMorePlaces() async {
+    if (_isLoadingMore || !_hasMore || !_isConnected()) {
+      return;
+    }
+    final requestGeneration = _placesRequestGeneration;
+    _isLoadingMore = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final page = await _placeRepository.fetchPlacesPage(cursor: _nextCursor);
+      if (requestGeneration != _placesRequestGeneration) {
+        return;
+      }
+      final knownIds = _places.map((place) => place.id).toSet();
+      _places.addAll(page.items.where((place) => knownIds.add(place.id)));
+      _nextCursor = page.nextCursor;
+      _hasMore = page.hasMore;
+      await LocalStorageService.instance.saveCachedPlaces(_places);
+    } catch (e) {
+      if (requestGeneration == _placesRequestGeneration) {
+        _errorMessage = cleanExceptionMessage(e, 'Failed to load more places');
+      }
+    } finally {
+      if (requestGeneration == _placesRequestGeneration) {
+        _isLoadingMore = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<void> searchPlaces(String query) async {
-    _isLoading = true;
+    final normalized = normalizePlaceSearchQuery(query);
+    final requestGeneration = ++_searchRequestGeneration;
+    final sessionGeneration = _sessionGeneration;
+    final sessionUserId = _sessionUserId;
+
+    _normalizedSearchQuery = normalized;
+    _searchCursor = null;
+    _hasMoreSearchResults = false;
+    _isLoadingMoreSearchResults = false;
     _errorMessage = null;
+
+    if (normalized.length < placeSearchMinimumLength) {
+      _searchResults = [];
+      _isSearching = false;
+      notifyListeners();
+      return;
+    }
+
+    _isSearching = true;
     notifyListeners();
 
-    // Always normalise so 'CAFE' and 'cafe' produce identical results.
-    final normalized = query.trim().toLowerCase();
-
-    // Client-side predicate used both as primary (offline) and merge (online).
-    bool matchesLocal(PlaceModel place) {
-      return place.name.toLowerCase().contains(normalized) ||
-          place.category.toLowerCase().contains(normalized) ||
-          place.location.toLowerCase().contains(normalized) ||
-          place.tags.any((t) => t.toLowerCase().contains(normalized));
-    }
-
     try {
-      if (ConnectivityService.instance.isConnected) {
-        // Pass the normalised query to the repository.
-        final remoteResults =
-            await _placeRepository.searchPlaces(normalized);
-        // Merge: remote results first, then any locally-matching places
-        // that Firestore might have missed due to case differences.
-        final remoteIds = remoteResults.map((p) => p.id).toSet();
-        final localExtras = _places
-            .where((p) => matchesLocal(p) && !remoteIds.contains(p.id))
-            .toList();
-        _searchResults = [...remoteResults, ...localExtras];
+      if (_isConnected()) {
+        final page = await _placeRepository.searchPlacesPage(normalized);
+        if (!_isCurrentSearch(
+          normalized,
+          requestGeneration,
+          sessionUserId,
+          sessionGeneration,
+        )) {
+          return;
+        }
+        _searchResults = page.items;
+        _searchCursor = page.nextCursor;
+        _hasMoreSearchResults = page.hasMore;
       } else {
-        _searchResults = _places.where(matchesLocal).toList();
+        _searchResults = _localSearch(normalized);
       }
     } catch (e) {
-      _errorMessage = cleanExceptionMessage(e, 'Failed to search places');
-      debugPrint('Error searching places: $e');
-      // Always fall back to a local, case-insensitive pass.
-      _searchResults = _places.where(matchesLocal).toList();
+      if (_isCurrentSearch(
+        normalized,
+        requestGeneration,
+        sessionUserId,
+        sessionGeneration,
+      )) {
+        _errorMessage = cleanExceptionMessage(e, 'Failed to search places');
+        debugPrint('Error searching places: $e');
+        _searchResults = _localSearch(normalized);
+      }
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (_isCurrentSearch(
+        normalized,
+        requestGeneration,
+        sessionUserId,
+        sessionGeneration,
+      )) {
+        _isSearching = false;
+        notifyListeners();
+      }
     }
   }
+
+  Future<void> loadMoreSearchResults() async {
+    if (_isLoadingMoreSearchResults ||
+        !_hasMoreSearchResults ||
+        !_isConnected()) {
+      return;
+    }
+    final normalized = _normalizedSearchQuery;
+    final requestGeneration = _searchRequestGeneration;
+    final sessionGeneration = _sessionGeneration;
+    final sessionUserId = _sessionUserId;
+    _isLoadingMoreSearchResults = true;
+    notifyListeners();
+
+    try {
+      final page = await _placeRepository.searchPlacesPage(
+        normalized,
+        cursor: _searchCursor,
+      );
+      if (!_isCurrentSearch(
+        normalized,
+        requestGeneration,
+        sessionUserId,
+        sessionGeneration,
+      )) {
+        return;
+      }
+      final knownIds = _searchResults.map((place) => place.id).toSet();
+      _searchResults.addAll(
+        page.items.where((place) => knownIds.add(place.id)),
+      );
+      _searchCursor = page.nextCursor;
+      _hasMoreSearchResults = page.hasMore;
+    } catch (e) {
+      if (_isCurrentSearch(
+        normalized,
+        requestGeneration,
+        sessionUserId,
+        sessionGeneration,
+      )) {
+        _errorMessage = cleanExceptionMessage(
+          e,
+          'Failed to load more search results',
+        );
+      }
+    } finally {
+      if (_isCurrentSearch(
+        normalized,
+        requestGeneration,
+        sessionUserId,
+        sessionGeneration,
+      )) {
+        _isLoadingMoreSearchResults = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  List<PlaceModel> _localSearch(String normalized) {
+    return _places.where((place) {
+      return buildPlaceSearchPrefixes([
+        place.name,
+        place.category,
+        place.location,
+        ...place.tags,
+      ]).contains(normalized);
+    }).toList();
+  }
+
+  bool _isCurrentSearch(
+    String normalized,
+    int requestGeneration,
+    String? sessionUserId,
+    int sessionGeneration,
+  ) =>
+      normalized == _normalizedSearchQuery &&
+      requestGeneration == _searchRequestGeneration &&
+      _isCurrentSession(sessionUserId, sessionGeneration);
 
   Future<bool> addPlace(PlaceModel place) async {
     if (_isAdding) {
@@ -212,7 +389,7 @@ class PlacesProvider with ChangeNotifier {
       return false;
     }
 
-    if (!ConnectivityService.instance.isConnected) {
+    if (!_isConnected()) {
       _errorMessage = 'Internet connection required to publish a place.';
       notifyListeners();
       return false;
@@ -238,8 +415,10 @@ class PlacesProvider with ChangeNotifier {
       await LocalStorageService.instance.saveCachedPlaces(_places);
 
       try {
-        final refreshedPlaces = await _placeRepository.fetchPlaces();
-        _places = refreshedPlaces;
+        final page = await _placeRepository.fetchPlacesPage();
+        _places = page.items;
+        _nextCursor = page.nextCursor;
+        _hasMore = page.hasMore;
         await LocalStorageService.instance.saveCachedPlaces(_places);
       } catch (refreshError) {
         debugPrint('Place created, but refresh failed: $refreshError');
@@ -280,53 +459,96 @@ class PlacesProvider with ChangeNotifier {
     required double userLng,
     double radiusKm = 5.0,
   }) async {
+    final requestGeneration = ++_nearbyRequestGeneration;
+    final sessionGeneration = _sessionGeneration;
+    final sessionUserId = _sessionUserId;
     _isLoadingNearby = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      if (_places.isEmpty) {
-        await fetchPlaces();
-      }
-
-      _nearbyPlaces = _places.where((place) {
-        final distance = _calculateDistance(
-          userLat,
-          userLng,
-          place.latitude,
-          place.longitude,
-        );
-        return distance <= radiusKm;
-      }).toList();
-
-      _nearbyPlaces.sort((a, b) {
-        final distA = _calculateDistance(
-          userLat,
-          userLng,
-          a.latitude,
-          a.longitude,
-        );
-        final distB = _calculateDistance(
-          userLat,
-          userLng,
-          b.latitude,
-          b.longitude,
-        );
-        return distA.compareTo(distB);
-      });
-
-      debugPrint(
-        'Found ${_nearbyPlaces.length} places within ${radiusKm}km',
+      final page = await _placeRepository.fetchNearbyPlaces(
+        latitude: userLat,
+        longitude: userLng,
+        radiusKm: radiusKm,
       );
+      if (!_isCurrentGeographicRequest(
+        requestGeneration,
+        _nearbyRequestGeneration,
+        sessionUserId,
+        sessionGeneration,
+      )) {
+        return;
+      }
+      _nearbyPlaces = page.items;
+      _hasLoadedNearby = true;
+
+      debugPrint('Found ${_nearbyPlaces.length} places within ${radiusKm}km');
       notifyListeners();
     } catch (e) {
-      _errorMessage = cleanExceptionMessage(e, 'Failed to load nearby places');
-      debugPrint('Error fetching nearby places: $e');
+      if (_isCurrentGeographicRequest(
+        requestGeneration,
+        _nearbyRequestGeneration,
+        sessionUserId,
+        sessionGeneration,
+      )) {
+        _errorMessage = cleanExceptionMessage(
+          e,
+          'Failed to load nearby places',
+        );
+        debugPrint('Error fetching nearby places: $e');
+      }
     } finally {
-      _isLoadingNearby = false;
-      notifyListeners();
+      if (_isCurrentGeographicRequest(
+        requestGeneration,
+        _nearbyRequestGeneration,
+        sessionUserId,
+        sessionGeneration,
+      )) {
+        _isLoadingNearby = false;
+        notifyListeners();
+      }
     }
   }
+
+  Future<void> fetchPlacesInBounds(GeoBounds bounds) async {
+    if (!bounds.isValid || !_isConnected()) return;
+    final requestGeneration = ++_mapRequestGeneration;
+    final sessionGeneration = _sessionGeneration;
+    final sessionUserId = _sessionUserId;
+    try {
+      final page = await _placeRepository.fetchPlacesInBounds(bounds);
+      if (!_isCurrentGeographicRequest(
+        requestGeneration,
+        _mapRequestGeneration,
+        sessionUserId,
+        sessionGeneration,
+      )) {
+        return;
+      }
+      _mapPlaces = page.items;
+      _hasLoadedMapBounds = true;
+      notifyListeners();
+    } catch (e) {
+      if (_isCurrentGeographicRequest(
+        requestGeneration,
+        _mapRequestGeneration,
+        sessionUserId,
+        sessionGeneration,
+      )) {
+        debugPrint('Error loading places for map bounds: $e');
+      }
+    }
+  }
+
+  bool _isCurrentGeographicRequest(
+    int requestGeneration,
+    int currentRequestGeneration,
+    String? sessionUserId,
+    int sessionGeneration,
+  ) =>
+      requestGeneration == currentRequestGeneration &&
+      _isCurrentSession(sessionUserId, sessionGeneration);
 
   List<PlaceModel> getNearbyPlacesByCategory({
     required double userLat,
@@ -334,21 +556,30 @@ class PlacesProvider with ChangeNotifier {
     required String category,
     double radiusKm = 5.0,
   }) {
-    return _places.where((place) {
-      final distance = _calculateDistance(
-        userLat,
-        userLng,
-        place.latitude,
-        place.longitude,
+    return _nearbyPlaces.where((place) {
+      final distance = distanceKm(
+        fromLatitude: userLat,
+        fromLongitude: userLng,
+        toLatitude: place.latitude,
+        toLongitude: place.longitude,
       );
       return distance <= radiusKm &&
           place.category.toLowerCase() == category.toLowerCase();
-    }).toList()
-      ..sort((a, b) {
-        final distA = _calculateDistance(userLat, userLng, a.latitude, a.longitude);
-        final distB = _calculateDistance(userLat, userLng, b.latitude, b.longitude);
-        return distA.compareTo(distB);
-      });
+    }).toList()..sort((a, b) {
+      final distA = distanceKm(
+        fromLatitude: userLat,
+        fromLongitude: userLng,
+        toLatitude: a.latitude,
+        toLongitude: a.longitude,
+      );
+      final distB = distanceKm(
+        fromLatitude: userLat,
+        fromLongitude: userLng,
+        toLatitude: b.latitude,
+        toLongitude: b.longitude,
+      );
+      return distA.compareTo(distB);
+    });
   }
 
   double getDistanceToPlace({
@@ -356,24 +587,12 @@ class PlacesProvider with ChangeNotifier {
     required double userLng,
     required PlaceModel place,
   }) {
-    return _calculateDistance(userLat, userLng, place.latitude, place.longitude);
-  }
-
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-    const earthRadiusKm = 6371.0;
-    final dLat = _toRad(lat2 - lat1);
-    final dLon = _toRad(lon2 - lon1);
-    final a = (math.sin(dLat / 2) * math.sin(dLat / 2)) +
-        (math.cos(_toRad(lat1)) *
-            math.cos(_toRad(lat2)) *
-            math.sin(dLon / 2) *
-            math.sin(dLon / 2));
-    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-    return earthRadiusKm * c;
-  }
-
-  double _toRad(double degree) {
-    return degree * math.pi / 180;
+    return distanceKm(
+      fromLatitude: userLat,
+      fromLongitude: userLng,
+      toLatitude: place.latitude,
+      toLongitude: place.longitude,
+    );
   }
 
   Future<DirectionsResult?> getDirectionsToCoords({
@@ -430,10 +649,18 @@ class PlacesProvider with ChangeNotifier {
       case SortOption.nearest:
         if (userLat != null && userLng != null) {
           sorted.sort((a, b) {
-            final distA =
-                _calculateDistance(userLat, userLng, a.latitude, a.longitude);
-            final distB =
-                _calculateDistance(userLat, userLng, b.latitude, b.longitude);
+            final distA = distanceKm(
+              fromLatitude: userLat,
+              fromLongitude: userLng,
+              toLatitude: a.latitude,
+              toLongitude: a.longitude,
+            );
+            final distB = distanceKm(
+              fromLatitude: userLat,
+              fromLongitude: userLng,
+              toLatitude: b.latitude,
+              toLongitude: b.longitude,
+            );
             return distA.compareTo(distB);
           });
         }

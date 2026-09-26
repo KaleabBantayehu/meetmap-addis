@@ -1,6 +1,8 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart';
 
+import 'cache_keys.dart';
+
 class SecureStorageService {
   static SecureStorageService? _instance;
   late final FlutterSecureStorage _storage;
@@ -9,17 +11,19 @@ class SecureStorageService {
 
   static SecureStorageService get instance {
     if (_instance == null) {
-      throw Exception('SecureStorageService must be initialized by calling init()');
+      throw Exception(
+        'SecureStorageService must be initialized by calling init()',
+      );
     }
     return _instance!;
   }
 
   static Future<void> init() async {
     if (_instance != null) return;
-    
+
     const storage = FlutterSecureStorage();
     _instance = SecureStorageService._().._storage = storage;
-    
+
     // Warm up the secure storage mechanism to detect platform-level issues early
     try {
       await _instance!._storage.write(key: 'init_test', value: 'warmup');
@@ -39,6 +43,16 @@ class SecureStorageService {
 
   Future<void> delete(String key) async {
     await _storage.delete(key: key);
+  }
+
+  Future<void> clearUserData(String userId) async {
+    await delete(CacheKeys.privateUserSession(userId));
+
+    final activeUserId = await read(CacheKeys.activeUserSessionUid);
+    if (activeUserId == userId) {
+      await delete(CacheKeys.legacyUserSession);
+      await delete(CacheKeys.activeUserSessionUid);
+    }
   }
 
   Future<void> clearAll() async {

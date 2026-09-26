@@ -1,6 +1,9 @@
 import '../../../shared/data/mock_places.dart';
 import '../../../shared/models/place_model.dart';
 import '../place_repository.dart';
+import '../page_result.dart';
+import '../../search/place_search_index.dart';
+import '../../location/geo_bounds.dart';
 
 class MockPlaceRepository implements PlaceRepository {
   final List<PlaceModel> _places = List.from(mockPlaces);
@@ -25,6 +28,111 @@ class MockPlaceRepository implements PlaceRepository {
   }
 
   @override
+  Future<PageResult<PlaceModel>> fetchPlacesPage({
+    String? cursor,
+    int limit = 20,
+  }) async {
+    final start = cursor == null
+        ? 0
+        : _places.indexWhere((p) => p.id == cursor) + 1;
+    final safeStart = start < 0 ? 0 : start;
+    final items = _places.skip(safeStart).take(limit).toList();
+    return PageResult(
+      items: items,
+      nextCursor: items.isEmpty ? null : items.last.id,
+      hasMore: safeStart + items.length < _places.length,
+    );
+  }
+
+  @override
+  Future<PageResult<PlaceModel>> fetchPlacesInBounds(
+    GeoBounds bounds, {
+    String? cursor,
+    int limit = 50,
+  }) async {
+    final matches =
+        _places
+            .where(
+              (place) =>
+                  hasValidCoordinates(place.latitude, place.longitude) &&
+                  bounds.contains(place.latitude, place.longitude),
+            )
+            .toList()
+          ..sort(_compareGeographicOrder);
+    final decodedCursor = decodeGeoCursor(cursor);
+    final start = decodedCursor == null
+        ? 0
+        : matches.indexWhere((place) => place.id == decodedCursor.documentId) +
+              1;
+    final safeStart = start < 0 ? 0 : start;
+    final items = matches.skip(safeStart).take(limit).toList();
+    final last = items.isEmpty ? null : items.last;
+    return PageResult(
+      items: items,
+      nextCursor: last == null
+          ? null
+          : encodeGeoCursor(last.latitude, last.longitude, last.id),
+      hasMore: safeStart + items.length < matches.length,
+    );
+  }
+
+  @override
+  Future<PageResult<PlaceModel>> fetchNearbyPlaces({
+    required double latitude,
+    required double longitude,
+    required double radiusKm,
+    String? cursor,
+    int candidateLimit = 50,
+  }) async {
+    final page = await fetchPlacesInBounds(
+      GeoBounds.around(
+        latitude: latitude,
+        longitude: longitude,
+        radiusKm: radiusKm,
+      ),
+      cursor: cursor,
+      limit: candidateLimit,
+    );
+    final places =
+        page.items.where((place) {
+          return distanceKm(
+                fromLatitude: latitude,
+                fromLongitude: longitude,
+                toLatitude: place.latitude,
+                toLongitude: place.longitude,
+              ) <=
+              radiusKm;
+        }).toList()..sort((a, b) {
+          final aDistance = distanceKm(
+            fromLatitude: latitude,
+            fromLongitude: longitude,
+            toLatitude: a.latitude,
+            toLongitude: a.longitude,
+          );
+          final bDistance = distanceKm(
+            fromLatitude: latitude,
+            fromLongitude: longitude,
+            toLatitude: b.latitude,
+            toLongitude: b.longitude,
+          );
+          return aDistance.compareTo(bDistance);
+        });
+    return PageResult(
+      items: places,
+      nextCursor: page.nextCursor,
+      hasMore: page.hasMore,
+    );
+  }
+
+  int _compareGeographicOrder(PlaceModel a, PlaceModel b) {
+    final latitude = a.latitude.compareTo(b.latitude);
+    if (latitude != 0) return latitude;
+    final longitude = a.longitude.compareTo(b.longitude);
+    if (longitude != 0) return longitude;
+    return a.id.compareTo(b.id);
+  }
+
+  @override
   Future<List<PlaceModel>> fetchFeaturedPlaces() async {
     await Future.delayed(const Duration(milliseconds: 300));
     return _places.where((p) => p.rating >= 4.7).toList();
@@ -42,15 +150,39 @@ class MockPlaceRepository implements PlaceRepository {
 
   @override
   Future<List<PlaceModel>> searchPlaces(String query) async {
+    return (await searchPlacesPage(query)).items;
+  }
+
+  @override
+  Future<PageResult<PlaceModel>> searchPlacesPage(
+    String normalizedQuery, {
+    String? cursor,
+    int limit = 20,
+  }) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    if (query.isEmpty) return List.from(_places);
-    final normalized = query.toLowerCase();
-    return _places.where((place) {
-      return place.name.toLowerCase().contains(normalized) ||
-          place.category.toLowerCase().contains(normalized) ||
-          place.location.toLowerCase().contains(normalized) ||
-          place.tags.any((t) => t.toLowerCase().contains(normalized));
-    }).toList();
+    final query = normalizePlaceSearchQuery(normalizedQuery);
+    if (query.length < placeSearchMinimumLength) {
+      return const PageResult(items: [], nextCursor: null, hasMore: false);
+    }
+    final matches = _places.where((place) {
+      final prefixes = buildPlaceSearchPrefixes([
+        place.name,
+        place.category,
+        place.location,
+        ...place.tags,
+      ]);
+      return prefixes.contains(query);
+    }).toList()..sort((a, b) => a.id.compareTo(b.id));
+    final start = cursor == null
+        ? 0
+        : matches.indexWhere((place) => place.id == cursor) + 1;
+    final safeStart = start < 0 ? 0 : start;
+    final items = matches.skip(safeStart).take(limit).toList();
+    return PageResult(
+      items: items,
+      nextCursor: items.isEmpty ? null : items.last.id,
+      hasMore: safeStart + items.length < matches.length,
+    );
   }
 
   @override

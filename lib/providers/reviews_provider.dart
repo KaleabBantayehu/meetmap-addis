@@ -9,18 +9,30 @@ import 'auth_provider.dart';
 class ReviewsProvider with ChangeNotifier {
   final ReviewRepository _reviewRepository;
   final AuthProvider _authProvider;
+  final bool Function() _isConnected;
 
   ReviewsProvider({
     required ReviewRepository reviewRepository,
     required AuthProvider authProvider,
+    bool Function()? isConnected,
   }) : _reviewRepository = reviewRepository,
-       _authProvider = authProvider;
+       _authProvider = authProvider,
+       _isConnected =
+           isConnected ?? (() => ConnectivityService.instance.isConnected);
 
   final Map<String, List<ReviewModel>> _reviewsByPlace = {};
   Map<String, List<ReviewModel>> get reviewsByPlace => _reviewsByPlace;
 
   final Map<String, bool> _loadingStates = {};
   bool isLoading(String placeId) => _loadingStates[placeId] ?? false;
+  final Map<String, bool> _loadingMoreStates = {};
+  final Map<String, bool> _hasMoreStates = {};
+  final Map<String, bool> _loadedStates = {};
+  final Map<String, String?> _nextCursors = {};
+  final Map<String, int> _requestGenerations = {};
+  bool isLoadingMore(String placeId) => _loadingMoreStates[placeId] ?? false;
+  bool hasMore(String placeId) => _hasMoreStates[placeId] ?? false;
+  bool hasLoaded(String placeId) => _loadedStates[placeId] ?? false;
 
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
@@ -51,6 +63,8 @@ class ReviewsProvider with ChangeNotifier {
   }
 
   Future<void> fetchReviews(String placeId) async {
+    final generation = (_requestGenerations[placeId] ?? 0) + 1;
+    _requestGenerations[placeId] = generation;
     _loadingStates[placeId] = true;
     _errorMessage = null;
     notifyListeners();
@@ -59,17 +73,59 @@ class ReviewsProvider with ChangeNotifier {
     _loadFromCache(placeId);
 
     try {
-      if (ConnectivityService.instance.isConnected) {
-        final reviews = await _reviewRepository.fetchReviews(placeId);
-        _reviewsByPlace[placeId] = reviews;
+      if (_isConnected()) {
+        final page = await _reviewRepository.fetchReviewsPage(placeId);
+        if (_requestGenerations[placeId] != generation) return;
+        _reviewsByPlace[placeId] = page.items;
+        _nextCursors[placeId] = page.nextCursor;
+        _hasMoreStates[placeId] = page.hasMore;
+        _loadedStates[placeId] = true;
         await _saveToCache(placeId);
       }
     } catch (e) {
       _errorMessage = cleanExceptionMessage(e, 'Failed to load reviews');
       debugPrint('Failed to fetch reviews: $e');
     } finally {
-      _loadingStates[placeId] = false;
-      notifyListeners();
+      if (_requestGenerations[placeId] == generation) {
+        _loadingStates[placeId] = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> loadMoreReviews(String placeId) async {
+    if (isLoadingMore(placeId) || !hasMore(placeId) || !_isConnected()) {
+      return;
+    }
+    final generation = _requestGenerations[placeId] ?? 0;
+    _loadingMoreStates[placeId] = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final page = await _reviewRepository.fetchReviewsPage(
+        placeId,
+        cursor: _nextCursors[placeId],
+      );
+      if (_requestGenerations[placeId] != generation) {
+        return;
+      }
+      final reviews = _reviewsByPlace[placeId] ?? <ReviewModel>[];
+      final ids = reviews.map((review) => review.id).toSet();
+      reviews.addAll(page.items.where((review) => ids.add(review.id)));
+      reviews.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      _reviewsByPlace[placeId] = reviews;
+      _nextCursors[placeId] = page.nextCursor;
+      _hasMoreStates[placeId] = page.hasMore;
+      await _saveToCache(placeId);
+    } catch (e) {
+      if (_requestGenerations[placeId] == generation) {
+        _errorMessage = cleanExceptionMessage(e, 'Failed to load more reviews');
+      }
+    } finally {
+      if (_requestGenerations[placeId] == generation) {
+        _loadingMoreStates[placeId] = false;
+        notifyListeners();
+      }
     }
   }
 

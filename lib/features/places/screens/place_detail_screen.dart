@@ -65,10 +65,12 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
 
     _fetchReviews(resolvedPlace.id);
 
-    final reviews = context.watch<ReviewsProvider>().getReviews(
-      resolvedPlace.id,
-    );
-    final displayedPlace = reviews.isEmpty
+    final reviewsProvider = context.watch<ReviewsProvider>();
+    final reviews = reviewsProvider.getReviews(resolvedPlace.id);
+    final reviewsAreComplete =
+        reviewsProvider.hasLoaded(resolvedPlace.id) &&
+        !reviewsProvider.hasMore(resolvedPlace.id);
+    final displayedPlace = reviews.isEmpty || !reviewsAreComplete
         ? resolvedPlace
         : resolvedPlace.copyWith(
             rating:

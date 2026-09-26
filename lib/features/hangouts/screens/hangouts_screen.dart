@@ -228,6 +228,24 @@ class _HangoutsScreenState extends State<HangoutsScreen> {
                                 ),
                               ),
                             ),
+                            if (hangoutsProvider.hasMore)
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton(
+                                  onPressed: hangoutsProvider.isLoadingMore
+                                      ? null
+                                      : hangoutsProvider.loadMoreHangouts,
+                                  child: hangoutsProvider.isLoadingMore
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Text('Load more hangouts'),
+                                ),
+                              ),
                           ],
 
                           const SizedBox(height: 16),

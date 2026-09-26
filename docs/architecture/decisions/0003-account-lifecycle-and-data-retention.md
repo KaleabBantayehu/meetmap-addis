@@ -89,6 +89,32 @@ Firestore rules continue denying client deletion of public profiles and private
 account documents, trusted lifecycle-field injection, aggregate mutation, and
 cross-user relationship manipulation.
 
+## Active Discovery Reads
+
+Event and hangout models continue treating a missing `lifecycleStatus` as
+`active` for legacy deserialization and cached-data compatibility. Firestore
+cannot query for documents where a field is absent, while `!=` and `not-in`
+queries also exclude missing fields. Production activation of lifecycle-aware
+reads therefore requires a controlled backfill before the matching client is
+released:
+
+- existing events without the field receive `lifecycleStatus: active`;
+- existing hangouts without the field receive `lifecycleStatus: active`;
+- retained events and hangouts keep their trusted `archived` and `inactive`
+  statuses;
+- new client-created events and hangouts write `active` explicitly.
+
+After that backfill, active discovery queries use an equality filter before
+document-ID pagination. This prevents known archived or inactive documents from
+consuming page reads and keeps `hasMore` tied to active documents. Provider and
+cache filtering remains as defense in depth. Place discovery is unchanged:
+`systemManaged` places are retained public content and remain discoverable.
+
+The lifecycle equality plus document-ID ordering uses Firestore's built-in
+single-field index. Featured events add equality filters for `lifecycleStatus`
+and `isFeatured`; this query uses Firestore index merging unless the production
+project explicitly requests a composite index. No speculative index is added.
+
 ## Reassessment Triggers
 
 Revisit this decision if legal deletion requirements require public-content

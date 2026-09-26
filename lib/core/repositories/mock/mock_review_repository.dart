@@ -1,5 +1,6 @@
 import '../../../shared/models/review_model.dart';
 import '../review_repository.dart';
+import '../page_result.dart';
 
 class MockReviewRepository implements ReviewRepository {
   final List<ReviewModel> _reviews = [
@@ -39,6 +40,27 @@ class MockReviewRepository implements ReviewRepository {
   }
 
   @override
+  Future<PageResult<ReviewModel>> fetchReviewsPage(
+    String placeId, {
+    String? cursor,
+    int limit = 15,
+  }) async {
+    final matching =
+        _reviews.where((review) => review.placeId == placeId).toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final start = cursor == null
+        ? 0
+        : matching.indexWhere((r) => r.id == cursor) + 1;
+    final safeStart = start < 0 ? 0 : start;
+    final items = matching.skip(safeStart).take(limit).toList();
+    return PageResult(
+      items: items,
+      nextCursor: items.isEmpty ? null : items.last.id,
+      hasMore: safeStart + items.length < matching.length,
+    );
+  }
+
+  @override
   Future<ReviewModel> createReview(String placeId, ReviewModel review) async {
     await Future.delayed(const Duration(milliseconds: 300));
     final newReview = review.copyWith(
@@ -57,7 +79,12 @@ class MockReviewRepository implements ReviewRepository {
   }
 
   @override
-  Future<void> toggleLike(String reviewId, String placeId, String userId, bool isLiking) async {
+  Future<void> toggleLike(
+    String reviewId,
+    String placeId,
+    String userId,
+    bool isLiking,
+  ) async {
     await Future.delayed(const Duration(milliseconds: 200));
     final index = _reviews.indexWhere((r) => r.id == reviewId);
     if (index != -1) {

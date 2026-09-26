@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../shared/models/review_model.dart';
 import '../review_repository.dart';
+import '../page_result.dart';
 import '../repository_error_mapper.dart';
 
 class FirebaseReviewRepository implements ReviewRepository {
@@ -14,16 +15,35 @@ class FirebaseReviewRepository implements ReviewRepository {
 
   @override
   Future<List<ReviewModel>> fetchReviews(String placeId) async {
+    return (await fetchReviewsPage(placeId)).items;
+  }
+
+  @override
+  Future<PageResult<ReviewModel>> fetchReviewsPage(
+    String placeId, {
+    String? cursor,
+    int limit = 15,
+  }) async {
     try {
-      final snapshot = await _firestore
+      Query<Map<String, dynamic>> query = _firestore
           .collection('places')
           .doc(placeId)
           .collection('reviews')
+          .orderBy(FieldPath.documentId, descending: true)
+          .limit(limit + 1);
+      if (cursor != null) query = query.startAfter([cursor]);
+      final snapshot = await query
           .get(const GetOptions(source: Source.server))
           .timeout(const Duration(seconds: 4));
-      final reviews = snapshot.docs.map(_mapDocToReview).toList();
+      final hasMore = snapshot.docs.length > limit;
+      final docs = snapshot.docs.take(limit).toList();
+      final reviews = docs.map(_mapDocToReview).toList();
       reviews.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      return reviews;
+      return PageResult(
+        items: reviews,
+        nextCursor: docs.isEmpty ? null : docs.last.id,
+        hasMore: hasMore,
+      );
     } catch (e) {
       throw Exception(mapRepositoryError(e, 'Failed to load reviews'));
     }

@@ -159,26 +159,32 @@ class NetworkProvider with ChangeNotifier {
   Future<void> loadFollowState(String currentUserId) async {
     final generation = _sessionGeneration;
     if (_sessionUserId != currentUserId) return;
-    final allUsers = [..._suggestedUsers, ..._trendingReviewers];
-    for (final user in allUsers) {
-      if (user.id.isEmpty || user.id == currentUserId) continue;
-      try {
-        final isFollowingUser = await _networkRepository.isFollowing(
-          currentUserId,
-          user.id,
-        );
-        if (!_isCurrentSession(currentUserId, generation)) return;
-        if (isFollowingUser) {
-          _followingUserIds.add(user.id);
-        } else {
-          _followingUserIds.remove(user.id);
-        }
-        final count = await _networkRepository.getFollowerCount(user.id);
-        if (!_isCurrentSession(currentUserId, generation)) return;
-        _followerCounts[user.id] = count;
-      } catch (_) {}
+    final targetIds = [..._suggestedUsers, ..._trendingReviewers]
+        .map((user) => user.id)
+        .where((id) => id.isNotEmpty && id != currentUserId)
+        .toSet()
+        .toList();
+    try {
+      final summary = await _networkRepository.getRelationshipSummary(
+        currentUserId,
+        targetIds,
+      );
+      if (!_isCurrentSession(currentUserId, generation)) return;
+      _followingUserIds
+        ..clear()
+        ..addAll(summary.followingUserIds);
+      _followerCounts
+        ..clear()
+        ..addAll(summary.followerCounts);
+      notifyListeners();
+    } catch (e) {
+      if (!_isCurrentSession(currentUserId, generation)) return;
+      _errorMessage = cleanExceptionMessage(
+        e,
+        'Unable to load relationship state',
+      );
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   Future<bool> toggleFollow({

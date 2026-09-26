@@ -202,7 +202,7 @@ class _EventsScreenState extends State<EventsScreen> {
                     )
                   else
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 120),
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
                       sliver: SliverList.separated(
                         itemCount: filtered.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 16),
@@ -221,6 +221,26 @@ class _EventsScreenState extends State<EventsScreen> {
                             },
                           );
                         },
+                      ),
+                    ),
+                  if (!isLoading && eventsProvider.hasMore)
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
+                      sliver: SliverToBoxAdapter(
+                        child: OutlinedButton(
+                          onPressed: eventsProvider.isLoadingMore
+                              ? null
+                              : eventsProvider.loadMoreEvents,
+                          child: eventsProvider.isLoadingMore
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Load more events'),
+                        ),
                       ),
                     ),
                 ],

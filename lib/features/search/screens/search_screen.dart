@@ -90,13 +90,15 @@ class _SearchScreenState extends State<SearchScreen> {
     final placesProvider = Provider.of<PlacesProvider>(context);
     final savedProvider = Provider.of<SavedProvider>(context);
     final locationProvider = Provider.of<LocationProvider>(context);
-    
+
     // Determine the list of places to display:
     final List<PlaceModel> results;
     if (query.trim().isEmpty) {
       results = defaultSuggestionIds
           .map((id) {
-            final found = placesProvider.places.where((place) => place.id == id);
+            final found = placesProvider.places.where(
+              (place) => place.id == id,
+            );
             return found.isNotEmpty ? found.first : null;
           })
           .whereType<PlaceModel>()
@@ -107,7 +109,7 @@ class _SearchScreenState extends State<SearchScreen> {
       results = getFilteredPlaces(placesProvider.places);
     }
 
-    final isLoading = placesProvider.isLoading;
+    final isLoading = placesProvider.isSearching;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -122,11 +124,13 @@ class _SearchScreenState extends State<SearchScreen> {
                 setState(() {
                   query = value;
                 });
-                
+
                 // Debounce the remote search request
                 if (_debounce?.isActive ?? false) _debounce!.cancel();
                 _debounce = Timer(const Duration(milliseconds: 300), () {
-                  if (mounted && value.isNotEmpty && ConnectivityService.instance.isConnected) {
+                  if (mounted &&
+                      value.isNotEmpty &&
+                      ConnectivityService.instance.isConnected) {
                     placesProvider.searchPlaces(value);
                   }
                 });
@@ -148,7 +152,8 @@ class _SearchScreenState extends State<SearchScreen> {
                   RecentSearchChips(
                     searches: placesProvider.recentSearches,
                     onSelected: useRecentSearch,
-                    onRemove: (value) => placesProvider.removeRecentSearch(value),
+                    onRemove: (value) =>
+                        placesProvider.removeRecentSearch(value),
                     onClearAll: () => placesProvider.clearRecentSearches(),
                   ),
                   const SizedBox(height: 38),
@@ -162,37 +167,54 @@ class _SearchScreenState extends State<SearchScreen> {
                   else if (results.isEmpty)
                     SearchEmptyState(query: query)
                   else
-                    ...results.map(
-                      (place) {
-                        final String distLabel;
-                        if (locationProvider.hasLocation) {
-                          final km = placesProvider.getDistanceToPlace(
-                            userLat: locationProvider.currentLatitude!,
-                            userLng: locationProvider.currentLongitude!,
-                            place: place,
-                          );
-                          distLabel = '${km.toStringAsFixed(1)} km away';
-                        } else {
-                          distLabel = 'Nearby';
-                        }
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: SearchResultCard(
-                            place: place,
-                            distanceLabel: distLabel,
-                            isSaved: savedProvider.isSaved(place.id),
-                            onTap: () {
-                              if (query.isNotEmpty) {
-                                placesProvider.addRecentSearch(query);
-                              } else {
-                                placesProvider.addRecentSearch(place.name);
-                              }
-                              openPlaceDetails(place);
-                            },
-                            onSaveToggle: () => savedProvider.toggleSaved(place),
-                          ),
+                    ...results.map((place) {
+                      final String distLabel;
+                      if (locationProvider.hasLocation) {
+                        final km = placesProvider.getDistanceToPlace(
+                          userLat: locationProvider.currentLatitude!,
+                          userLng: locationProvider.currentLongitude!,
+                          place: place,
                         );
-                      },
+                        distLabel = '${km.toStringAsFixed(1)} km away';
+                      } else {
+                        distLabel = 'Nearby';
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: SearchResultCard(
+                          place: place,
+                          distanceLabel: distLabel,
+                          isSaved: savedProvider.isSaved(place.id),
+                          onTap: () {
+                            if (query.isNotEmpty) {
+                              placesProvider.addRecentSearch(query);
+                            } else {
+                              placesProvider.addRecentSearch(place.name);
+                            }
+                            openPlaceDetails(place);
+                          },
+                          onSaveToggle: () => savedProvider.toggleSaved(place),
+                        ),
+                      );
+                    }),
+                  if (query.trim().isNotEmpty &&
+                      placesProvider.hasMoreSearchResults)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: OutlinedButton(
+                        onPressed: placesProvider.isLoadingMoreSearchResults
+                            ? null
+                            : placesProvider.loadMoreSearchResults,
+                        child: placesProvider.isLoadingMoreSearchResults
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('Load more results'),
+                      ),
                     ),
                   const SizedBox(height: 34),
                   BrowseCategoryGrid(
@@ -216,10 +238,10 @@ class _SearchScreenState extends State<SearchScreen> {
   void useRecentSearch(String value) {
     searchController.text = value;
     setState(() => query = value);
-    
+
     final placesProvider = Provider.of<PlacesProvider>(context, listen: false);
     placesProvider.addRecentSearch(value);
-    
+
     if (ConnectivityService.instance.isConnected) {
       placesProvider.searchPlaces(value);
     }
@@ -230,11 +252,14 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() {
       selectedCategory = nextCategory;
     });
-    
+
     if (ConnectivityService.instance.isConnected) {
       final activeQuery = nextCategory.isNotEmpty ? nextCategory : query;
       if (activeQuery.isNotEmpty) {
-        Provider.of<PlacesProvider>(context, listen: false).searchPlaces(activeQuery);
+        Provider.of<PlacesProvider>(
+          context,
+          listen: false,
+        ).searchPlaces(activeQuery);
       }
     }
   }
@@ -244,5 +269,4 @@ class _SearchScreenState extends State<SearchScreen> {
       context,
     ).push(MaterialPageRoute(builder: (_) => PlaceDetailScreen(place: place)));
   }
-
 }

@@ -20,13 +20,15 @@ class PlaceReviewsSection extends StatelessWidget {
         final isLoading = reviewsProvider.isLoading(place.id);
         final visibleReviews = reviews.take(2).toList();
 
-        // Calculate dynamic average if we have local reviews
-        final averageRating = reviews.isEmpty
+        final reviewsAreComplete =
+            reviewsProvider.hasLoaded(place.id) &&
+            !reviewsProvider.hasMore(place.id);
+        final averageRating = reviews.isEmpty || !reviewsAreComplete
             ? place.rating
             : reviews.map((r) => r.rating).reduce((a, b) => a + b) /
                   reviews.length;
 
-        final reviewCount = reviews.isEmpty
+        final reviewCount = reviews.isEmpty || !reviewsAreComplete
             ? place.reviewCount
             : reviews.length;
 
@@ -85,6 +87,22 @@ class PlaceReviewsSection extends StatelessWidget {
                     ), // Added unique key for list integrity
                     padding: const EdgeInsets.only(bottom: 14),
                     child: _ReviewTile(review: review, placeId: place.id),
+                  ),
+                ),
+              if (reviewsProvider.hasMore(place.id))
+                Align(
+                  alignment: Alignment.center,
+                  child: TextButton(
+                    onPressed: reviewsProvider.isLoadingMore(place.id)
+                        ? null
+                        : () => reviewsProvider.loadMoreReviews(place.id),
+                    child: reviewsProvider.isLoadingMore(place.id)
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Load more reviews'),
                   ),
                 ),
               const SizedBox(height: 8),

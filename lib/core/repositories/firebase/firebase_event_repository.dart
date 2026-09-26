@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../shared/models/event_model.dart';
 import '../event_repository.dart';
+import '../page_result.dart';
 import '../repository_error_mapper.dart';
 
 class FirebaseEventRepository implements EventRepository {
@@ -16,16 +17,29 @@ class FirebaseEventRepository implements EventRepository {
 
   @override
   Future<List<EventModel>> getEvents() async {
+    return (await getEventsPage()).items;
+  }
+
+  @override
+  Future<PageResult<EventModel>> getEventsPage({
+    String? cursor,
+    int limit = 20,
+  }) async {
     try {
-      final snapshot = await _firestore
+      Query<Map<String, dynamic>> query = _firestore
           .collection('events')
-          .orderBy('date')
-          .get()
-          .timeout(const Duration(seconds: 5));
-      return snapshot.docs
-          .map(_mapDoc)
-          .where((event) => event.isActive)
-          .toList();
+          .where('lifecycleStatus', isEqualTo: 'active')
+          .orderBy(FieldPath.documentId)
+          .limit(limit + 1);
+      if (cursor != null) query = query.startAfter([cursor]);
+      final snapshot = await query.get().timeout(const Duration(seconds: 5));
+      final hasMore = snapshot.docs.length > limit;
+      final docs = snapshot.docs.take(limit).toList();
+      return PageResult(
+        items: docs.map(_mapDoc).where((event) => event.isActive).toList(),
+        nextCursor: docs.isEmpty ? null : docs.last.id,
+        hasMore: hasMore,
+      );
     } catch (e) {
       throw Exception(mapRepositoryError(e, 'Failed to load events'));
     }
@@ -34,19 +48,18 @@ class FirebaseEventRepository implements EventRepository {
   @override
   Future<EventModel?> getFeaturedEvent() async {
     try {
-      final events = await getEvents();
-      for (final event in events) {
-        if (event.isFeatured) return event;
+      final snapshot = await _firestore
+          .collection('events')
+          .where('lifecycleStatus', isEqualTo: 'active')
+          .where('isFeatured', isEqualTo: true)
+          .limit(10)
+          .get()
+          .timeout(const Duration(seconds: 5));
+      for (final event in snapshot.docs.map(_mapDoc)) {
+        if (event.isActive && event.isFeatured) return event;
       }
       return null;
     } catch (e) {
-      if (e.toString().contains('failed: precond')) {
-        final events = await getEvents();
-        for (final event in events) {
-          if (event.isFeatured) return event;
-        }
-        return null;
-      }
       throw Exception(mapRepositoryError(e, 'Failed to load featured event'));
     }
   }
@@ -74,7 +87,6 @@ class FirebaseEventRepository implements EventRepository {
       };
       data.remove('attendeeCount');
       data.remove('isFeatured');
-      data.remove('lifecycleStatus');
 
       await docRef.set(data).timeout(const Duration(seconds: 4));
 

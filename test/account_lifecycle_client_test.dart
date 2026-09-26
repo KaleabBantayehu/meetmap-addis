@@ -1,13 +1,17 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:meetmap_addis/core/location/geo_bounds.dart';
 import 'package:meetmap_addis/core/repositories/auth_repository.dart';
 import 'package:meetmap_addis/core/repositories/network_repository.dart';
+import 'package:meetmap_addis/core/repositories/page_result.dart';
 import 'package:meetmap_addis/core/repositories/place_repository.dart';
 import 'package:meetmap_addis/core/repositories/saved_repository.dart';
 import 'package:meetmap_addis/core/services/best_effort_cleanup.dart';
 import 'package:meetmap_addis/core/storage/cache_keys.dart';
 import 'package:meetmap_addis/core/storage/local_storage_service.dart';
+import 'package:meetmap_addis/core/storage/secure_storage_service.dart';
 import 'package:meetmap_addis/providers/auth_provider.dart';
 import 'package:meetmap_addis/providers/network_provider.dart';
 import 'package:meetmap_addis/providers/places_provider.dart';
@@ -21,7 +25,9 @@ void main() {
 
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
+    FlutterSecureStorage.setMockInitialValues({});
     await LocalStorageService.init();
+    await SecureStorageService.init();
   });
 
   test('saved results from an old session are discarded', () async {
@@ -43,10 +49,16 @@ void main() {
     savedRepository.requests[0].complete([_place('alice-place')]);
     await Future<void>.delayed(Duration.zero);
     expect(provider.savedPlaces, isEmpty);
+    expect(LocalStorageService.instance.getSavedPlaces('alice'), isEmpty);
+    expect(LocalStorageService.instance.getSavedPlaces('bob'), isEmpty);
 
     savedRepository.requests[1].complete([_place('bob-place')]);
     await Future<void>.delayed(Duration.zero);
     expect(provider.savedPlaces.single.id, 'bob-place');
+    expect(
+      LocalStorageService.instance.getSavedPlaces('bob').single.id,
+      'bob-place',
+    );
     authProvider.dispose();
     provider.dispose();
   });
@@ -262,6 +274,77 @@ void main() {
     ]);
 
     expect(completed, ['first', 'last']);
+  });
+
+  test('account cleanup removes only the deleted user local data', () async {
+    const alice = 'alice';
+    const bob = 'bob';
+    final local = LocalStorageService.instance;
+    final secure = SecureStorageService.instance;
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString(CacheKeys.savedPlacesForUser(alice), 'alice places');
+    await prefs.setStringList(CacheKeys.savedPlaceIdsForUser(alice), ['a']);
+    await prefs.setString(
+      CacheKeys.savedPlacesLastSyncForUser(alice),
+      'alice sync',
+    );
+    await local.saveSearchHistory(alice, ['alice search']);
+    await secure.write(CacheKeys.privateUserSession(alice), 'alice session');
+
+    await prefs.setString(CacheKeys.savedPlacesForUser(bob), 'bob places');
+    await prefs.setStringList(CacheKeys.savedPlaceIdsForUser(bob), ['b']);
+    await prefs.setString(
+      CacheKeys.savedPlacesLastSyncForUser(bob),
+      'bob sync',
+    );
+    await local.saveSearchHistory(bob, ['bob search']);
+    await secure.write(CacheKeys.privateUserSession(bob), 'bob session');
+    await secure.write(CacheKeys.activeUserSessionUid, alice);
+    await secure.write(CacheKeys.legacyUserSession, 'alice legacy session');
+    await prefs.setString(CacheKeys.placesCache, '[]');
+
+    await local.clearUserData(alice);
+    await secure.clearUserData(alice);
+    await local.clearUserData(alice);
+    await secure.clearUserData(alice);
+
+    expect(prefs.getString(CacheKeys.savedPlacesForUser(alice)), isNull);
+    expect(prefs.getStringList(CacheKeys.savedPlaceIdsForUser(alice)), isNull);
+    expect(
+      prefs.getString(CacheKeys.savedPlacesLastSyncForUser(alice)),
+      isNull,
+    );
+    expect(local.getSearchHistory(alice), isEmpty);
+    expect(await secure.read(CacheKeys.privateUserSession(alice)), isNull);
+    expect(await secure.read(CacheKeys.activeUserSessionUid), isNull);
+    expect(await secure.read(CacheKeys.legacyUserSession), isNull);
+
+    expect(prefs.getString(CacheKeys.savedPlacesForUser(bob)), 'bob places');
+    expect(prefs.getStringList(CacheKeys.savedPlaceIdsForUser(bob)), ['b']);
+    expect(
+      prefs.getString(CacheKeys.savedPlacesLastSyncForUser(bob)),
+      'bob sync',
+    );
+    expect(local.getSearchHistory(bob), ['bob search']);
+    expect(await secure.read(CacheKeys.privateUserSession(bob)), 'bob session');
+    expect(prefs.getString(CacheKeys.placesCache), '[]');
+
+    await secure.write(CacheKeys.privateUserSession(alice), 'stale alice');
+    await secure.write(CacheKeys.activeUserSessionUid, bob);
+    await secure.write(CacheKeys.legacyUserSession, 'bob legacy session');
+    await secure.clearUserData(alice);
+
+    expect(await secure.read(CacheKeys.privateUserSession(alice)), isNull);
+    expect(await secure.read(CacheKeys.activeUserSessionUid), bob);
+    expect(
+      await secure.read(CacheKeys.legacyUserSession),
+      'bob legacy session',
+    );
+
+    await local.clearUserData(bob);
+    await secure.clearUserData(bob);
+    await prefs.remove(CacheKeys.placesCache);
   });
 
   test('search history is isolated and restored by user session', () async {
@@ -496,6 +579,15 @@ class _DelayedNetworkRepository implements NetworkRepository {
       false;
 
   @override
+  Future<NetworkRelationshipSummary> getRelationshipSummary(
+    String currentUserId,
+    List<String> targetUserIds,
+  ) async => const NetworkRelationshipSummary(
+    followingUserIds: {},
+    followerCounts: {},
+  );
+
+  @override
   Future<int> getFollowerCount(String userId) async => 0;
 
   @override
@@ -503,6 +595,28 @@ class _DelayedNetworkRepository implements NetworkRepository {
 }
 
 class _TestPlaceRepository implements PlaceRepository {
+  @override
+  Future<PageResult<PlaceModel>> fetchNearbyPlaces({
+    required double latitude,
+    required double longitude,
+    required double radiusKm,
+    String? cursor,
+    int candidateLimit = 50,
+  }) async => const PageResult(items: [], nextCursor: null, hasMore: false);
+
+  @override
+  Future<PageResult<PlaceModel>> fetchPlacesInBounds(
+    GeoBounds bounds, {
+    String? cursor,
+    int limit = 50,
+  }) async => const PageResult(items: [], nextCursor: null, hasMore: false);
+
+  @override
+  Future<PageResult<PlaceModel>> fetchPlacesPage({
+    String? cursor,
+    int limit = 20,
+  }) async => const PageResult(items: [], nextCursor: null, hasMore: false);
+
   @override
   Future<PlaceModel> createPlace(PlaceModel place) async => place;
 
@@ -537,4 +651,11 @@ class _TestPlaceRepository implements PlaceRepository {
 
   @override
   Future<List<PlaceModel>> searchPlaces(String query) async => [];
+
+  @override
+  Future<PageResult<PlaceModel>> searchPlacesPage(
+    String normalizedQuery, {
+    String? cursor,
+    int limit = 20,
+  }) async => const PageResult(items: [], nextCursor: null, hasMore: false);
 }

@@ -131,15 +131,68 @@ class FirebaseNetworkRepository implements NetworkRepository {
   }
 
   @override
+  Future<NetworkRelationshipSummary> getRelationshipSummary(
+    String currentUserId,
+    List<String> targetUserIds,
+  ) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null || currentUser.uid != currentUserId) {
+      throw Exception('User not authenticated or unauthorized');
+    }
+
+    final targetIds = targetUserIds
+        .where((id) => id.isNotEmpty && id != currentUserId)
+        .toSet()
+        .toList();
+    if (targetIds.isEmpty) {
+      return const NetworkRelationshipSummary(
+        followingUserIds: {},
+        followerCounts: {},
+      );
+    }
+
+    try {
+      final followingIds = <String>{};
+      for (var start = 0; start < targetIds.length; start += 30) {
+        final end = start + 30 < targetIds.length
+            ? start + 30
+            : targetIds.length;
+        final chunk = targetIds.sublist(start, end);
+        final snapshot = await _firestore
+            .collection('users')
+            .doc(currentUserId)
+            .collection('following')
+            .where(FieldPath.documentId, whereIn: chunk)
+            .get()
+            .timeout(const Duration(seconds: 5));
+        followingIds.addAll(snapshot.docs.map((doc) => doc.id));
+      }
+
+      final countEntries = await Future.wait(
+        targetIds.map((id) async => MapEntry(id, await getFollowerCount(id))),
+      );
+      return NetworkRelationshipSummary(
+        followingUserIds: followingIds,
+        followerCounts: Map.fromEntries(countEntries),
+      );
+    } catch (e) {
+      throw Exception(
+        mapRepositoryError(e, 'Failed to load relationship state'),
+      );
+    }
+  }
+
+  @override
   Future<int> getFollowerCount(String userId) async {
     try {
       final snapshot = await _firestore
           .collection('users')
           .doc(userId)
           .collection('followers')
+          .count()
           .get()
           .timeout(const Duration(seconds: 5));
-      return snapshot.size;
+      return snapshot.count ?? 0;
     } catch (e) {
       throw Exception(mapRepositoryError(e, 'Failed to load follower count'));
     }
@@ -152,9 +205,10 @@ class FirebaseNetworkRepository implements NetworkRepository {
           .collection('users')
           .doc(userId)
           .collection('following')
+          .count()
           .get()
           .timeout(const Duration(seconds: 5));
-      return snapshot.size;
+      return snapshot.count ?? 0;
     } catch (e) {
       throw Exception(mapRepositoryError(e, 'Failed to load following count'));
     }

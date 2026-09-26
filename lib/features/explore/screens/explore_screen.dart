@@ -70,6 +70,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
       MaterialPageRoute(builder: (_) => const FilterScreen()),
     );
     if (result == null || !mounted) return;
+    final placesProvider = Provider.of<PlacesProvider>(context, listen: false);
+    final locationProvider = Provider.of<LocationProvider>(
+      context,
+      listen: false,
+    );
 
     // Parse rating  e.g. '3.5+' → 3.5, 'Any' → 0.0
     final ratingStr = (result['rating'] as String?) ?? 'Any';
@@ -88,13 +93,19 @@ class _ExploreScreenState extends State<ExploreScreen> {
       _filterAmenities =
           (result['amenities'] as List<dynamic>?)?.cast<String>() ?? [];
     });
+    if (locationProvider.hasLocation) {
+      _fetchNearbyPlaces(placesProvider, locationProvider);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final placesProvider = Provider.of<PlacesProvider>(context);
     final locationProvider = Provider.of<LocationProvider>(context);
-    final allPlaces = placesProvider.places;
+    final allPlaces =
+        locationProvider.hasLocation && placesProvider.hasLoadedNearby
+        ? placesProvider.nearbyPlaces
+        : placesProvider.places;
     final isLoading = placesProvider.isLoading;
 
     // Category filter
@@ -201,6 +212,24 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         ),
                       );
                     }),
+                  if (!isLoading && placesProvider.hasMore)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: OutlinedButton(
+                        onPressed: placesProvider.isLoadingMore
+                            ? null
+                            : placesProvider.loadMorePlaces,
+                        child: placesProvider.isLoadingMore
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('Load more places'),
+                      ),
+                    ),
                 ],
               ),
             ),

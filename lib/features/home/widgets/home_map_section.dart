@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:gebeta_gl/gebeta_gl.dart';
 import 'package:meetmap_addis/core/constants/colors.dart';
 import 'package:meetmap_addis/core/services/gebeta_map_service.dart';
+import 'package:meetmap_addis/core/location/geo_bounds.dart';
 import 'package:meetmap_addis/features/places/screens/place_detail_screen.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
 
@@ -12,9 +13,14 @@ import 'map_pin.dart';
 import 'place_preview_card.dart';
 
 class HomeMapSection extends StatefulWidget {
-  const HomeMapSection({super.key, required this.places});
+  const HomeMapSection({
+    super.key,
+    required this.places,
+    required this.onBoundsChanged,
+  });
 
   final List<PlaceModel> places;
+  final ValueChanged<GeoBounds> onBoundsChanged;
 
   @override
   State<HomeMapSection> createState() => _HomeMapSectionState();
@@ -76,7 +82,10 @@ class _HomeMapSectionState extends State<HomeMapSection> {
                         await _fitInitialPlaces();
                         _reprojectPins();
                       },
-                      onCameraIdle: _reprojectPins,
+                      onCameraIdle: () {
+                        _reprojectPins();
+                        _notifyVisibleBounds();
+                      },
                       apiKey: _mapService.apiKey,
                     )
                   : const Center(
@@ -199,6 +208,23 @@ class _HomeMapSectionState extends State<HomeMapSection> {
 
   Future<void> _onMapCreated(GebetaMapController controller) async {
     _mapController = controller;
+  }
+
+  Future<void> _notifyVisibleBounds() async {
+    final controller = _mapController;
+    if (!_isStyleReady || controller == null || !mounted) return;
+    try {
+      final visible = await controller.getVisibleRegion();
+      final bounds = GeoBounds(
+        north: visible.northeast.latitude,
+        south: visible.southwest.latitude,
+        east: visible.northeast.longitude,
+        west: visible.southwest.longitude,
+      );
+      if (bounds.isValid) widget.onBoundsChanged(bounds);
+    } catch (error) {
+      debugPrint('Unable to read Home map bounds: $error');
+    }
   }
 
   Future<void> _animateCameraToPlace(PlaceModel place) async {

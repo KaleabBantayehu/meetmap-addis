@@ -7,9 +7,14 @@ import '../shared/models/hangout_model.dart';
 
 class HangoutsProvider with ChangeNotifier {
   final HangoutRepository _hangoutRepository;
+  final bool Function() _isConnected;
 
-  HangoutsProvider({required HangoutRepository hangoutRepository})
-    : _hangoutRepository = hangoutRepository {
+  HangoutsProvider({
+    required HangoutRepository hangoutRepository,
+    bool Function()? isConnected,
+  }) : _hangoutRepository = hangoutRepository,
+       _isConnected =
+           isConnected ?? (() => ConnectivityService.instance.isConnected) {
     _loadFromCache();
   }
 
@@ -27,6 +32,13 @@ class HangoutsProvider with ChangeNotifier {
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+  bool _isLoadingMore = false;
+  bool get isLoadingMore => _isLoadingMore;
+  bool _hasMore = true;
+  bool get hasMore => _hasMore;
+  String? _nextCursor;
+  int _requestGeneration = 0;
+  final List<HangoutModel> _loadedHangouts = [];
 
   bool _isAdding = false;
   bool get isAdding => _isAdding;
@@ -69,6 +81,7 @@ class HangoutsProvider with ChangeNotifier {
   }
 
   Future<void> fetchHangouts() async {
+    final generation = ++_requestGeneration;
     if (_activeHangout == null && _quickHangouts.isEmpty) {
       _isLoading = true;
     }
@@ -76,12 +89,18 @@ class HangoutsProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      if (ConnectivityService.instance.isConnected) {
-        final allHangouts = await _hangoutRepository.getHangouts();
-        _applyHangouts(allHangouts);
+      if (_isConnected()) {
+        final page = await _hangoutRepository.getHangoutsPage();
+        if (generation != _requestGeneration) return;
+        _loadedHangouts
+          ..clear()
+          ..addAll(page.items);
+        _nextCursor = page.nextCursor;
+        _hasMore = page.hasMore;
+        _applyHangouts(_loadedHangouts);
         _topPickVenues = await _hangoutRepository.getTopPickVenues();
         _recentActivities = await _hangoutRepository.getRecentActivities();
-        await LocalStorageService.instance.saveCachedHangouts(allHangouts);
+        await LocalStorageService.instance.saveCachedHangouts(_loadedHangouts);
         await LocalStorageService.instance.saveCachedVenues(_topPickVenues);
         await LocalStorageService.instance.saveCachedActivities(
           _recentActivities,
@@ -93,15 +112,55 @@ class HangoutsProvider with ChangeNotifier {
       _errorMessage = cleanExceptionMessage(e, 'Failed to load hangouts');
       if (_activeHangout == null && _quickHangouts.isEmpty) _loadFromCache();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (generation == _requestGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> loadMoreHangouts() async {
+    if (_isLoadingMore || !_hasMore || !_isConnected()) {
+      return;
+    }
+    final generation = _requestGeneration;
+    _isLoadingMore = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final page = await _hangoutRepository.getHangoutsPage(
+        cursor: _nextCursor,
+      );
+      if (generation != _requestGeneration) {
+        return;
+      }
+      final ids = _loadedHangouts.map((hangout) => hangout.id).toSet();
+      _loadedHangouts.addAll(
+        page.items.where((hangout) => hangout.isActive && ids.add(hangout.id)),
+      );
+      _nextCursor = page.nextCursor;
+      _hasMore = page.hasMore;
+      _applyHangouts(_loadedHangouts);
+      await LocalStorageService.instance.saveCachedHangouts(_loadedHangouts);
+    } catch (e) {
+      if (generation == _requestGeneration) {
+        _errorMessage = cleanExceptionMessage(
+          e,
+          'Failed to load more hangouts',
+        );
+      }
+    } finally {
+      if (generation == _requestGeneration) {
+        _isLoadingMore = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<bool> addHangout(HangoutModel hangout) async {
     if (_isAdding) return false;
 
-    if (!ConnectivityService.instance.isConnected) {
+    if (!_isConnected()) {
       _errorMessage = 'No internet connection';
       notifyListeners();
       return false;

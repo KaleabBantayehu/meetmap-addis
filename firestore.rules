@@ -110,7 +110,7 @@ service cloud.firestore {
           'id', 'name', 'imageUrl', 'category', 'location', 'priceRange',
           'isOpen', 'latitude', 'longitude', 'tags', 'description',
           'priceLevel', 'imageUrls', 'amenities', 'createdAt', 'updatedAt',
-          'createdBy', 'phone'
+          'createdBy', 'phone', 'searchPrefixes'
         ])
         && data.id == placeId
         && data.name is string && data.name.size() >= 3 && data.name.size() <= 150
@@ -130,6 +130,8 @@ service cloud.firestore {
         && data.createdAt is timestamp
         && data.updatedAt is timestamp
         && data.createdBy is string
+        && (!('searchPrefixes' in data)
+          || (data.searchPrefixes is list && data.searchPrefixes.size() <= 200))
         && validOptionalString(data, 'phone', 30);
     }
 
@@ -138,7 +140,7 @@ service cloud.firestore {
       return data.diff(resource.data).affectedKeys().hasOnly([
           'name', 'imageUrl', 'category', 'location', 'priceRange', 'isOpen',
           'latitude', 'longitude', 'tags', 'description', 'priceLevel',
-          'imageUrls', 'amenities', 'updatedAt', 'phone'
+          'imageUrls', 'amenities', 'updatedAt', 'phone', 'searchPrefixes'
         ])
         && data.name is string && data.name.size() >= 3 && data.name.size() <= 150
         && data.description is string && data.description.size() >= 20 && data.description.size() <= 5000
@@ -147,6 +149,8 @@ service cloud.firestore {
         && !(data.latitude == 0 && data.longitude == 0)
         && data.priceLevel is int && data.priceLevel >= 1 && data.priceLevel <= 4
         && data.imageUrls is list && data.imageUrls.size() >= 1 && data.imageUrls.size() <= 10
+        && (!('searchPrefixes' in data)
+          || (data.searchPrefixes is list && data.searchPrefixes.size() <= 200))
         && data.updatedAt is timestamp;
     }
 
@@ -198,7 +202,7 @@ service cloud.firestore {
       return data.keys().hasOnly([
           'id', 'title', 'category', 'location', 'date', 'time', 'host',
           'imageUrl', 'description', 'createdBy', 'latitude', 'longitude',
-          'createdAt', 'updatedAt'
+          'createdAt', 'updatedAt', 'lifecycleStatus'
         ])
         && data.id == eventId
         && data.title is string && data.title.size() >= 3 && data.title.size() <= 200
@@ -210,6 +214,7 @@ service cloud.firestore {
         && data.imageUrl is string && data.imageUrl.size() <= 2048
         && data.description is string && data.description.size() <= 5000
         && data.createdBy is string
+        && (!('lifecycleStatus' in data) || data.lifecycleStatus == 'active')
         && data.latitude is number && data.latitude >= -90 && data.latitude <= 90
         && data.longitude is number && data.longitude >= -180 && data.longitude <= 180
         && !(data.latitude == 0 && data.longitude == 0)
@@ -235,7 +240,7 @@ service cloud.firestore {
       return data.keys().hasOnly([
           'id', 'title', 'category', 'location', 'time', 'imageUrl',
           'description', 'createdBy', 'latitude', 'longitude', 'createdAt',
-          'updatedAt'
+          'updatedAt', 'lifecycleStatus'
         ])
         && data.id == hangoutId
         && data.title is string && data.title.size() >= 3 && data.title.size() <= 200
@@ -245,6 +250,7 @@ service cloud.firestore {
         && data.imageUrl is string && data.imageUrl.size() <= 2048
         && data.description is string && data.description.size() <= 5000
         && data.createdBy is string
+        && (!('lifecycleStatus' in data) || data.lifecycleStatus == 'active')
         && data.latitude is number && data.latitude >= -90 && data.latitude <= 90
         && data.longitude is number && data.longitude >= -180 && data.longitude <= 180
         && !(data.latitude == 0 && data.longitude == 0)

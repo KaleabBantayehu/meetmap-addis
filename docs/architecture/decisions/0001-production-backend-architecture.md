@@ -151,6 +151,14 @@ The Flutter client must not directly modify `ratingSum`, `reviewCount`, or `rati
 
 The aggregate implementation must handle create, edit, and delete operations. Firestore events can be retried and are not guaranteed to arrive in order. Processing must therefore be idempotent, use transactions for aggregate mutations, and prevent duplicate event application. The implementation should retain enough event identity or state to determine whether a transition has already been applied.
 
+### Idempotency Marker Retention
+
+Each aggregate event is recorded at `places/{placeId}/aggregateEvents/{eventIdHash}` in the same transaction that updates the place aggregate. A marker therefore exists if and only if that event's aggregate mutation committed. Its `processedAt` value is operational metadata; it does not define a safe deletion time.
+
+Automatic marker retention is intentionally deferred. The current `onDocumentWritten` trigger enables retries but does not configure or establish a documented maximum event replay age. Deleting a marker after an assumed interval could allow a delayed replay of the same event ID to apply the aggregate delta again. Reconciliation can repair corruption after it is detected, but it does not make that replay safe.
+
+The marker collection is therefore intentionally unbounded in the current correctness-first design. Operations should monitor marker document count, storage, and write cost. Retention may be reconsidered only when the deployed event-delivery contract provides a defensible upper replay bound, such as an explicit and documented maximum retry age. Any future retention window must exceed that bound with an operational safety margin and must be validated against delayed delivery, manual replay, and recovery procedures before cleanup is enabled.
+
 An eventual reconciliation operation must recompute aggregate fields from authoritative review documents. Reconciliation repairs historical corruption, failed processing, and legacy inconsistencies. It is a recovery mechanism, not the normal card-read path.
 
 Individual place cards must never fetch their own review collections. Cards consume the maintained aggregate on the place document. This avoids an N+1 review-read pattern across Home, Explore, Search, and Saved.
@@ -173,6 +181,25 @@ Production collection access will move toward:
 - elimination of N+1 saved-place and networking reads.
 
 Fallback caching may improve offline experience, but it must not become the source of authorization or trusted business data. User-specific caches must be scoped to the authenticated user and have explicit invalidation and freshness behavior.
+
+### Firestore Index And Deployment Contract
+
+`firestore.indexes.json` is the single source-controlled definition of explicit Firestore composite indexes, and `firebase.json` references it through `firestore.indexes`. Composite indexes are added only for an implemented query that cannot use Firestore's built-in single-field or document-key indexes.
+
+The current production query inventory is:
+
+| Query | Index contract |
+| --- | --- |
+| Places, events, hangouts, and nested reviews ordered and paginated by document ID | Built-in document-key index |
+| Place search using `searchPrefixes` array membership and document-ID ordering | Built-in array single-field index, whose entries include document-key ordering |
+| Place geographic bounds using latitude and longitude ranges ordered by latitude, longitude, and document ID | Explicit collection-scope composite index: `latitude ASC`, `longitude ASC`, `__name__ ASC` |
+| Active events and hangouts using lifecycle equality and document-ID ordering | Built-in lifecycle single-field index with document-key ordering |
+| Featured events using lifecycle and featured equality filters | Firestore index merging of the relevant single-field indexes |
+| Featured places using a rating range ordered by rating | Built-in rating single-field index |
+
+The Firestore emulator verifies query shape, cursor behavior, and rules compatibility, but emulator success does not prove that a required production composite index has been deployed. Before enabling a query that depends on a new explicit index, deploy the reviewed source-controlled definitions with `firebase deploy --only firestore:indexes`, wait for the Firebase Console index state to become `READY`, and execute the query against the intended production project. Confirm that no missing-index error occurs, deployed definitions match source control, and no unexpected console-only indexes have become an undocumented dependency.
+
+Index changes require review against the exact repository query, including collection versus collection-group scope, field modes, ordering, and cursor values. Missing-index links from production errors are diagnostic input, not authorization to create an index manually without recording it in `firestore.indexes.json`. Unused indexes are not removed during unrelated work because deletion can break an active query and also requires a production deployment.
 
 ## Search Decision
 

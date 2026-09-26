@@ -8,12 +8,20 @@ import {
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import {
+  collection,
   deleteDoc,
   doc,
+  documentId,
   getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
   setDoc,
+  startAfter,
   Timestamp,
   updateDoc,
+  where,
   writeBatch,
 } from 'firebase/firestore';
 
@@ -78,6 +86,7 @@ const placeData = (createdBy = 'alice', placeId = 'place-1') => ({
   priceLevel: 2,
   imageUrls: ['https://example.com/place.jpg'],
   amenities: [],
+  searchPrefixes: ['te', 'tes', 'test', 'ca', 'caf', 'cafe'],
   createdAt: timestamp(),
   updatedAt: timestamp(),
   createdBy,
@@ -399,6 +408,75 @@ describe('places', () => {
         ratingSum: 0,
       }),
     );
+    const legacyPlace = newPlaceData('alice', 'legacy-search');
+    delete legacyPlace.searchPrefixes;
+    await assertSucceeds(
+      setDoc(doc(alice, 'places/legacy-search'), legacyPlace),
+    );
+    await assertFails(
+      setDoc(doc(alice, 'places/oversized-search'), {
+        ...newPlaceData('alice', 'oversized-search'),
+        searchPrefixes: Array.from({ length: 201 }, (_, index) => `p${index}`),
+      }),
+    );
+  });
+
+  test('public place prefix search supports stable document ordering', async () => {
+    await seed('places/search-a', placeData('alice', 'search-a'));
+    await seed('places/search-b', placeData('alice', 'search-b'));
+    const searchQuery = query(
+      collection(publicDb(), 'places'),
+      where('searchPrefixes', 'array-contains', 'cafe'),
+      orderBy(documentId()),
+      limit(1),
+    );
+    const snapshot = await assertSucceeds(getDocs(searchQuery));
+    assert.equal(snapshot.docs.length, 1);
+    assert.equal(snapshot.docs[0].id, 'search-a');
+  });
+
+  test('public geographic candidates support bounded stable pagination', async () => {
+    await seed('places/geo-a', {
+      ...placeData('alice', 'geo-a'),
+      latitude: 9.01,
+      longitude: 38.71,
+    });
+    await seed('places/geo-b', {
+      ...placeData('alice', 'geo-b'),
+      latitude: 9.02,
+      longitude: 38.72,
+    });
+    const base = collection(publicDb(), 'places');
+    const firstQuery = query(
+      base,
+      where('latitude', '>=', 9),
+      where('latitude', '<=', 9.1),
+      where('longitude', '>=', 38.7),
+      where('longitude', '<=', 38.8),
+      orderBy('latitude'),
+      orderBy('longitude'),
+      orderBy(documentId()),
+      limit(1),
+    );
+    const first = await assertSucceeds(getDocs(firstQuery));
+    assert.equal(first.docs.length, 1);
+    assert.equal(first.docs[0].id, 'geo-a');
+
+    const secondQuery = query(
+      base,
+      where('latitude', '>=', 9),
+      where('latitude', '<=', 9.1),
+      where('longitude', '>=', 38.7),
+      where('longitude', '<=', 38.8),
+      orderBy('latitude'),
+      orderBy('longitude'),
+      orderBy(documentId()),
+      startAfter(9.01, 38.71, 'geo-a'),
+      limit(1),
+    );
+    const second = await assertSucceeds(getDocs(secondQuery));
+    assert.equal(second.docs.length, 1);
+    assert.equal(second.docs[0].id, 'geo-b');
   });
 
   test('only creator can update/delete and protected fields are immutable', async () => {
@@ -502,11 +580,11 @@ describe('reviews', () => {
   });
 });
 
-for (const collection of ['events', 'hangouts']) {
-  describe(collection, () => {
+for (const collectionName of ['events', 'hangouts']) {
+  describe(collectionName, () => {
     test('creator can create, update, and delete their own document', async () => {
-      const aliceRef = doc(dbFor('alice'), `${collection}/item-1`);
-      const data = collection === 'events' ? eventData() : hangoutData();
+      const aliceRef = doc(dbFor('alice'), `${collectionName}/item-1`);
+      const data = collectionName === 'events' ? eventData() : hangoutData();
       await assertSucceeds(setDoc(aliceRef, data));
       await assertSucceeds(
         updateDoc(aliceRef, { title: 'Updated Item', updatedAt: timestamp() }),
@@ -514,32 +592,51 @@ for (const collection of ['events', 'hangouts']) {
       await assertSucceeds(deleteDoc(aliceRef));
     });
 
+    test('clients may create active or legacy content but not inactive content', async () => {
+      const alice = dbFor('alice');
+      const dataFor = collectionName === 'events' ? eventData : hangoutData;
+      await assertSucceeds(
+        setDoc(doc(alice, `${collectionName}/active-item`), {
+          ...dataFor(),
+          id: 'active-item',
+          lifecycleStatus: 'active',
+        }),
+      );
+      await assertFails(
+        setDoc(doc(alice, `${collectionName}/inactive-item`), {
+          ...dataFor(),
+          id: 'inactive-item',
+          lifecycleStatus: collectionName === 'events' ? 'archived' : 'inactive',
+        }),
+      );
+    });
+
     test('ownership claims, transfers, and writes by another user are denied', async () => {
       const alice = dbFor('alice');
-      const dataFor = collection === 'events' ? eventData : hangoutData;
+      const dataFor = collectionName === 'events' ? eventData : hangoutData;
       await assertFails(
-        setDoc(doc(alice, `${collection}/wrong-owner`), {
+        setDoc(doc(alice, `${collectionName}/wrong-owner`), {
           ...dataFor('bob'),
           id: 'wrong-owner',
         }),
       );
-      await seed(`${collection}/item-1`, dataFor());
+      await seed(`${collectionName}/item-1`, dataFor());
       await assertFails(
-        updateDoc(doc(alice, `${collection}/item-1`), { createdBy: 'bob' }),
+        updateDoc(doc(alice, `${collectionName}/item-1`), { createdBy: 'bob' }),
       );
       await assertFails(
-        updateDoc(doc(alice, `${collection}/item-1`), {
+        updateDoc(doc(alice, `${collectionName}/item-1`), {
           attendeeCount: 99,
           updatedAt: timestamp(),
         }),
       );
       await assertFails(
-        updateDoc(doc(alice, `${collection}/item-1`), {
-          [collection === 'events' ? 'isFeatured' : 'isLive']: true,
+        updateDoc(doc(alice, `${collectionName}/item-1`), {
+          [collectionName === 'events' ? 'isFeatured' : 'isLive']: true,
           updatedAt: timestamp(),
         }),
       );
-      const bobRef = doc(dbFor('bob'), `${collection}/item-1`);
+      const bobRef = doc(dbFor('bob'), `${collectionName}/item-1`);
       await assertFails(
         updateDoc(bobRef, { title: 'Hijacked', updatedAt: timestamp() }),
       );
@@ -547,6 +644,94 @@ for (const collection of ['events', 'hangouts']) {
     });
   });
 }
+
+describe('lifecycle-aware discovery', () => {
+  for (const collectionName of ['events', 'hangouts']) {
+    test(`${collectionName} active query excludes retained and unbackfilled legacy documents`, async () => {
+      const dataFor = collectionName === 'events' ? eventData : hangoutData;
+      await seed(`${collectionName}/active-a`, {
+        ...dataFor(),
+        id: 'active-a',
+        lifecycleStatus: 'active',
+      });
+      await seed(`${collectionName}/active-b`, {
+        ...dataFor(),
+        id: 'active-b',
+        lifecycleStatus: 'active',
+      });
+      await seed(`${collectionName}/retained`, {
+        ...dataFor(),
+        id: 'retained',
+        createdBy: null,
+        lifecycleStatus: collectionName === 'events' ? 'archived' : 'inactive',
+      });
+      await seed(`${collectionName}/legacy`, {
+        ...dataFor(),
+        id: 'legacy',
+      });
+
+      const first = await assertSucceeds(
+        getDocs(
+          query(
+            collection(publicDb(), collectionName),
+            where('lifecycleStatus', '==', 'active'),
+            orderBy(documentId()),
+            limit(1),
+          ),
+        ),
+      );
+      assert.deepEqual(first.docs.map((item) => item.id), ['active-a']);
+      const second = await assertSucceeds(
+        getDocs(
+          query(
+            collection(publicDb(), collectionName),
+            where('lifecycleStatus', '==', 'active'),
+            orderBy(documentId()),
+            startAfter('active-a'),
+            limit(1),
+          ),
+        ),
+      );
+      assert.deepEqual(second.docs.map((item) => item.id), ['active-b']);
+    });
+  }
+
+  test('featured event query returns only active featured events', async () => {
+    await seed('events/active-featured', {
+      ...eventData(),
+      id: 'active-featured',
+      lifecycleStatus: 'active',
+      isFeatured: true,
+    });
+    await seed('events/active-standard', {
+      ...eventData(),
+      id: 'active-standard',
+      lifecycleStatus: 'active',
+      isFeatured: false,
+    });
+    await seed('events/archived-featured', {
+      ...eventData(),
+      id: 'archived-featured',
+      createdBy: null,
+      lifecycleStatus: 'archived',
+      isFeatured: true,
+    });
+
+    const snapshot = await assertSucceeds(
+      getDocs(
+        query(
+          collection(publicDb(), 'events'),
+          where('lifecycleStatus', '==', 'active'),
+          where('isFeatured', '==', true),
+          limit(10),
+        ),
+      ),
+    );
+    assert.deepEqual(snapshot.docs.map((item) => item.id), [
+      'active-featured',
+    ]);
+  });
+});
 
 describe('unauthenticated writes', () => {
   test('publicly readable product data remains protected from anonymous writes', async () => {

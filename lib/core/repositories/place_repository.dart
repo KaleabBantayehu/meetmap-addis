@@ -1,4 +1,6 @@
 import '../../shared/models/place_model.dart';
+import 'page_result.dart';
+import '../location/geo_bounds.dart';
 
 abstract class PlaceRepository {
   @Deprecated('Use fetchPlaces instead')
@@ -7,12 +9,34 @@ abstract class PlaceRepository {
   @Deprecated('Use fetchPlaceById instead')
   Future<PlaceModel?> getPlaceById(String id);
 
+  @Deprecated('Use searchPlacesPage instead')
   Future<List<PlaceModel>> searchPlaces(String query);
-  
+  Future<PageResult<PlaceModel>> searchPlacesPage(
+    String normalizedQuery, {
+    String? cursor,
+    int limit = 20,
+  });
+
   @Deprecated('Use fetchSavedPlaces instead')
   Future<List<PlaceModel>> getSavedPlaces();
 
   Future<List<PlaceModel>> fetchPlaces();
+  Future<PageResult<PlaceModel>> fetchPlacesPage({
+    String? cursor,
+    int limit = 20,
+  });
+  Future<PageResult<PlaceModel>> fetchPlacesInBounds(
+    GeoBounds bounds, {
+    String? cursor,
+    int limit = 50,
+  });
+  Future<PageResult<PlaceModel>> fetchNearbyPlaces({
+    required double latitude,
+    required double longitude,
+    required double radiusKm,
+    String? cursor,
+    int candidateLimit = 50,
+  });
   Future<List<PlaceModel>> fetchFeaturedPlaces();
   Future<PlaceModel?> fetchPlaceById(String id);
   Future<List<PlaceModel>> filterPlaces({

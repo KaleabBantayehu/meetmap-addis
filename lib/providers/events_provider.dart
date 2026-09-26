@@ -7,9 +7,14 @@ import '../shared/models/event_model.dart';
 
 class EventsProvider with ChangeNotifier {
   final EventRepository _eventRepository;
+  final bool Function() _isConnected;
 
-  EventsProvider({required EventRepository eventRepository})
-    : _eventRepository = eventRepository {
+  EventsProvider({
+    required EventRepository eventRepository,
+    bool Function()? isConnected,
+  }) : _eventRepository = eventRepository,
+       _isConnected =
+           isConnected ?? (() => ConnectivityService.instance.isConnected) {
     _loadFromCache();
   }
 
@@ -21,6 +26,12 @@ class EventsProvider with ChangeNotifier {
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+  bool _isLoadingMore = false;
+  bool get isLoadingMore => _isLoadingMore;
+  bool _hasMore = true;
+  bool get hasMore => _hasMore;
+  String? _nextCursor;
+  int _requestGeneration = 0;
 
   bool _isAdding = false;
   bool get isAdding => _isAdding;
@@ -42,6 +53,7 @@ class EventsProvider with ChangeNotifier {
   }
 
   Future<void> fetchEvents() async {
+    final generation = ++_requestGeneration;
     if (_events.isEmpty) {
       _isLoading = true;
     }
@@ -49,8 +61,12 @@ class EventsProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      if (ConnectivityService.instance.isConnected) {
-        _events = await _eventRepository.getEvents();
+      if (_isConnected()) {
+        final page = await _eventRepository.getEventsPage();
+        if (generation != _requestGeneration) return;
+        _events = page.items.where((event) => event.isActive).toList();
+        _nextCursor = page.nextCursor;
+        _hasMore = page.hasMore;
         _featuredEvent =
             await _eventRepository.getFeaturedEvent() ??
             _firstFeaturedEvent(_events);
@@ -62,8 +78,43 @@ class EventsProvider with ChangeNotifier {
       _errorMessage = cleanExceptionMessage(e, 'Failed to load events');
       if (_events.isEmpty) _loadFromCache();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (generation == _requestGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> loadMoreEvents() async {
+    if (_isLoadingMore || !_hasMore || !_isConnected()) {
+      return;
+    }
+    final generation = _requestGeneration;
+    _isLoadingMore = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final page = await _eventRepository.getEventsPage(cursor: _nextCursor);
+      if (generation != _requestGeneration) {
+        return;
+      }
+      final ids = _events.map((event) => event.id).toSet();
+      _events.addAll(
+        page.items.where((event) => event.isActive && ids.add(event.id)),
+      );
+      _nextCursor = page.nextCursor;
+      _hasMore = page.hasMore;
+      _featuredEvent ??= _firstFeaturedEvent(_events);
+      await LocalStorageService.instance.saveCachedEvents(_events);
+    } catch (e) {
+      if (generation == _requestGeneration) {
+        _errorMessage = cleanExceptionMessage(e, 'Failed to load more events');
+      }
+    } finally {
+      if (generation == _requestGeneration) {
+        _isLoadingMore = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -77,7 +128,7 @@ class EventsProvider with ChangeNotifier {
   Future<bool> addEvent(EventModel event) async {
     if (_isAdding) return false;
 
-    if (!ConnectivityService.instance.isConnected) {
+    if (!_isConnected()) {
       _errorMessage = 'No internet connection';
       notifyListeners();
       return false;

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../shared/models/hangout_model.dart';
 import '../hangout_repository.dart';
+import '../page_result.dart';
 import '../repository_error_mapper.dart';
 
 class FirebaseHangoutRepository implements HangoutRepository {
@@ -18,15 +19,32 @@ class FirebaseHangoutRepository implements HangoutRepository {
 
   @override
   Future<List<HangoutModel>> getHangouts() async {
+    return (await getHangoutsPage()).items;
+  }
+
+  @override
+  Future<PageResult<HangoutModel>> getHangoutsPage({
+    String? cursor,
+    int limit = 20,
+  }) async {
     try {
-      final snapshot = await _firestore
+      Query<Map<String, dynamic>> query = _firestore
           .collection('hangouts')
-          .get()
-          .timeout(const Duration(seconds: 5));
-      return snapshot.docs
-          .map((doc) => _mapDoc(doc, HangoutModel.fromMap))
-          .where((hangout) => hangout.isActive)
-          .toList();
+          .where('lifecycleStatus', isEqualTo: 'active')
+          .orderBy(FieldPath.documentId)
+          .limit(limit + 1);
+      if (cursor != null) query = query.startAfter([cursor]);
+      final snapshot = await query.get().timeout(const Duration(seconds: 5));
+      final hasMore = snapshot.docs.length > limit;
+      final docs = snapshot.docs.take(limit).toList();
+      return PageResult(
+        items: docs
+            .map((doc) => _mapDoc(doc, HangoutModel.fromMap))
+            .where((hangout) => hangout.isActive)
+            .toList(),
+        nextCursor: docs.isEmpty ? null : docs.last.id,
+        hasMore: hasMore,
+      );
     } catch (e) {
       throw Exception(mapRepositoryError(e, 'Failed to load hangouts'));
     }
@@ -87,7 +105,6 @@ class FirebaseHangoutRepository implements HangoutRepository {
       };
       data.remove('attendeeCount');
       data.remove('isLive');
-      data.remove('lifecycleStatus');
 
       await docRef.set(data).timeout(const Duration(seconds: 4));
 

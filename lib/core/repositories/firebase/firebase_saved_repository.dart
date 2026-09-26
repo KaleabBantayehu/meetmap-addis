@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../shared/models/place_model.dart';
 import '../saved_repository.dart';
+import '../saved_place_hydrator.dart';
 import '../repository_error_mapper.dart';
 
 class FirebaseSavedRepository implements SavedRepository {
@@ -24,6 +25,11 @@ class FirebaseSavedRepository implements SavedRepository {
 
   @override
   Future<List<PlaceModel>> fetchSavedPlaces(String userId) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null || currentUser.uid != userId) {
+      throw Exception('User not authenticated or unauthorized');
+    }
+
     try {
       final snapshot = await _firestore
           .collection('users')
@@ -32,24 +38,31 @@ class FirebaseSavedRepository implements SavedRepository {
           .get()
           .timeout(const Duration(seconds: 4));
 
-      final List<PlaceModel> savedPlaces = [];
+      final savedDocuments = snapshot.docs.toList()
+        ..sort((a, b) {
+          final aTime = a.data()['savedAt'] as Timestamp?;
+          final bTime = b.data()['savedAt'] as Timestamp?;
+          if (aTime == null && bTime == null) return 0;
+          if (aTime == null) return 1;
+          if (bTime == null) return -1;
+          return bTime.compareTo(aTime);
+        });
 
-      // Fetch details for each saved place
-      for (final doc in snapshot.docs) {
-        final placeId = doc.id;
-        final placeDoc = await _firestore
-            .collection('places')
-            .doc(placeId)
-            .get()
-            .timeout(const Duration(seconds: 4));
-
-        if (placeDoc.exists && placeDoc.data() != null) {
-          final data = placeDoc.data()!;
-          data['id'] = placeDoc.id;
-          savedPlaces.add(PlaceModel.fromMap(data));
-        }
-      }
-      return savedPlaces;
+      return hydrateSavedPlaces(
+        savedPlaceIds: savedDocuments.map((doc) => doc.id).toList(),
+        fetchBatch: (ids) async {
+          final placesSnapshot = await _firestore
+              .collection('places')
+              .where(FieldPath.documentId, whereIn: ids)
+              .get()
+              .timeout(const Duration(seconds: 4));
+          return placesSnapshot.docs.map((doc) {
+            final data = doc.data();
+            data['id'] = doc.id;
+            return PlaceModel.fromMap(data);
+          }).toList();
+        },
+      );
     } catch (e) {
       throw Exception(mapRepositoryError(e, 'Failed to load saved places'));
     }

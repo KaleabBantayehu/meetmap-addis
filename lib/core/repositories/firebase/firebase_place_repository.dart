@@ -2,7 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../shared/models/place_model.dart';
 import '../place_repository.dart';
+import '../page_result.dart';
 import '../repository_error_mapper.dart';
+import '../../search/place_search_index.dart';
+import '../../location/geo_bounds.dart';
 
 class FirebasePlaceRepository implements PlaceRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -28,15 +31,128 @@ class FirebasePlaceRepository implements PlaceRepository {
 
   @override
   Future<List<PlaceModel>> fetchPlaces() async {
+    return (await fetchPlacesPage()).items;
+  }
+
+  @override
+  Future<PageResult<PlaceModel>> fetchPlacesPage({
+    String? cursor,
+    int limit = 20,
+  }) async {
     try {
-      final snapshot = await _firestore
+      Query<Map<String, dynamic>> query = _firestore
           .collection('places')
-          .get()
-          .timeout(const Duration(seconds: 4));
-      return snapshot.docs.map(_mapDocToPlace).toList();
+          .orderBy(FieldPath.documentId)
+          .limit(limit + 1);
+      if (cursor != null) query = query.startAfter([cursor]);
+      final snapshot = await query.get().timeout(const Duration(seconds: 4));
+      final hasMore = snapshot.docs.length > limit;
+      final docs = snapshot.docs.take(limit).toList();
+      return PageResult(
+        items: docs.map(_mapDocToPlace).toList(),
+        nextCursor: docs.isEmpty ? null : docs.last.id,
+        hasMore: hasMore,
+      );
     } catch (e) {
       throw Exception(mapRepositoryError(e, 'Failed to load places'));
     }
+  }
+
+  @override
+  Future<PageResult<PlaceModel>> fetchPlacesInBounds(
+    GeoBounds bounds, {
+    String? cursor,
+    int limit = 50,
+  }) async {
+    if (!bounds.isValid) {
+      throw ArgumentError('Valid non-antimeridian map bounds are required.');
+    }
+    try {
+      Query<Map<String, dynamic>> query = _firestore
+          .collection('places')
+          .where('latitude', isGreaterThanOrEqualTo: bounds.south)
+          .where('latitude', isLessThanOrEqualTo: bounds.north)
+          .where('longitude', isGreaterThanOrEqualTo: bounds.west)
+          .where('longitude', isLessThanOrEqualTo: bounds.east)
+          .orderBy('latitude')
+          .orderBy('longitude')
+          .orderBy(FieldPath.documentId)
+          .limit(limit + 1);
+      final decodedCursor = decodeGeoCursor(cursor);
+      if (decodedCursor != null) {
+        query = query.startAfter([
+          decodedCursor.latitude,
+          decodedCursor.longitude,
+          decodedCursor.documentId,
+        ]);
+      }
+      final snapshot = await query.get().timeout(const Duration(seconds: 4));
+      final hasMore = snapshot.docs.length > limit;
+      final docs = snapshot.docs.take(limit).toList();
+      final last = docs.isEmpty ? null : docs.last;
+      return PageResult(
+        items: docs.map(_mapDocToPlace).toList(),
+        nextCursor: last == null
+            ? null
+            : encodeGeoCursor(
+                (last.data()['latitude'] as num).toDouble(),
+                (last.data()['longitude'] as num).toDouble(),
+                last.id,
+              ),
+        hasMore: hasMore,
+      );
+    } catch (e) {
+      throw Exception(mapRepositoryError(e, 'Failed to load map places'));
+    }
+  }
+
+  @override
+  Future<PageResult<PlaceModel>> fetchNearbyPlaces({
+    required double latitude,
+    required double longitude,
+    required double radiusKm,
+    String? cursor,
+    int candidateLimit = 50,
+  }) async {
+    final bounds = GeoBounds.around(
+      latitude: latitude,
+      longitude: longitude,
+      radiusKm: radiusKm,
+    );
+    final page = await fetchPlacesInBounds(
+      bounds,
+      cursor: cursor,
+      limit: candidateLimit,
+    );
+    final places =
+        page.items.where((place) {
+          return distanceKm(
+                fromLatitude: latitude,
+                fromLongitude: longitude,
+                toLatitude: place.latitude,
+                toLongitude: place.longitude,
+              ) <=
+              radiusKm;
+        }).toList()..sort((a, b) {
+          final aDistance = distanceKm(
+            fromLatitude: latitude,
+            fromLongitude: longitude,
+            toLatitude: a.latitude,
+            toLongitude: a.longitude,
+          );
+          final bDistance = distanceKm(
+            fromLatitude: latitude,
+            fromLongitude: longitude,
+            toLatitude: b.latitude,
+            toLongitude: b.longitude,
+          );
+          return aDistance.compareTo(bDistance);
+        });
+    return PageResult(
+      items: places,
+      nextCursor: page.nextCursor,
+      hasMore: page.hasMore,
+    );
   }
 
   @override
@@ -76,17 +192,39 @@ class FirebasePlaceRepository implements PlaceRepository {
 
   @override
   Future<List<PlaceModel>> searchPlaces(String query) async {
-    try {
-      if (query.isEmpty) return fetchPlaces();
+    return (await searchPlacesPage(query)).items;
+  }
 
-      // Prefix search using Firestore rules
-      final snapshot = await _firestore
+  @override
+  Future<PageResult<PlaceModel>> searchPlacesPage(
+    String normalizedQuery, {
+    String? cursor,
+    int limit = 20,
+  }) async {
+    try {
+      final query = normalizePlaceSearchQuery(normalizedQuery);
+      if (query.length < placeSearchMinimumLength) {
+        return const PageResult(items: [], nextCursor: null, hasMore: false);
+      }
+
+      Query<Map<String, dynamic>> firestoreQuery = _firestore
           .collection('places')
-          .where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThanOrEqualTo: '$query\uf8ff')
-          .get()
-          .timeout(const Duration(seconds: 4));
-      return snapshot.docs.map(_mapDocToPlace).toList();
+          .where('searchPrefixes', arrayContains: query)
+          .orderBy(FieldPath.documentId)
+          .limit(limit + 1);
+      if (cursor != null) {
+        firestoreQuery = firestoreQuery.startAfter([cursor]);
+      }
+      final snapshot = await firestoreQuery.get().timeout(
+        const Duration(seconds: 4),
+      );
+      final hasMore = snapshot.docs.length > limit;
+      final docs = snapshot.docs.take(limit).toList();
+      return PageResult(
+        items: docs.map(_mapDocToPlace).toList(),
+        nextCursor: docs.isEmpty ? null : docs.last.id,
+        hasMore: hasMore,
+      );
     } catch (e) {
       throw Exception(mapRepositoryError(e, 'Search failed'));
     }
@@ -165,6 +303,12 @@ class FirebasePlaceRepository implements PlaceRepository {
       data['id'] = docRef.id;
       data['createdAt'] = FieldValue.serverTimestamp();
       data['updatedAt'] = FieldValue.serverTimestamp();
+      data['searchPrefixes'] = buildPlaceSearchPrefixes([
+        placeWithOwnership.name,
+        placeWithOwnership.category,
+        placeWithOwnership.location,
+        ...placeWithOwnership.tags,
+      ]);
 
       await docRef.set(data).timeout(const Duration(seconds: 4));
 

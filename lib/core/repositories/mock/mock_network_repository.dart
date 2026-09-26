@@ -32,6 +32,18 @@ class MockNetworkRepository implements NetworkRepository {
   }
 
   @override
+  Future<NetworkRelationshipSummary> getRelationshipSummary(
+    String currentUserId,
+    List<String> targetUserIds,
+  ) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    return NetworkRelationshipSummary(
+      followingUserIds: const {},
+      followerCounts: {for (final id in targetUserIds) id: 0},
+    );
+  }
+
+  @override
   Future<int> getFollowerCount(String userId) async {
     await Future.delayed(const Duration(milliseconds: 100));
     return 0;

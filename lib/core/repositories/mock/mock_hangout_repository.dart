@@ -1,6 +1,7 @@
 import '../../../shared/data/mock_hangouts.dart';
 import '../../../shared/models/hangout_model.dart';
 import '../hangout_repository.dart';
+import '../page_result.dart';
 
 class MockHangoutRepository implements HangoutRepository {
   late final List<HangoutModel> _hangouts = [activeHangout, ...quickHangouts];
@@ -10,6 +11,24 @@ class MockHangoutRepository implements HangoutRepository {
   Future<List<HangoutModel>> getHangouts() async {
     await Future.delayed(const Duration(milliseconds: 400));
     return List.from(_hangouts);
+  }
+
+  @override
+  Future<PageResult<HangoutModel>> getHangoutsPage({
+    String? cursor,
+    int limit = 20,
+  }) async {
+    final active = _hangouts.where((hangout) => hangout.isActive).toList();
+    final start = cursor == null
+        ? 0
+        : active.indexWhere((h) => h.id == cursor) + 1;
+    final safeStart = start < 0 ? 0 : start;
+    final items = active.skip(safeStart).take(limit).toList();
+    return PageResult(
+      items: items,
+      nextCursor: items.isEmpty ? null : items.last.id,
+      hasMore: safeStart + items.length < active.length,
+    );
   }
 
   @override

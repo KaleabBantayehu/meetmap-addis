@@ -217,5 +217,14 @@ class LocalStorageService {
 
   Future<void> remove(String key) => _prefs.remove(key);
 
+  Future<void> clearUserData(String userId) async {
+    await Future.wait([
+      remove(CacheKeys.savedPlacesForUser(userId)),
+      remove(CacheKeys.savedPlaceIdsForUser(userId)),
+      remove(CacheKeys.savedPlacesLastSyncForUser(userId)),
+      remove(CacheKeys.searchHistoryForUser(userId)),
+    ]);
+  }
+
   Future<void> clearAll() => _prefs.clear();
 }

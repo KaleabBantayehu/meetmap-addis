@@ -27,7 +27,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final placesProvider = Provider.of<PlacesProvider>(context);
-    final places = placesProvider.places;
+    final places = placesProvider.hasLoadedMapBounds
+        ? placesProvider.mapPlaces
+        : placesProvider.places;
     final isLoading = placesProvider.isLoading;
     final errorMessage = placesProvider.errorMessage;
 
@@ -58,14 +60,17 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     )
-                  : places.isEmpty
+                  : places.isEmpty && !placesProvider.hasLoadedMapBounds
                   ? const Center(
                       child: Text(
                         'No places found',
                         style: TextStyle(color: AppColors.textSecondary),
                       ),
                     )
-                  : HomeMapSection(places: places),
+                  : HomeMapSection(
+                      places: places,
+                      onBoundsChanged: placesProvider.fetchPlacesInBounds,
+                    ),
             ),
           ],
         ),

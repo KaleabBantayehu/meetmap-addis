@@ -134,6 +134,40 @@ describe('trusted review aggregate transaction', () => {
     assert.equal((await placeAggregate()).reviewCount, 1);
   });
 
+  test('durable marker prevents replay after intervening review events', async () => {
+    const firstEvent = {
+      eventId: 'durable-event',
+      reviewId: 'review-1',
+      afterData: { userId: 'alice', rating: 5 },
+    };
+
+    await apply(firstEvent);
+    await apply({
+      eventId: 'intervening-event',
+      reviewId: 'review-2',
+      afterData: { userId: 'alice', rating: 3 },
+    });
+    const replay = await apply(firstEvent);
+
+    assert.equal(replay.duplicate, true);
+    const aggregate = await placeAggregate();
+    assert.equal(aggregate.ratingSum, 8);
+    assert.equal(aggregate.reviewCount, 2);
+    assert.equal(aggregate.rating, 4);
+
+    const markers = await db
+      .collection('places/place-1/aggregateEvents')
+      .get();
+    assert.equal(markers.size, 2);
+    const marker = markers.docs
+      .map((snapshot) => snapshot.data())
+      .find((data) => data.eventId === firstEvent.eventId);
+    assert.equal(marker.placeId, 'place-1');
+    assert.equal(marker.reviewId, 'review-1');
+    assert.equal(marker.eventType, 'create');
+    assert.ok(marker.processedAt);
+  });
+
   test('review anonymization does not change aggregate values', async () => {
     await db.doc('places/place-1').update({
       ratingSum: 9,
@@ -200,6 +234,11 @@ describe('trusted review aggregate transaction', () => {
       }),
       /requires reconciliation/,
     );
+
+    const markers = await db
+      .collection('places/place-1/aggregateEvents')
+      .get();
+    assert.equal(markers.size, 0);
   });
 
   test('single-place reconciliation uses authoritative reviews', async () => {
