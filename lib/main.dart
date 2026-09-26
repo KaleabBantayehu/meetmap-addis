@@ -75,13 +75,19 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => PlacesProvider(placeRepository: placeRepository),
-        ),
         ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProvider(
           create: (_) =>
               AuthProvider(authRepository: authRepository)..checkCurrentUser(),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, PlacesProvider>(
+          create: (_) => PlacesProvider(placeRepository: placeRepository),
+          update: (_, authProvider, previous) {
+            final provider =
+                previous ?? PlacesProvider(placeRepository: placeRepository);
+            provider.syncSession(authProvider.currentUser?.id);
+            return provider;
+          },
         ),
         ChangeNotifierProxyProvider<AuthProvider, SavedProvider>(
           create: (context) => SavedProvider(

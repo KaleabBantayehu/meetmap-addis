@@ -25,6 +25,17 @@ void main() {
     );
   });
 
+  test('search-history cache keys are scoped by Firebase UID', () {
+    expect(
+      CacheKeys.searchHistoryForUser('alice'),
+      isNot(CacheKeys.searchHistoryForUser('bob')),
+    );
+    expect(
+      CacheKeys.searchHistoryForUser(null),
+      isNot(CacheKeys.searchHistoryForUser('alice')),
+    );
+  });
+
   test('legacy place pricing remains compatible', () {
     final place = PlaceModel.fromMap({
       'id': 'legacy-place',

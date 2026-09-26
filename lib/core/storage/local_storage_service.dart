@@ -30,12 +30,12 @@ class LocalStorageService {
   }
 
   // --- Search History ---
-  List<String> getSearchHistory() {
-    return _prefs.getStringList(CacheKeys.searchHistory) ?? [];
+  List<String> getSearchHistory(String? userId) {
+    return _prefs.getStringList(CacheKeys.searchHistoryForUser(userId)) ?? [];
   }
 
-  Future<void> saveSearchHistory(List<String> history) async {
-    await _prefs.setStringList(CacheKeys.searchHistory, history);
+  Future<void> saveSearchHistory(String? userId, List<String> history) async {
+    await _prefs.setStringList(CacheKeys.searchHistoryForUser(userId), history);
   }
 
   // --- Saved Place IDs ---

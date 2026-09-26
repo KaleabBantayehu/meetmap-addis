@@ -4,7 +4,8 @@ class CacheKeys {
   static const String legacyUserSession = 'user_session_secure';
   static const String savedPlaces = 'saved_places_cache';
   static const String savedPlaceIds = 'saved_place_ids_cache';
-  static const String searchHistory = 'search_history_cache';
+  static const String legacySearchHistory = 'search_history_cache';
+  static const String searchHistoryPrefix = 'search_history_cache_';
   static const String placesCache = 'all_places_cache';
   static const String eventsCache = 'events_cache';
   static const String hangoutsCache = 'hangouts_cache';
@@ -34,4 +35,7 @@ class CacheKeys {
 
   static String savedPlacesLastSyncForUser(String userId) =>
       '${savedPlacesLastSync}_$userId';
+
+  static String searchHistoryForUser(String? userId) =>
+      '$searchHistoryPrefix${userId ?? 'anonymous'}';
 }

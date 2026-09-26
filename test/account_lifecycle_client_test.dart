@@ -3,11 +3,14 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meetmap_addis/core/repositories/auth_repository.dart';
 import 'package:meetmap_addis/core/repositories/network_repository.dart';
+import 'package:meetmap_addis/core/repositories/place_repository.dart';
 import 'package:meetmap_addis/core/repositories/saved_repository.dart';
 import 'package:meetmap_addis/core/services/best_effort_cleanup.dart';
+import 'package:meetmap_addis/core/storage/cache_keys.dart';
 import 'package:meetmap_addis/core/storage/local_storage_service.dart';
 import 'package:meetmap_addis/providers/auth_provider.dart';
 import 'package:meetmap_addis/providers/network_provider.dart';
+import 'package:meetmap_addis/providers/places_provider.dart';
 import 'package:meetmap_addis/providers/saved_provider.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
 import 'package:meetmap_addis/shared/models/user_model.dart';
@@ -77,6 +80,61 @@ void main() {
     ]);
 
     expect(completed, ['first', 'last']);
+  });
+
+  test('search history is isolated and restored by user session', () async {
+    final storage = LocalStorageService.instance;
+    await storage.remove(CacheKeys.searchHistoryForUser('alice'));
+    await storage.remove(CacheKeys.searchHistoryForUser('bob'));
+    await storage.remove(CacheKeys.searchHistoryForUser(null));
+    final provider = PlacesProvider(placeRepository: _TestPlaceRepository());
+
+    provider.syncSession('alice');
+    await provider.addRecentSearch('coffee');
+    expect(storage.getSearchHistory('alice'), ['coffee']);
+
+    provider.syncSession('bob');
+    expect(provider.recentSearches, isEmpty);
+    await provider.addRecentSearch('lunch');
+    expect(storage.getSearchHistory('bob'), ['lunch']);
+    expect(provider.recentSearches, ['lunch']);
+
+    provider.syncSession('alice');
+    expect(provider.recentSearches, ['coffee']);
+    provider.syncSession(null);
+    expect(provider.recentSearches, isEmpty);
+    provider.dispose();
+  });
+
+  test('legacy global search history does not enter a user session', () async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(CacheKeys.legacySearchHistory, ['legacy query']);
+    await LocalStorageService.instance.remove(
+      CacheKeys.searchHistoryForUser('alice'),
+    );
+
+    final provider = PlacesProvider(placeRepository: _TestPlaceRepository());
+    provider.syncSession('alice');
+
+    expect(provider.recentSearches, isEmpty);
+    provider.dispose();
+  });
+
+  test('an old session search write cannot repopulate a new session', () async {
+    final storage = LocalStorageService.instance;
+    await storage.remove(CacheKeys.searchHistoryForUser('alice'));
+    await storage.remove(CacheKeys.searchHistoryForUser('bob'));
+    final provider = PlacesProvider(placeRepository: _TestPlaceRepository());
+    provider.syncSession('alice');
+
+    final aliceWrite = provider.addRecentSearch('alice query');
+    provider.syncSession('bob');
+    await aliceWrite;
+
+    expect(provider.recentSearches, isEmpty);
+    expect(storage.getSearchHistory('alice'), ['alice query']);
+    expect(storage.getSearchHistory('bob'), isEmpty);
+    provider.dispose();
   });
 }
 
@@ -192,4 +250,41 @@ class _DelayedNetworkRepository implements NetworkRepository {
 
   @override
   Future<int> getFollowingCount(String userId) async => 0;
+}
+
+class _TestPlaceRepository implements PlaceRepository {
+  @override
+  Future<PlaceModel> createPlace(PlaceModel place) async => place;
+
+  @override
+  Future<List<PlaceModel>> fetchFeaturedPlaces() async => [];
+
+  @override
+  Future<List<PlaceModel>> fetchPlaces() async => [];
+
+  @override
+  Future<PlaceModel?> fetchPlaceById(String id) async => null;
+
+  @override
+  Future<List<PlaceModel>> fetchSavedPlaces() async => [];
+
+  @override
+  Future<List<PlaceModel>> filterPlaces({
+    String? category,
+    String? priceRange,
+    double? minRating,
+    List<String>? amenities,
+  }) async => [];
+
+  @override
+  Future<PlaceModel?> getPlaceById(String id) async => null;
+
+  @override
+  Future<List<PlaceModel>> getPlaces() async => [];
+
+  @override
+  Future<List<PlaceModel>> getSavedPlaces() async => [];
+
+  @override
+  Future<List<PlaceModel>> searchPlaces(String query) async => [];
 }

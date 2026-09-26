@@ -13,7 +13,7 @@ class PlacesProvider with ChangeNotifier {
 
   PlacesProvider({required PlaceRepository placeRepository})
     : _placeRepository = placeRepository {
-    _loadSearchHistory();
+    _loadSearchHistory(null);
     _loadCachedPlaces();
   }
 
@@ -31,6 +31,8 @@ class PlacesProvider with ChangeNotifier {
 
   List<String> _recentSearches = [];
   List<String> get recentSearches => _recentSearches;
+  String? _sessionUserId;
+  int _sessionGeneration = 0;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -44,9 +46,18 @@ class PlacesProvider with ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
-  void _loadSearchHistory() {
+  void syncSession(String? userId) {
+    if (_sessionUserId == userId) return;
+    _sessionGeneration++;
+    _sessionUserId = userId;
+    _recentSearches = [];
+    _loadSearchHistory(userId);
+    notifyListeners();
+  }
+
+  void _loadSearchHistory(String? userId) {
     try {
-      _recentSearches = LocalStorageService.instance.getSearchHistory();
+      _recentSearches = LocalStorageService.instance.getSearchHistory(userId);
       debugPrint(
         'Loaded ${_recentSearches.length} recent searches from cache.',
       );
@@ -70,6 +81,8 @@ class PlacesProvider with ChangeNotifier {
   Future<void> addRecentSearch(String query) async {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return;
+    final userId = _sessionUserId;
+    final generation = _sessionGeneration;
 
     _recentSearches.removeWhere(
       (item) => item.toLowerCase() == trimmed.toLowerCase(),
@@ -78,36 +91,45 @@ class PlacesProvider with ChangeNotifier {
     if (_recentSearches.length > 10) {
       _recentSearches = _recentSearches.sublist(0, 10);
     }
+    final history = List<String>.from(_recentSearches);
 
     try {
-      await LocalStorageService.instance.saveSearchHistory(_recentSearches);
+      await LocalStorageService.instance.saveSearchHistory(userId, history);
     } catch (e) {
       debugPrint('Error saving search history: $e');
     }
-    notifyListeners();
+    if (_isCurrentSession(userId, generation)) notifyListeners();
   }
 
   Future<void> removeRecentSearch(String query) async {
+    final userId = _sessionUserId;
+    final generation = _sessionGeneration;
     _recentSearches.removeWhere(
       (item) => item.toLowerCase() == query.toLowerCase().trim(),
     );
+    final history = List<String>.from(_recentSearches);
     try {
-      await LocalStorageService.instance.saveSearchHistory(_recentSearches);
+      await LocalStorageService.instance.saveSearchHistory(userId, history);
     } catch (e) {
       debugPrint('Error removing search history item: $e');
     }
-    notifyListeners();
+    if (_isCurrentSession(userId, generation)) notifyListeners();
   }
 
   Future<void> clearRecentSearches() async {
+    final userId = _sessionUserId;
+    final generation = _sessionGeneration;
     _recentSearches.clear();
     try {
-      await LocalStorageService.instance.saveSearchHistory(_recentSearches);
+      await LocalStorageService.instance.saveSearchHistory(userId, const []);
     } catch (e) {
       debugPrint('Error clearing search history: $e');
     }
-    notifyListeners();
+    if (_isCurrentSession(userId, generation)) notifyListeners();
   }
+
+  bool _isCurrentSession(String? userId, int generation) =>
+      _sessionUserId == userId && _sessionGeneration == generation;
 
   Future<void> fetchPlaces() async {
     if (_places.isEmpty) {
