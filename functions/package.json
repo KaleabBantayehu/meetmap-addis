@@ -9,7 +9,10 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "reconcile:place": "node scripts/reconcile-place.js",
-    "reseed:demo-users": "node scripts/reseed-demo-users.js"
+    "reseed:demo-users": "node scripts/reseed-demo-users.js",
+    "migrate:search-prefixes": "node scripts/migrations/backfill-search-prefixes.js",
+    "migrate:lifecycle": "node scripts/migrations/backfill-lifecycle-status.js",
+    "migrate:review-aggregates": "node scripts/migrations/reconcile-review-aggregates.js"
   },
   "dependencies": {
     "firebase-admin": "14.5.0",
