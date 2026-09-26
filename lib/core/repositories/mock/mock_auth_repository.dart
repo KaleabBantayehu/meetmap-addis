@@ -63,6 +63,12 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> deleteAccount() async {
+    _currentUser = null;
+    _authStateController.add(null);
+  }
+
+  @override
   Future<UserModel> signInWithGoogle() async {
     await Future.delayed(const Duration(milliseconds: 500));
     _currentUser = UserModel(

@@ -133,6 +133,23 @@ class AuthProvider extends ChangeNotifier {
       signupWithEmail(email, password, name);
   Future<void> logout() => signOut();
 
+  Future<bool> deleteAccount() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _authRepository.deleteAccount();
+      _currentUser = null;
+      return true;
+    } catch (error) {
+      _errorMessage = error.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> checkCurrentUser() async {
     _isLoading = true;
     notifyListeners();

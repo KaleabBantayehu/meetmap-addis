@@ -51,6 +51,7 @@ dependencies:
   http: ^1.6.0
   gebeta_gl: ^0.22.4
   geolocator: ^14.0.1
+  cloud_functions: ^6.5.0
 
 
 dev_dependencies:

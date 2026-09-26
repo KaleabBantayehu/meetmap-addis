@@ -134,6 +134,26 @@ describe('trusted review aggregate transaction', () => {
     assert.equal((await placeAggregate()).reviewCount, 1);
   });
 
+  test('review anonymization does not change aggregate values', async () => {
+    await db.doc('places/place-1').update({
+      ratingSum: 9,
+      reviewCount: 2,
+      rating: 4.5,
+    });
+
+    await apply({
+      eventId: 'event-anonymize-review',
+      reviewId: 'review-1',
+      beforeData: { userId: 'alice', rating: 5 },
+      afterData: { userId: null, authorStatus: 'deleted', rating: 5 },
+    });
+
+    const aggregate = await placeAggregate();
+    assert.equal(aggregate.ratingSum, 9);
+    assert.equal(aggregate.reviewCount, 2);
+    assert.equal(aggregate.rating, 4.5);
+  });
+
   test('concurrent creates are transactionally accumulated', async () => {
     await Promise.all([
       apply({

@@ -190,6 +190,8 @@ class _ReviewTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentUserId = context.watch<AuthProvider>().currentUser?.id;
     final isOwnReview = currentUserId == review.userId;
+    final isDeletedAuthor = review.userId == null;
+    final reviewUserId = review.userId;
 
     // Defensively clamp rating count between 0 and 5 to protect list loop generation bounds
     final starCount = review.rating.round().clamp(0, 5);
@@ -221,10 +223,12 @@ class _ReviewTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isOwnReview
+                      isDeletedAuthor
+                          ? 'Deleted user'
+                          : isOwnReview
                           ? 'You'
-                          : (review.userId.length > 4
-                                ? 'User ${review.userId.substring(0, 4)}'
+                          : ((reviewUserId?.length ?? 0) > 4
+                                ? 'User ${reviewUserId!.substring(0, 4)}'
                                 : 'User'),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.textPrimary,

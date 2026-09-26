@@ -7,9 +7,14 @@ import '../shared/models/user_model.dart';
 
 class NetworkProvider with ChangeNotifier {
   final NetworkRepository _networkRepository;
+  final bool Function() _isConnected;
 
-  NetworkProvider({required NetworkRepository networkRepository})
-    : _networkRepository = networkRepository {
+  NetworkProvider({
+    required NetworkRepository networkRepository,
+    bool Function()? isConnected,
+  }) : _networkRepository = networkRepository,
+       _isConnected =
+           isConnected ?? (() => ConnectivityService.instance.isConnected) {
     _loadFromCache();
   }
 
@@ -33,6 +38,21 @@ class NetworkProvider with ChangeNotifier {
 
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
+  String? _sessionUserId;
+  int _sessionGeneration = 0;
+
+  void syncSession(String? userId) {
+    if (_sessionUserId == userId) return;
+    _sessionGeneration++;
+    _sessionUserId = userId;
+    _followingUserIds.clear();
+    _followActionInProgress.clear();
+    _followerCounts.clear();
+    _followingCounts.clear();
+    _errorMessage = null;
+    _isLoading = false;
+    notifyListeners();
+  }
 
   bool get hasActiveSearch => _searchQuery.trim().isNotEmpty;
 
@@ -51,6 +71,7 @@ class NetworkProvider with ChangeNotifier {
   }
 
   Future<void> fetchNetworkData() async {
+    final generation = _sessionGeneration;
     if (_suggestedUsers.isEmpty && _trendingReviewers.isEmpty) {
       _isLoading = true;
     }
@@ -58,9 +79,14 @@ class NetworkProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      if (ConnectivityService.instance.isConnected) {
-        _suggestedUsers = await _networkRepository.getSuggestedUsers();
-        _trendingReviewers = await _networkRepository.getTrendingReviewers();
+      if (_isConnected()) {
+        final suggestedUsers = await _networkRepository.getSuggestedUsers();
+        if (!_isCurrentGeneration(generation)) return;
+        final trendingReviewers = await _networkRepository
+            .getTrendingReviewers();
+        if (!_isCurrentGeneration(generation)) return;
+        _suggestedUsers = suggestedUsers;
+        _trendingReviewers = trendingReviewers;
         await LocalStorageService.instance.saveCachedSuggestedUsers(
           _suggestedUsers,
         );
@@ -72,13 +98,16 @@ class NetworkProvider with ChangeNotifier {
         _loadFromCache();
       }
     } catch (e) {
+      if (!_isCurrentGeneration(generation)) return;
       _errorMessage = cleanExceptionMessage(e, 'Failed to load network data');
       if (_suggestedUsers.isEmpty && _trendingReviewers.isEmpty) {
         _loadFromCache();
       }
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (_isCurrentGeneration(generation)) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -105,23 +134,29 @@ class NetworkProvider with ChangeNotifier {
     required bool includeFollowing,
   }) async {
     if (userId.isEmpty) return;
+    final generation = _sessionGeneration;
     try {
-      _followerCounts[userId] = await _networkRepository.getFollowerCount(
-        userId,
-      );
+      final followerCount = await _networkRepository.getFollowerCount(userId);
+      if (!_isCurrentGeneration(generation)) return;
+      _followerCounts[userId] = followerCount;
       if (includeFollowing) {
-        _followingCounts[userId] = await _networkRepository.getFollowingCount(
+        final followingCount = await _networkRepository.getFollowingCount(
           userId,
         );
+        if (!_isCurrentGeneration(generation)) return;
+        _followingCounts[userId] = followingCount;
       }
       notifyListeners();
     } catch (e) {
+      if (!_isCurrentGeneration(generation)) return;
       _errorMessage = cleanExceptionMessage(e, 'Unable to load profile counts');
       notifyListeners();
     }
   }
 
   Future<void> loadFollowState(String currentUserId) async {
+    final generation = _sessionGeneration;
+    if (_sessionUserId != currentUserId) return;
     final allUsers = [..._suggestedUsers, ..._trendingReviewers];
     for (final user in allUsers) {
       if (user.id.isEmpty || user.id == currentUserId) continue;
@@ -130,12 +165,14 @@ class NetworkProvider with ChangeNotifier {
           currentUserId,
           user.id,
         );
+        if (!_isCurrentSession(currentUserId, generation)) return;
         if (isFollowingUser) {
           _followingUserIds.add(user.id);
         } else {
           _followingUserIds.remove(user.id);
         }
         final count = await _networkRepository.getFollowerCount(user.id);
+        if (!_isCurrentSession(currentUserId, generation)) return;
         _followerCounts[user.id] = count;
       } catch (_) {}
     }
@@ -152,6 +189,8 @@ class NetworkProvider with ChangeNotifier {
         _followActionInProgress.contains(targetId)) {
       return false;
     }
+    final generation = _sessionGeneration;
+    if (_sessionUserId != currentUserId) return false;
 
     final wasFollowing = _followingUserIds.contains(targetId);
     final previousCount = followerCountFor(targetUser);
@@ -171,9 +210,12 @@ class NetworkProvider with ChangeNotifier {
       } else {
         await _networkRepository.followUser(currentUserId, targetId);
       }
-      await _refreshFollowerCount(targetId);
+      if (!_isCurrentSession(currentUserId, generation)) return false;
+      await _refreshFollowerCount(targetId, generation);
+      if (!_isCurrentSession(currentUserId, generation)) return false;
       return true;
     } catch (e) {
+      if (!_isCurrentSession(currentUserId, generation)) return false;
       if (wasFollowing) {
         _followingUserIds.add(targetId);
       } else {
@@ -186,17 +228,25 @@ class NetworkProvider with ChangeNotifier {
       );
       return false;
     } finally {
-      _followActionInProgress.remove(targetId);
-      notifyListeners();
+      if (_isCurrentSession(currentUserId, generation)) {
+        _followActionInProgress.remove(targetId);
+        notifyListeners();
+      }
     }
   }
 
-  Future<void> _refreshFollowerCount(String userId) async {
+  Future<void> _refreshFollowerCount(String userId, int generation) async {
     try {
       final count = await _networkRepository.getFollowerCount(userId);
+      if (!_isCurrentGeneration(generation)) return;
       _followerCounts[userId] = count;
     } catch (_) {}
   }
+
+  bool _isCurrentGeneration(int generation) => _sessionGeneration == generation;
+
+  bool _isCurrentSession(String userId, int generation) =>
+      _sessionUserId == userId && _isCurrentGeneration(generation);
 
   void _applySearch() {
     if (_searchQuery.isEmpty) {

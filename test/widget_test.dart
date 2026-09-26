@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:meetmap_addis/shared/models/place_model.dart';
 import 'package:meetmap_addis/shared/models/event_model.dart';
+import 'package:meetmap_addis/shared/models/hangout_model.dart';
 import 'package:meetmap_addis/shared/models/review_model.dart';
 import 'package:meetmap_addis/core/storage/cache_keys.dart';
 
@@ -10,6 +11,17 @@ void main() {
     expect(
       CacheKeys.privateUserSession('alice'),
       isNot(CacheKeys.privateUserSession('bob')),
+    );
+  });
+
+  test('saved-place cache keys are scoped by Firebase UID', () {
+    expect(
+      CacheKeys.savedPlacesForUser('alice'),
+      isNot(CacheKeys.savedPlacesForUser('bob')),
+    );
+    expect(
+      CacheKeys.savedPlaceIdsForUser('alice'),
+      isNot(CacheKeys.savedPlaceIdsForUser('bob')),
     );
   });
 
@@ -100,5 +112,23 @@ void main() {
 
     expect(event.latitude, isNull);
     expect(event.longitude, isNull);
+  });
+
+  test('retained event and hangout lifecycle states are inactive', () {
+    final event = EventModel.fromMap({
+      'id': 'event-1',
+      'title': 'Archived event',
+      'lifecycleStatus': 'archived',
+    });
+    final hangout = HangoutModel.fromMap({
+      'id': 'hangout-1',
+      'title': 'Inactive hangout',
+      'lifecycleStatus': 'inactive',
+    });
+
+    expect(event.isActive, isFalse);
+    expect(hangout.isActive, isFalse);
+    expect(EventModel.fromMap({'id': 'legacy'}).isActive, isTrue);
+    expect(HangoutModel.fromMap({'id': 'legacy'}).isActive, isTrue);
   });
 }

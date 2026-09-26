@@ -39,17 +39,17 @@ class LocalStorageService {
   }
 
   // --- Saved Place IDs ---
-  List<String> getSavedPlaceIds() {
-    return _prefs.getStringList(CacheKeys.savedPlaceIds) ?? [];
+  List<String> getSavedPlaceIds(String userId) {
+    return _prefs.getStringList(CacheKeys.savedPlaceIdsForUser(userId)) ?? [];
   }
 
-  Future<void> saveSavedPlaceIds(List<String> ids) async {
-    await _prefs.setStringList(CacheKeys.savedPlaceIds, ids);
+  Future<void> saveSavedPlaceIds(String userId, List<String> ids) async {
+    await _prefs.setStringList(CacheKeys.savedPlaceIdsForUser(userId), ids);
   }
 
   // --- Saved Places Cache ---
-  List<PlaceModel> getSavedPlaces() {
-    final jsonStr = _prefs.getString(CacheKeys.savedPlaces);
+  List<PlaceModel> getSavedPlaces(String userId) {
+    final jsonStr = _prefs.getString(CacheKeys.savedPlacesForUser(userId));
     if (jsonStr == null) return [];
     try {
       final List<dynamic> decoded = json.decode(jsonStr);
@@ -62,12 +62,12 @@ class LocalStorageService {
     }
   }
 
-  Future<void> saveSavedPlaces(List<PlaceModel> places) async {
+  Future<void> saveSavedPlaces(String userId, List<PlaceModel> places) async {
     final List<Map<String, dynamic>> maps = places
         .map((p) => p.toMap())
         .toList();
     final jsonStr = json.encode(maps);
-    await _prefs.setString(CacheKeys.savedPlaces, jsonStr);
+    await _prefs.setString(CacheKeys.savedPlacesForUser(userId), jsonStr);
   }
 
   // --- All Places Cache ---

@@ -25,6 +25,7 @@ class FirebaseHangoutRepository implements HangoutRepository {
           .timeout(const Duration(seconds: 5));
       return snapshot.docs
           .map((doc) => _mapDoc(doc, HangoutModel.fromMap))
+          .where((hangout) => hangout.isActive)
           .toList();
     } catch (e) {
       throw Exception(mapRepositoryError(e, 'Failed to load hangouts'));
@@ -86,6 +87,7 @@ class FirebaseHangoutRepository implements HangoutRepository {
       };
       data.remove('attendeeCount');
       data.remove('isLive');
+      data.remove('lifecycleStatus');
 
       await docRef.set(data).timeout(const Duration(seconds: 4));
 

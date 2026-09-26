@@ -594,3 +594,82 @@ test('no unmatched document path is writable by an authenticated user', async ()
   );
   assert.ok(true);
 });
+
+describe('trusted account lifecycle fields', () => {
+  test('ordinary clients cannot inject or change lifecycle ownership fields', async () => {
+    const alice = dbFor('alice');
+    const place = newPlaceData('alice', 'lifecycle-place');
+    place.lifecycleStatus = 'systemManaged';
+    await assertFails(setDoc(doc(alice, 'places/lifecycle-place'), place));
+
+    await seed('places/lifecycle-place', placeData('alice', 'lifecycle-place'));
+    await assertFails(
+      updateDoc(doc(alice, 'places/lifecycle-place'), {
+        lifecycleStatus: 'systemManaged',
+      }),
+    );
+
+    await seed(
+      'places/lifecycle-place/reviews/review-1',
+      reviewData('alice', 'lifecycle-place', 'review-1'),
+    );
+    await assertFails(
+      updateDoc(
+        doc(alice, 'places/lifecycle-place/reviews/review-1'),
+        { userId: 'deleted-user', authorStatus: 'deleted' },
+      ),
+    );
+  });
+
+  test('account document deletion remains unavailable to clients', async () => {
+    await seed('users/alice', userData('alice'));
+    await seed('users/alice/private/account', privateAccountData('alice'));
+    const alice = dbFor('alice');
+    await assertFails(deleteDoc(doc(alice, 'users/alice')));
+    await assertFails(deleteDoc(doc(alice, 'users/alice/private/account')));
+    await assertFails(deleteDoc(doc(publicDb(), 'users/alice')));
+  });
+
+  test('retained lifecycle documents cannot be claimed, edited, or deleted', async () => {
+    const systemPlace = placeData('alice', 'system-place');
+    systemPlace.createdBy = null;
+    systemPlace.lifecycleStatus = 'systemManaged';
+    const archivedEvent = eventData('alice');
+    archivedEvent.createdBy = null;
+    archivedEvent.lifecycleStatus = 'archived';
+    const inactiveHangout = hangoutData('alice');
+    inactiveHangout.createdBy = null;
+    inactiveHangout.lifecycleStatus = 'inactive';
+    await seed('places/system-place', systemPlace);
+    await seed('events/archived-event', archivedEvent);
+    await seed('hangouts/inactive-hangout', inactiveHangout);
+
+    const alice = dbFor('alice');
+    for (const path of [
+      'places/system-place',
+      'events/archived-event',
+      'hangouts/inactive-hangout',
+    ]) {
+      await assertFails(updateDoc(doc(alice, path), { createdBy: 'alice' }));
+      await assertFails(updateDoc(doc(alice, path), { lifecycleStatus: 'active' }));
+      await assertFails(deleteDoc(doc(alice, path)));
+    }
+  });
+
+  test('anonymized reviews are unowned and immutable to all clients', async () => {
+    const review = reviewData('alice', 'place-1', 'anonymous-review');
+    review.userId = null;
+    review.authorStatus = 'deleted';
+    review.anonymizedAt = timestamp();
+    await seed('places/place-1/reviews/anonymous-review', review);
+
+    for (const uid of ['alice', 'bob', 'deleted-user']) {
+      const reference = doc(
+        dbFor(uid),
+        'places/place-1/reviews/anonymous-review',
+      );
+      await assertFails(updateDoc(reference, { reviewText: 'Changed' }));
+      await assertFails(deleteDoc(reference));
+    }
+  });
+});

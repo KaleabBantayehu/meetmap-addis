@@ -335,10 +335,14 @@ service cloud.firestore {
           && !('reportCount' in request.resource.data)
           && hasValidReviewShape(placeId);
         allow update: if signedIn()
+          && resource.data.userId is string
+          && !('authorStatus' in resource.data)
           && request.auth.uid == resource.data.userId
           && hasValidReviewShape(placeId)
           && reviewTrustedFieldsAreUnchanged();
         allow delete: if signedIn()
+          && resource.data.userId is string
+          && !('authorStatus' in resource.data)
           && request.auth.uid == resource.data.userId;
       }
     }

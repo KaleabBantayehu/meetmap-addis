@@ -26,4 +26,12 @@ class CacheKeys {
 
   static String privateUserSession(String userId) =>
       '$privateUserSessionPrefix$userId';
+
+  static String savedPlacesForUser(String userId) => '${savedPlaces}_$userId';
+
+  static String savedPlaceIdsForUser(String userId) =>
+      '${savedPlaceIds}_$userId';
+
+  static String savedPlacesLastSyncForUser(String userId) =>
+      '${savedPlacesLastSync}_$userId';
 }

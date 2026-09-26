@@ -78,9 +78,7 @@ void main() async {
         ChangeNotifierProvider(
           create: (_) => PlacesProvider(placeRepository: placeRepository),
         ),
-        ChangeNotifierProvider(
-          create: (_) => LocationProvider(),
-        ),
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProvider(
           create: (_) =>
               AuthProvider(authRepository: authRepository)..checkCurrentUser(),
@@ -90,12 +88,16 @@ void main() async {
             savedRepository: savedRepository,
             authProvider: Provider.of<AuthProvider>(context, listen: false),
           ),
-          update: (context, authProvider, previous) =>
-              previous ??
-              SavedProvider(
-                savedRepository: savedRepository,
-                authProvider: authProvider,
-              ),
+          update: (context, authProvider, previous) {
+            final provider =
+                previous ??
+                SavedProvider(
+                  savedRepository: savedRepository,
+                  authProvider: authProvider,
+                );
+            provider.syncSession(authProvider.currentUser?.id);
+            return provider;
+          },
         ),
         ChangeNotifierProxyProvider<AuthProvider, ReviewsProvider>(
           create: (context) => ReviewsProvider(
@@ -112,8 +114,15 @@ void main() async {
         ChangeNotifierProvider(
           create: (_) => EventsProvider(eventRepository: eventRepository),
         ),
-        ChangeNotifierProvider(
+        ChangeNotifierProxyProvider<AuthProvider, NetworkProvider>(
           create: (_) => NetworkProvider(networkRepository: networkRepository),
+          update: (_, authProvider, previous) {
+            final provider =
+                previous ??
+                NetworkProvider(networkRepository: networkRepository);
+            provider.syncSession(authProvider.currentUser?.id);
+            return provider;
+          },
         ),
         ChangeNotifierProvider(
           create: (_) => HangoutsProvider(hangoutRepository: hangoutRepository),

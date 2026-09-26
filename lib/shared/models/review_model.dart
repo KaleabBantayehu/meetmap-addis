@@ -6,7 +6,7 @@ import 'dart:convert';
 class ReviewModel {
   final String id;
   final String placeId;
-  final String userId;
+  final String? userId;
   final double rating;
   final String reviewText;
   final List<String> imageUrls;
@@ -83,7 +83,7 @@ class ReviewModel {
     return ReviewModel(
       id: map['id'] ?? '',
       placeId: map['placeId'] ?? '',
-      userId: map['userId'] ?? '',
+      userId: map['userId'] as String?,
       rating: (map['rating'] ?? 0).toDouble(),
       reviewText: map['reviewText'] ?? map['comment'] ?? '',
       imageUrls: List<String>.from(map['imageUrls'] ?? []),

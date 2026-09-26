@@ -30,7 +30,10 @@ class EventsProvider with ChangeNotifier {
 
   void _loadFromCache() {
     try {
-      _events = LocalStorageService.instance.getCachedEvents();
+      _events = LocalStorageService.instance
+          .getCachedEvents()
+          .where((event) => event.isActive)
+          .toList();
       _featuredEvent = _firstFeaturedEvent(_events);
       if (_events.isNotEmpty) notifyListeners();
     } catch (e) {
@@ -66,7 +69,7 @@ class EventsProvider with ChangeNotifier {
 
   EventModel? _firstFeaturedEvent(List<EventModel> events) {
     for (final event in events) {
-      if (event.isFeatured) return event;
+      if (event.isActive && event.isFeatured) return event;
     }
     return null;
   }

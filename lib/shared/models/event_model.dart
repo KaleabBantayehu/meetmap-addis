@@ -15,6 +15,7 @@ class EventModel {
   final String? createdBy;
   final double? latitude;
   final double? longitude;
+  final String lifecycleStatus;
 
   const EventModel({
     required this.id,
@@ -31,7 +32,10 @@ class EventModel {
     this.createdBy,
     this.latitude,
     this.longitude,
+    this.lifecycleStatus = 'active',
   });
+
+  bool get isActive => lifecycleStatus == 'active';
 
   EventModel copyWith({
     String? id,
@@ -48,6 +52,7 @@ class EventModel {
     String? createdBy,
     double? latitude,
     double? longitude,
+    String? lifecycleStatus,
   }) {
     return EventModel(
       id: id ?? this.id,
@@ -64,6 +69,7 @@ class EventModel {
       createdBy: createdBy ?? this.createdBy,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      lifecycleStatus: lifecycleStatus ?? this.lifecycleStatus,
     );
   }
 
@@ -83,6 +89,7 @@ class EventModel {
       createdBy: map['createdBy'] as String?,
       latitude: (map['latitude'] as num?)?.toDouble(),
       longitude: (map['longitude'] as num?)?.toDouble(),
+      lifecycleStatus: map['lifecycleStatus'] as String? ?? 'active',
     );
   }
 
@@ -102,6 +109,7 @@ class EventModel {
       'createdBy': createdBy,
       'latitude': latitude,
       'longitude': longitude,
+      'lifecycleStatus': lifecycleStatus,
     };
   }
 
@@ -128,7 +136,8 @@ class EventModel {
         other.isFeatured == isFeatured &&
         other.createdBy == createdBy &&
         other.latitude == latitude &&
-        other.longitude == longitude;
+        other.longitude == longitude &&
+        other.lifecycleStatus == lifecycleStatus;
   }
 
   @override
@@ -146,6 +155,7 @@ class EventModel {
         isFeatured.hashCode ^
         createdBy.hashCode ^
         latitude.hashCode ^
-        longitude.hashCode;
+        longitude.hashCode ^
+        lifecycleStatus.hashCode;
   }
 }

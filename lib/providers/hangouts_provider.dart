@@ -35,12 +35,15 @@ class HangoutsProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   void _applyHangouts(List<HangoutModel> hangouts) {
-    if (hangouts.isNotEmpty) {
-      _activeHangout = hangouts.firstWhere(
+    final activeHangouts = hangouts
+        .where((hangout) => hangout.isActive)
+        .toList();
+    if (activeHangouts.isNotEmpty) {
+      _activeHangout = activeHangouts.firstWhere(
         (h) => h.isLive,
-        orElse: () => hangouts.first,
+        orElse: () => activeHangouts.first,
       );
-      _quickHangouts = hangouts
+      _quickHangouts = activeHangouts
           .where((h) => h.id != _activeHangout?.id)
           .toList();
     } else {

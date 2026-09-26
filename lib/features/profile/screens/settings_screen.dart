@@ -17,6 +17,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isResetLoading = false;
+  bool _isDeletingAccount = false;
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +67,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   icon: Icons.lock_outline_rounded,
                   title: 'Change Password',
                   onTap: _isResetLoading ? null : _sendResetEmail,
+                ),
+                const Divider(height: 1, indent: 56),
+                SettingsTile(
+                  icon: Icons.delete_forever_outlined,
+                  title: 'Delete Account',
+                  onTap: _isDeletingAccount ? null : _confirmDeleteAccount,
                 ),
               ],
             ),
@@ -159,6 +166,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
       SnackBar(
         content: Text(error ?? 'Password reset email sent.'),
         backgroundColor: error == null ? AppColors.primary : AppColors.error,
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete account?'),
+        content: const Text(
+          'Your account and private data will be permanently deleted. '
+          'Public contributions may be retained without your identity.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isDeletingAccount = true);
+    final authProvider = context.read<AuthProvider>();
+    final deleted = await authProvider.deleteAccount();
+    if (!mounted) return;
+    setState(() => _isDeletingAccount = false);
+
+    if (deleted) {
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(authProvider.errorMessage ?? 'Unable to delete account.'),
+        backgroundColor: AppColors.error,
       ),
     );
   }

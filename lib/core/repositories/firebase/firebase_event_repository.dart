@@ -22,7 +22,10 @@ class FirebaseEventRepository implements EventRepository {
           .orderBy('date')
           .get()
           .timeout(const Duration(seconds: 5));
-      return snapshot.docs.map(_mapDoc).toList();
+      return snapshot.docs
+          .map(_mapDoc)
+          .where((event) => event.isActive)
+          .toList();
     } catch (e) {
       throw Exception(mapRepositoryError(e, 'Failed to load events'));
     }
@@ -31,14 +34,11 @@ class FirebaseEventRepository implements EventRepository {
   @override
   Future<EventModel?> getFeaturedEvent() async {
     try {
-      final snapshot = await _firestore
-          .collection('events')
-          .where('isFeatured', isEqualTo: true)
-          .limit(1)
-          .get()
-          .timeout(const Duration(seconds: 5));
-      if (snapshot.docs.isEmpty) return null;
-      return _mapDoc(snapshot.docs.first);
+      final events = await getEvents();
+      for (final event in events) {
+        if (event.isFeatured) return event;
+      }
+      return null;
     } catch (e) {
       if (e.toString().contains('failed: precond')) {
         final events = await getEvents();
@@ -74,6 +74,7 @@ class FirebaseEventRepository implements EventRepository {
       };
       data.remove('attendeeCount');
       data.remove('isFeatured');
+      data.remove('lifecycleStatus');
 
       await docRef.set(data).timeout(const Duration(seconds: 4));
 

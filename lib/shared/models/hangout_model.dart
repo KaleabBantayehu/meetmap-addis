@@ -13,6 +13,7 @@ class HangoutModel {
   final String? createdBy;
   final double? latitude;
   final double? longitude;
+  final String lifecycleStatus;
 
   const HangoutModel({
     required this.id,
@@ -27,7 +28,10 @@ class HangoutModel {
     this.createdBy,
     this.latitude,
     this.longitude,
+    this.lifecycleStatus = 'active',
   });
+
+  bool get isActive => lifecycleStatus == 'active';
 
   HangoutModel copyWith({
     String? id,
@@ -42,6 +46,7 @@ class HangoutModel {
     String? createdBy,
     double? latitude,
     double? longitude,
+    String? lifecycleStatus,
   }) {
     return HangoutModel(
       id: id ?? this.id,
@@ -56,6 +61,7 @@ class HangoutModel {
       createdBy: createdBy ?? this.createdBy,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      lifecycleStatus: lifecycleStatus ?? this.lifecycleStatus,
     );
   }
 
@@ -73,6 +79,7 @@ class HangoutModel {
       createdBy: map['createdBy'] as String?,
       latitude: (map['latitude'] as num?)?.toDouble(),
       longitude: (map['longitude'] as num?)?.toDouble(),
+      lifecycleStatus: map['lifecycleStatus'] as String? ?? 'active',
     );
   }
 
@@ -90,6 +97,7 @@ class HangoutModel {
       'createdBy': createdBy,
       'latitude': latitude,
       'longitude': longitude,
+      'lifecycleStatus': lifecycleStatus,
     };
   }
 
@@ -114,7 +122,8 @@ class HangoutModel {
         other.isLive == isLive &&
         other.createdBy == createdBy &&
         other.latitude == latitude &&
-        other.longitude == longitude;
+        other.longitude == longitude &&
+        other.lifecycleStatus == lifecycleStatus;
   }
 
   @override
@@ -130,7 +139,8 @@ class HangoutModel {
         isLive.hashCode ^
         createdBy.hashCode ^
         (latitude?.hashCode ?? 0) ^
-        (longitude?.hashCode ?? 0);
+        (longitude?.hashCode ?? 0) ^
+        lifecycleStatus.hashCode;
   }
 }
 

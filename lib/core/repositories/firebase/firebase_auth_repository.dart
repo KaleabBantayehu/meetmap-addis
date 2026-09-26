@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import '../../../shared/models/user_model.dart';
@@ -7,11 +8,13 @@ import '../auth_repository.dart';
 import '../../storage/cache_keys.dart';
 import '../../storage/secure_storage_service.dart';
 import '../../storage/local_storage_service.dart';
+import '../../services/best_effort_cleanup.dart';
 
 class FirebaseAuthRepository implements AuthRepository {
   final fb.FirebaseAuth _firebaseAuth = fb.FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
 
   UserModel _mapFirebaseUser(fb.User user, {String? name}) {
     final defaultPhoto = 'https://i.pravatar.cc/150?img=12';
@@ -321,6 +324,35 @@ class FirebaseAuthRepository implements AuthRepository {
     try {
       await _clearCachedUser(userId);
     } catch (_) {}
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    final userId = _firebaseAuth.currentUser?.uid;
+    if (userId == null) {
+      throw Exception('Please sign in to delete your account.');
+    }
+
+    try {
+      final result = await _functions.httpsCallable('deleteAccount').call();
+      if (result.data is! Map || result.data['deleted'] != true) {
+        throw Exception('Account deletion was not confirmed.');
+      }
+      await runBestEffortCleanup([
+        () => _googleSignIn.signOut(),
+        () => _firebaseAuth.signOut(),
+        () => _clearCachedUser(userId),
+        () => LocalStorageService.instance.clearAll(),
+        () => SecureStorageService.instance.clearAll(),
+      ]);
+    } on FirebaseFunctionsException catch (error) {
+      if (error.code == 'unauthenticated') {
+        throw Exception('Please sign in again before deleting your account.');
+      }
+      throw Exception(
+        'Account deletion could not be completed. Please try again.',
+      );
+    }
   }
 
   @override
