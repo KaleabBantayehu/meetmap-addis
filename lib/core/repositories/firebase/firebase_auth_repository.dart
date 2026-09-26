@@ -115,12 +115,8 @@ class FirebaseAuthRepository implements AuthRepository {
           CacheKeys.activeUserSessionUid,
         );
     if (cachedUid != null && cachedUid.isNotEmpty) {
-      await SecureStorageService.instance.delete(
-        CacheKeys.privateUserSession(cachedUid),
-      );
+      await SecureStorageService.instance.clearUserData(cachedUid);
     }
-    await SecureStorageService.instance.delete(CacheKeys.legacyUserSession);
-    await SecureStorageService.instance.delete(CacheKeys.activeUserSessionUid);
   }
 
   Future<UserModel?> _loadCurrentUserProfile(fb.User firebaseUser) async {
@@ -374,8 +370,7 @@ class FirebaseAuthRepository implements AuthRepository {
         () => _googleSignIn.signOut(),
         () => _firebaseAuth.signOut(),
         () => _clearCachedUser(userId),
-        () => LocalStorageService.instance.clearAll(),
-        () => SecureStorageService.instance.clearAll(),
+        () => LocalStorageService.instance.clearUserData(userId),
       ]);
     } on FirebaseFunctionsException catch (error) {
       if (error.code == 'unauthenticated') {
