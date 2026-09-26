@@ -13,6 +13,9 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
+  String? get currentUserId => _currentUser?.id;
+
+  @override
   Stream<UserModel?> get authStateChanges => _authStateController.stream;
 
   @override

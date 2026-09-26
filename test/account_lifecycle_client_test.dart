@@ -70,6 +70,188 @@ void main() {
     provider.dispose();
   });
 
+  test(
+    'stale current-user lookup cannot restore a user after logout',
+    () async {
+      final repository = _RaceAuthRepository();
+      final provider = AuthProvider(authRepository: repository);
+      repository.setSession(_testUser('alice'));
+      await Future<void>.delayed(Duration.zero);
+
+      final lookup = provider.checkCurrentUser();
+      await Future<void>.delayed(Duration.zero);
+      await provider.signOut();
+      repository.currentUserRequests.first.complete(_testUser('alice'));
+      await lookup;
+
+      expect(repository.currentUserId, isNull);
+      expect(provider.currentUser, isNull);
+      provider.dispose();
+    },
+  );
+
+  test('an old user lookup cannot overwrite a newer account', () async {
+    final repository = _RaceAuthRepository();
+    final provider = AuthProvider(authRepository: repository);
+    repository.setSession(_testUser('alice'));
+    await Future<void>.delayed(Duration.zero);
+
+    final lookup = provider.checkCurrentUser();
+    await Future<void>.delayed(Duration.zero);
+    repository.setSession(_testUser('bob'));
+    await Future<void>.delayed(Duration.zero);
+    repository.currentUserRequests.single.complete(_testUser('alice'));
+    await lookup;
+
+    expect(repository.currentUserId, 'bob');
+    expect(provider.currentUser?.id, 'bob');
+    provider.dispose();
+  });
+
+  test('a stale profile completion cannot overwrite a newer account', () async {
+    final repository = _RaceAuthRepository();
+    final provider = AuthProvider(authRepository: repository);
+    repository.setSession(_testUser('alice'));
+    await Future<void>.delayed(Duration.zero);
+
+    final update = provider.updateProfile(_testUser('alice'));
+    await Future<void>.delayed(Duration.zero);
+    repository.setSession(_testUser('bob'));
+    await Future<void>.delayed(Duration.zero);
+    repository.profileRequests.single.complete(_testUser('alice'));
+
+    expect(await update, isFalse);
+    expect(provider.currentUser?.id, 'bob');
+    provider.dispose();
+  });
+
+  test(
+    'authentication mutations are serialized and newer login wins',
+    () async {
+      final repository = _RaceAuthRepository();
+      final provider = AuthProvider(authRepository: repository);
+
+      final aliceLogin = provider.loginWithEmail('alice', 'password');
+      await Future<void>.delayed(Duration.zero);
+      final bobLogin = provider.loginWithEmail('bob', 'password');
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.loginRequests, hasLength(1));
+
+      repository.loginRequests[0].complete(_testUser('alice'));
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.loginRequests, hasLength(2));
+      repository.loginRequests[1].complete(_testUser('bob'));
+
+      expect(await aliceLogin, isFalse);
+      expect(await bobLogin, isTrue);
+      expect(repository.currentUserId, 'bob');
+      expect(provider.currentUser?.id, 'bob');
+      provider.dispose();
+    },
+  );
+
+  test('an older authentication failure cannot clear a newer login', () async {
+    final repository = _RaceAuthRepository();
+    final provider = AuthProvider(authRepository: repository);
+
+    final aliceLogin = provider.loginWithEmail('alice', 'password');
+    await Future<void>.delayed(Duration.zero);
+    final bobLogin = provider.loginWithEmail('bob', 'password');
+    repository.loginRequests.single.completeError(Exception('A failed'));
+    await Future<void>.delayed(Duration.zero);
+    repository.loginRequests[1].complete(_testUser('bob'));
+
+    expect(await aliceLogin, isFalse);
+    expect(await bobLogin, isTrue);
+    expect(repository.currentUserId, 'bob');
+    expect(provider.currentUser?.id, 'bob');
+    provider.dispose();
+  });
+
+  test('logout requested after a pending login wins', () async {
+    final repository = _RaceAuthRepository();
+    final provider = AuthProvider(authRepository: repository);
+
+    final login = provider.loginWithEmail('alice', 'password');
+    await Future<void>.delayed(Duration.zero);
+    final logout = provider.signOut();
+    repository.loginRequests.single.complete(_testUser('alice'));
+
+    expect(await login, isFalse);
+    await logout;
+    expect(repository.currentUserId, isNull);
+    expect(provider.currentUser, isNull);
+    provider.dispose();
+  });
+
+  test('normal sequential login logout and login remains functional', () async {
+    final repository = _RaceAuthRepository();
+    final provider = AuthProvider(authRepository: repository);
+
+    final aliceLogin = provider.loginWithEmail('alice', 'password');
+    await Future<void>.delayed(Duration.zero);
+    repository.loginRequests.single.complete(_testUser('alice'));
+    expect(await aliceLogin, isTrue);
+
+    await provider.signOut();
+    expect(provider.currentUser, isNull);
+
+    final bobLogin = provider.loginWithEmail('bob', 'password');
+    await Future<void>.delayed(Duration.zero);
+    repository.loginRequests[1].complete(_testUser('bob'));
+    expect(await bobLogin, isTrue);
+    expect(provider.currentUser?.id, 'bob');
+    provider.dispose();
+  });
+
+  test(
+    'Google authentication uses the same serialized mutation boundary',
+    () async {
+      final repository = _RaceAuthRepository();
+      final provider = AuthProvider(authRepository: repository);
+
+      final googleLogin = provider.loginWithGoogle();
+      await Future<void>.delayed(Duration.zero);
+      final bobLogin = provider.loginWithEmail('bob', 'password');
+      expect(repository.googleRequests, hasLength(1));
+      expect(repository.loginRequests, isEmpty);
+
+      repository.googleRequests.single.complete(_testUser('google'));
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.loginRequests, hasLength(1));
+      repository.loginRequests.single.complete(_testUser('bob'));
+
+      expect(await googleLogin, isFalse);
+      expect(await bobLogin, isTrue);
+      expect(provider.currentUser?.id, 'bob');
+      provider.dispose();
+    },
+  );
+
+  test(
+    'network search state is cleared and stale results are discarded',
+    () async {
+      final repository = _DelayedNetworkRepository();
+      final provider = NetworkProvider(
+        networkRepository: repository,
+        isConnected: () => true,
+      );
+      provider.syncSession('alice');
+      await provider.searchUsers('alice query');
+      final fetch = provider.fetchNetworkData();
+      await Future<void>.delayed(Duration.zero);
+
+      provider.syncSession('bob');
+      repository.suggested.complete([_testUser('alice-result')]);
+      await fetch;
+
+      expect(provider.searchQuery, isEmpty);
+      expect(provider.searchResults, isEmpty);
+      expect(provider.suggestedUsers, isEmpty);
+      provider.dispose();
+    },
+  );
+
   test('best-effort cleanup continues after a failed operation', () async {
     final completed = <String>[];
 
@@ -161,6 +343,9 @@ class _TestAuthRepository implements AuthRepository {
   UserModel? _user;
 
   @override
+  String? get currentUserId => _user?.id;
+
+  @override
   Stream<UserModel?> get authStateChanges => _controller.stream;
 
   @override
@@ -190,6 +375,71 @@ class _TestAuthRepository implements AuthRepository {
 
   @override
   Future<void> deleteAccount() async => _user = null;
+}
+
+class _RaceAuthRepository implements AuthRepository {
+  final _controller = StreamController<UserModel?>.broadcast();
+  final currentUserRequests = <Completer<UserModel?>>[];
+  final profileRequests = <Completer<UserModel>>[];
+  final loginRequests = <Completer<UserModel>>[];
+  final googleRequests = <Completer<UserModel>>[];
+  UserModel? _user;
+
+  void setSession(UserModel? user) {
+    _user = user;
+    _controller.add(user);
+  }
+
+  @override
+  String? get currentUserId => _user?.id;
+
+  @override
+  Stream<UserModel?> get authStateChanges => _controller.stream;
+
+  @override
+  Future<UserModel?> getCurrentUser() {
+    final request = Completer<UserModel?>();
+    currentUserRequests.add(request);
+    return request.future;
+  }
+
+  @override
+  Future<void> logout() async => setSession(null);
+
+  @override
+  Future<UserModel> updateProfile(UserModel user) {
+    final request = Completer<UserModel>();
+    profileRequests.add(request);
+    return request.future;
+  }
+
+  @override
+  Future<void> deleteAccount() async => setSession(null);
+
+  @override
+  Future<UserModel> login(String email, String password) async {
+    final request = Completer<UserModel>();
+    loginRequests.add(request);
+    final user = await request.future;
+    setSession(user);
+    return user;
+  }
+
+  @override
+  Future<void> sendPasswordResetEmail(String email) async {}
+
+  @override
+  Future<UserModel> signInWithGoogle() async {
+    final request = Completer<UserModel>();
+    googleRequests.add(request);
+    final user = await request.future;
+    setSession(user);
+    return user;
+  }
+
+  @override
+  Future<UserModel> signup(String email, String password, String name) =>
+      login(email, password);
 }
 
 class _DelayedSavedRepository implements SavedRepository {

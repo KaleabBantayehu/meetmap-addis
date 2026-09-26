@@ -49,6 +49,8 @@ class NetworkProvider with ChangeNotifier {
     _followActionInProgress.clear();
     _followerCounts.clear();
     _followingCounts.clear();
+    _searchQuery = '';
+    _searchResults = [];
     _errorMessage = null;
     _isLoading = false;
     notifyListeners();

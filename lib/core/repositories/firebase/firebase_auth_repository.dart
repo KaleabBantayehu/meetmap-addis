@@ -16,6 +16,11 @@ class FirebaseAuthRepository implements AuthRepository {
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   final FirebaseFunctions _functions = FirebaseFunctions.instance;
 
+  @override
+  String? get currentUserId => _firebaseAuth.currentUser?.uid;
+
+  bool _isCurrentUser(String userId) => currentUserId == userId;
+
   UserModel _mapFirebaseUser(fb.User user, {String? name}) {
     final defaultPhoto = 'https://i.pravatar.cc/150?img=12';
     return UserModel(
@@ -74,19 +79,29 @@ class FirebaseAuthRepository implements AuthRepository {
   }
 
   Future<void> _cacheUser(UserModel user) async {
+    if (!_isCurrentUser(user.id)) return;
     final previousUid = await SecureStorageService.instance.read(
       CacheKeys.activeUserSessionUid,
     );
+    if (!_isCurrentUser(user.id)) return;
     if (previousUid != null && previousUid != user.id) {
       await SecureStorageService.instance.delete(
         CacheKeys.privateUserSession(previousUid),
       );
     }
+    if (!_isCurrentUser(user.id)) return;
     await SecureStorageService.instance.delete(CacheKeys.legacyUserSession);
+    if (!_isCurrentUser(user.id)) return;
     await SecureStorageService.instance.write(
       CacheKeys.privateUserSession(user.id),
       user.toJson(),
     );
+    if (!_isCurrentUser(user.id)) {
+      await SecureStorageService.instance.delete(
+        CacheKeys.privateUserSession(user.id),
+      );
+      return;
+    }
     await SecureStorageService.instance.write(
       CacheKeys.activeUserSessionUid,
       user.id,
@@ -148,6 +163,7 @@ class FirebaseAuthRepository implements AuthRepository {
       // 1. Try cache first to avoid Firestore lookup if same user is logged in
       try {
         final cachedUser = await _readCachedUser(fbUser.uid);
+        if (!_isCurrentUser(fbUser.uid)) return null;
         if (cachedUser != null) return cachedUser;
       } catch (e) {
         debugPrint('Error reading user session cache in authStateChanges: $e');
@@ -156,6 +172,7 @@ class FirebaseAuthRepository implements AuthRepository {
       // 2. Fetch from Firestore
       try {
         final userModel = await _loadCurrentUserProfile(fbUser);
+        if (!_isCurrentUser(fbUser.uid)) return null;
         if (userModel != null) {
           // Cache the profile and save last sync timestamp
           try {
@@ -172,6 +189,7 @@ class FirebaseAuthRepository implements AuthRepository {
       }
 
       // 3. Fallback: map from Firebase Auth
+      if (!_isCurrentUser(fbUser.uid)) return null;
       final fallbackUser = _mapFirebaseUser(fbUser);
       try {
         await _cacheUser(fallbackUser);
@@ -193,6 +211,7 @@ class FirebaseAuthRepository implements AuthRepository {
     // 1. Try cache first
     try {
       final cachedUser = await _readCachedUser(user.uid);
+      if (!_isCurrentUser(user.uid)) return null;
       if (cachedUser != null) return cachedUser;
     } catch (e) {
       debugPrint('Error reading user session cache in getCurrentUser: $e');
@@ -201,6 +220,7 @@ class FirebaseAuthRepository implements AuthRepository {
     // 2. Fetch from Firestore
     try {
       final userModel = await _loadCurrentUserProfile(user);
+      if (!_isCurrentUser(user.uid)) return null;
       if (userModel != null) {
         try {
           await _cacheUser(userModel);
@@ -216,6 +236,7 @@ class FirebaseAuthRepository implements AuthRepository {
     }
 
     // 3. Fallback: map from Firebase Auth
+    if (!_isCurrentUser(user.uid)) return null;
     final fallbackUser = _mapFirebaseUser(user);
     try {
       await _cacheUser(fallbackUser);
@@ -237,6 +258,9 @@ class FirebaseAuthRepository implements AuthRepository {
 
       try {
         final userModel = await _loadCurrentUserProfile(user);
+        if (!_isCurrentUser(user.uid)) {
+          throw Exception('Authentication session changed.');
+        }
         if (userModel != null) return userModel;
       } catch (e) {
         debugPrint(
@@ -244,6 +268,9 @@ class FirebaseAuthRepository implements AuthRepository {
         );
       }
 
+      if (!_isCurrentUser(user.uid)) {
+        throw Exception('Authentication session changed.');
+      }
       return _mapFirebaseUser(user);
     } on fb.FirebaseAuthException catch (e) {
       throw Exception(_getLoginErrorMessage(e.code));
@@ -287,9 +314,11 @@ class FirebaseAuthRepository implements AuthRepository {
         debugPrint(
           'Error saving user profile to Firestore during signup: $firestoreError',
         );
-        try {
-          await _firebaseAuth.signOut();
-        } catch (_) {}
+        if (_isCurrentUser(user.uid)) {
+          try {
+            await _firebaseAuth.signOut();
+          } catch (_) {}
+        }
 
         if (firestoreError.toString().contains('does not exist') ||
             firestoreError.toString().contains('disabled') ||
@@ -302,6 +331,9 @@ class FirebaseAuthRepository implements AuthRepository {
         throw Exception('Failed to create user profile. Please try again.');
       }
 
+      if (!_isCurrentUser(user.uid)) {
+        throw Exception('Authentication session changed.');
+      }
       return userModel;
     } on fb.FirebaseAuthException catch (e) {
       throw Exception(_getSignupErrorMessage(e.code));
@@ -382,6 +414,10 @@ class FirebaseAuthRepository implements AuthRepository {
       batch.set(privateAccountRef, privateMap, SetOptions(merge: true));
       await batch.commit().timeout(const Duration(seconds: 4));
 
+      if (!_isCurrentUser(user.id)) {
+        throw Exception('Authentication session changed.');
+      }
+
       if (currentUser.displayName != user.name) {
         await currentUser.updateDisplayName(user.name);
       }
@@ -435,6 +471,9 @@ class FirebaseAuthRepository implements AuthRepository {
 
       try {
         final doc = await docRef.get().timeout(const Duration(seconds: 4));
+        if (!_isCurrentUser(user.uid)) {
+          throw Exception('Authentication session changed.');
+        }
         if (!doc.exists) {
           userModel = _mapFirebaseUser(user, name: user.displayName);
           final publicMap = _buildPublicUserFirestoreMap(userModel);
@@ -451,9 +490,11 @@ class FirebaseAuthRepository implements AuthRepository {
         }
       } catch (firestoreError) {
         debugPrint('Firestore error during Google Sign-In: $firestoreError');
-        try {
-          await _firebaseAuth.signOut();
-        } catch (_) {}
+        if (_isCurrentUser(user.uid)) {
+          try {
+            await _firebaseAuth.signOut();
+          } catch (_) {}
+        }
 
         if (firestoreError.toString().contains('does not exist') ||
             firestoreError.toString().contains('disabled') ||
@@ -468,6 +509,9 @@ class FirebaseAuthRepository implements AuthRepository {
         );
       }
 
+      if (!_isCurrentUser(user.uid)) {
+        throw Exception('Authentication session changed.');
+      }
       return userModel;
     } on fb.FirebaseAuthException catch (e) {
       throw Exception(_getLoginErrorMessage(e.code));

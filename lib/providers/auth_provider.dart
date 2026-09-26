@@ -14,6 +14,11 @@ class AuthProvider extends ChangeNotifier {
 
   UserModel? _currentUser;
   UserModel? get currentUser => _currentUser;
+  int _sessionGeneration = 0;
+  Future<void> _authMutationChain = Future<void>.value();
+  int _pendingAuthMutations = 0;
+  bool _hasDeferredAuthState = false;
+  UserModel? _deferredAuthState;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -27,12 +32,16 @@ class AuthProvider extends ChangeNotifier {
     _authSubscription?.cancel();
     _authSubscription = _authRepository.authStateChanges.listen(
       (user) {
-        _currentUser = user;
-        _isLoading = false;
-        _errorMessage = null;
-        notifyListeners();
+        if (_authRepository.currentUserId != user?.id) return;
+        if (_pendingAuthMutations > 0) {
+          _hasDeferredAuthState = true;
+          _deferredAuthState = user;
+          return;
+        }
+        _applyAuthState(user);
       },
       onError: (error) {
+        _sessionGeneration++;
         _errorMessage = error.toString().replaceAll('Exception: ', '');
         _isLoading = false;
         notifyListeners();
@@ -41,16 +50,20 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> loginWithEmail(String email, String password) async {
-    _errorMessage = null;
-    notifyListeners();
+    final generation = ++_sessionGeneration;
+    return _serializeAuthMutation(() async {
+      _errorMessage = null;
+      notifyListeners();
 
-    try {
-      _currentUser = await _authRepository.login(email, password);
-      return true;
-    } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
-      return false;
-    }
+      try {
+        final user = await _authRepository.login(email, password);
+        return _applyCompletedUser(user, generation);
+      } catch (e) {
+        if (!_isCurrentGeneration(generation)) return false;
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        return false;
+      }
+    });
   }
 
   Future<bool> signupWithEmail(
@@ -58,53 +71,74 @@ class AuthProvider extends ChangeNotifier {
     String password,
     String name,
   ) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      _currentUser = await _authRepository.signup(email, password, name);
-      return true;
-    } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
-      return false;
-    } finally {
-      _isLoading = false;
+    final generation = ++_sessionGeneration;
+    return _serializeAuthMutation(() async {
+      _isLoading = true;
+      _errorMessage = null;
       notifyListeners();
-    }
+
+      try {
+        final user = await _authRepository.signup(email, password, name);
+        return _applyCompletedUser(user, generation);
+      } catch (e) {
+        if (!_isCurrentGeneration(generation)) return false;
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        return false;
+      } finally {
+        if (_isCurrentGeneration(generation)) {
+          _isLoading = false;
+          notifyListeners();
+        }
+      }
+    });
   }
 
   Future<void> signOut() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      await _authRepository.logout();
-      _currentUser = null;
-    } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
-    } finally {
-      _isLoading = false;
+    final generation = ++_sessionGeneration;
+    return _serializeAuthMutation(() async {
+      _isLoading = true;
+      _errorMessage = null;
       notifyListeners();
-    }
+
+      try {
+        await _authRepository.logout();
+        if (_isCurrentGeneration(generation) &&
+            _authRepository.currentUserId == null) {
+          _currentUser = null;
+        }
+      } catch (e) {
+        if (!_isCurrentGeneration(generation)) return;
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+      } finally {
+        if (_isCurrentGeneration(generation)) {
+          _isLoading = false;
+          notifyListeners();
+        }
+      }
+    });
   }
 
   Future<bool> loginWithGoogle() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      _currentUser = await _authRepository.signInWithGoogle();
-      return true;
-    } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
-      return false;
-    } finally {
-      _isLoading = false;
+    final generation = ++_sessionGeneration;
+    return _serializeAuthMutation(() async {
+      _isLoading = true;
+      _errorMessage = null;
       notifyListeners();
-    }
+
+      try {
+        final user = await _authRepository.signInWithGoogle();
+        return _applyCompletedUser(user, generation);
+      } catch (e) {
+        if (!_isCurrentGeneration(generation)) return false;
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        return false;
+      } finally {
+        if (_isCurrentGeneration(generation)) {
+          _isLoading = false;
+          notifyListeners();
+        }
+      }
+    });
   }
 
   // ————————————————————————————————————————————————————————————————
@@ -134,51 +168,136 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() => signOut();
 
   Future<bool> deleteAccount() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-    try {
-      await _authRepository.deleteAccount();
-      _currentUser = null;
-      return true;
-    } catch (error) {
-      _errorMessage = error.toString().replaceAll('Exception: ', '');
-      return false;
-    } finally {
-      _isLoading = false;
+    final generation = ++_sessionGeneration;
+    return _serializeAuthMutation(() async {
+      _isLoading = true;
+      _errorMessage = null;
       notifyListeners();
-    }
+      try {
+        await _authRepository.deleteAccount();
+        if (!_isCurrentGeneration(generation) ||
+            _authRepository.currentUserId != null) {
+          return false;
+        }
+        _currentUser = null;
+        return true;
+      } catch (error) {
+        if (!_isCurrentGeneration(generation)) return false;
+        _errorMessage = error.toString().replaceAll('Exception: ', '');
+        return false;
+      } finally {
+        if (_isCurrentGeneration(generation)) {
+          _isLoading = false;
+          notifyListeners();
+        }
+      }
+    });
   }
 
   Future<void> checkCurrentUser() async {
+    final generation = ++_sessionGeneration;
     _isLoading = true;
     notifyListeners();
     try {
-      _currentUser = await _authRepository.getCurrentUser();
+      final user = await _authRepository.getCurrentUser();
+      if (_pendingAuthMutations == 0 && _isCurrentResult(user, generation)) {
+        _currentUser = user;
+      }
     } catch (e) {
+      if (!_isCurrentGeneration(generation)) return;
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (_isCurrentGeneration(generation)) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<bool> updateProfile(UserModel user) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
+    final generation = ++_sessionGeneration;
+    return _serializeAuthMutation(() async {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
 
+      try {
+        final updatedUser = await _authRepository.updateProfile(user);
+        return _applyCompletedUser(updatedUser, generation);
+      } catch (e) {
+        if (!_isCurrentGeneration(generation)) return false;
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        return false;
+      } finally {
+        if (_isCurrentGeneration(generation)) {
+          _isLoading = false;
+          notifyListeners();
+        }
+      }
+    });
+  }
+
+  Future<T> _serializeAuthMutation<T>(Future<T> Function() operation) {
+    final completer = Completer<T>();
+    _pendingAuthMutations++;
+    _authMutationChain = _authMutationChain.then((_) async {
+      try {
+        completer.complete(await operation());
+      } catch (error, stackTrace) {
+        completer.completeError(error, stackTrace);
+      } finally {
+        _pendingAuthMutations--;
+        if (_pendingAuthMutations == 0) {
+          if (_hasDeferredAuthState &&
+              _authRepository.currentUserId == _deferredAuthState?.id) {
+            _applyAuthState(_deferredAuthState);
+          }
+          _hasDeferredAuthState = false;
+          _deferredAuthState = null;
+          _reconcileAuthoritativeSession();
+        }
+      }
+    });
+    return completer.future;
+  }
+
+  Future<void> _reconcileAuthoritativeSession() async {
+    final generation = _sessionGeneration;
     try {
-      _currentUser = await _authRepository.updateProfile(user);
-      return true;
-    } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
-      return false;
-    } finally {
+      final user = await _authRepository.getCurrentUser();
+      if (_pendingAuthMutations > 0 || !_isCurrentResult(user, generation)) {
+        return;
+      }
+      _currentUser = user;
       _isLoading = false;
       notifyListeners();
+    } catch (_) {
+      // The initiating operation already reports its own user-facing failure.
     }
   }
+
+  void _applyAuthState(UserModel? user) {
+    _sessionGeneration++;
+    _currentUser = user;
+    _isLoading = false;
+    _errorMessage = null;
+    notifyListeners();
+  }
+
+  bool _applyCompletedUser(UserModel user, int generation) {
+    if (_isCurrentResult(user, generation)) {
+      _currentUser = user;
+      return true;
+    }
+    return _currentUser?.id == user.id &&
+        _authRepository.currentUserId == user.id;
+  }
+
+  bool _isCurrentResult(UserModel? user, int generation) =>
+      _isCurrentGeneration(generation) &&
+      _authRepository.currentUserId == user?.id;
+
+  bool _isCurrentGeneration(int generation) => _sessionGeneration == generation;
 
   @override
   void dispose() {
